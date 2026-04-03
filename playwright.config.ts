@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const isStaticCI = !!process.env['STORYBOOK_STATIC']
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -17,7 +19,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm storybook',
+    // On CI: serve the pre-built static output. Locally: spin up the dev server.
+    command: isStaticCI ? 'npx serve storybook-static -p 6006 --no-clipboard' : 'pnpm storybook',
     url: 'http://localhost:6006',
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,

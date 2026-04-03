@@ -10,9 +10,13 @@ dev:
 test:
     pnpm vitest run --coverage
 
-# Run E2E tests (requires Storybook running or webServer auto-start)
+# Run E2E tests against a pre-built Storybook (CI)
 e2e:
     pnpm playwright test
+
+# Serve the pre-built Storybook static output for E2E
+serve-storybook:
+    pnpm dlx serve storybook-static -p 6006
 
 # Lint all code
 lint:
