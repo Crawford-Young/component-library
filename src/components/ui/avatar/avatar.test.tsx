@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { Avatar, AvatarFallback } from './avatar'
+import { Avatar, AvatarFallback, AvatarImage } from './avatar'
 
 describe('Avatar', () => {
   it('renders', () => {
@@ -39,6 +39,18 @@ describe('Avatar', () => {
   it('merges custom className', () => {
     const { container } = render(<Avatar className="custom" />)
     expect((container.firstChild as HTMLElement).className).toContain('custom')
+  })
+})
+
+describe('AvatarImage', () => {
+  it('renders without errors', () => {
+    const { container } = render(
+      <Avatar>
+        <AvatarImage src="test.png" alt="test" />
+        <AvatarFallback>CY</AvatarFallback>
+      </Avatar>,
+    )
+    expect(container.firstChild).toBeInTheDocument()
   })
 })
 

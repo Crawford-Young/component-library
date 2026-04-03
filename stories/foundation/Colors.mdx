@@ -18,14 +18,29 @@ rgb(var(--accent) / 0.5)   /* 50% opacity */
   {[
     { token: '--background', label: 'background', light: 'rgb(255 255 255)', dark: 'rgb(9 9 11)' },
     { token: '--surface', label: 'surface', light: 'rgb(250 250 250)', dark: 'rgb(24 24 27)' },
-    { token: '--surface-raised', label: 'surface-raised', light: 'rgb(244 244 245)', dark: 'rgb(39 39 42)' },
+    {
+      token: '--surface-raised',
+      label: 'surface-raised',
+      light: 'rgb(244 244 245)',
+      dark: 'rgb(39 39 42)',
+    },
   ].map(({ token, label, light, dark }) => (
     <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <div style={{ width: 40, height: 40, borderRadius: 6, background: `rgb(var(${token}))`, border: '1px solid rgb(var(--border))' }} />
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: `rgb(var(${token}))`,
+          border: '1px solid rgb(var(--border))',
+        }}
+      />
       <div>
         <code style={{ fontWeight: 600 }}>{token}</code>
         <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
-        <span style={{ marginLeft: 12, fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>light: {light} · dark: {dark}</span>
+        <span style={{ marginLeft: 12, fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+          light: {light} · dark: {dark}
+        </span>
       </div>
     </div>
   ))}
@@ -43,7 +58,9 @@ rgb(var(--accent) / 0.5)   /* 50% opacity */
       <div>
         <code style={{ fontWeight: 600 }}>{token}</code>
         <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
-        <span style={{ marginLeft: 12, fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>{value}</span>
+        <span style={{ marginLeft: 12, fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+          {value}
+        </span>
       </div>
     </div>
   ))}
@@ -57,7 +74,15 @@ rgb(var(--accent) / 0.5)   /* 50% opacity */
     { token: '--muted-foreground', label: 'muted-foreground' },
   ].map(({ token, label }) => (
     <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <div style={{ width: 40, height: 40, borderRadius: 6, background: `rgb(var(${token}))`, border: '1px solid rgb(var(--border))' }} />
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: `rgb(var(${token}))`,
+          border: '1px solid rgb(var(--border))',
+        }}
+      />
       <div>
         <code style={{ fontWeight: 600 }}>{token}</code>
         <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
@@ -74,7 +99,15 @@ rgb(var(--accent) / 0.5)   /* 50% opacity */
     { token: '--input', label: 'input' },
   ].map(({ token, label }) => (
     <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <div style={{ width: 40, height: 40, borderRadius: 6, background: `rgb(var(${token}))`, border: '1px solid rgb(var(--border))' }} />
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: `rgb(var(${token}))`,
+          border: '1px solid rgb(var(--border))',
+        }}
+      />
       <div>
         <code style={{ fontWeight: 600 }}>{token}</code>
         <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>

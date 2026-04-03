@@ -13,6 +13,7 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    exclude: ['**/node_modules/**', '**/tests/e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
@@ -23,7 +24,7 @@ export default defineConfig({
         lines: 100,
       },
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/index.ts', 'src/tailwind/index.ts', 'src/styles/**', 'src/**/index.ts'],
+      exclude: ['src/index.ts', 'src/tailwind/**', 'src/styles/**', 'src/**/index.ts'],
     },
   },
 })

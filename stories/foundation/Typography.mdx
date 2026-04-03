@@ -8,46 +8,71 @@ import { Meta } from '@storybook/blocks'
 Font families are injected by the consuming project via `next/font` and exposed as CSS variables.
 The library defaults to system fonts until those variables are set.
 
-| Variable | Default |
-|---|---|
-| `--font-sans` | `system-ui, sans-serif` |
+| Variable      | Default                   |
+| ------------- | ------------------------- |
+| `--font-sans` | `system-ui, sans-serif`   |
 | `--font-mono` | `ui-monospace, monospace` |
 
 ## Scale
 
 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-4xl · 2.25rem · 700</code>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-4xl · 2.25rem · 700
+    </code>
     <div style={{ fontSize: '2.25rem', fontWeight: 700, lineHeight: 1.1 }}>Heading One</div>
   </div>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-3xl · 1.875rem · 600</code>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-3xl · 1.875rem · 600
+    </code>
     <div style={{ fontSize: '1.875rem', fontWeight: 600 }}>Heading Two</div>
   </div>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-2xl · 1.5rem · 600</code>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-2xl · 1.5rem · 600
+    </code>
     <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>Heading Three</div>
   </div>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-xl · 1.25rem · 500</code>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-xl · 1.25rem · 500
+    </code>
     <div style={{ fontSize: '1.25rem', fontWeight: 500 }}>Heading Four</div>
   </div>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-base · 1rem · 400</code>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-base · 1rem · 400
+    </code>
     <div style={{ fontSize: '1rem' }}>Body — the quick brown fox jumps over the lazy dog.</div>
   </div>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-sm · 0.875rem · 400</code>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-sm · 0.875rem · 400
+    </code>
     <div style={{ fontSize: '0.875rem' }}>Small — the quick brown fox jumps over the lazy dog.</div>
   </div>
   <div>
-    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>text-xs · 0.75rem · 400</code>
-    <div style={{ fontSize: '0.75rem' }}>Extra small — the quick brown fox jumps over the lazy dog.</div>
+    <code style={{ fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+      text-xs · 0.75rem · 400
+    </code>
+    <div style={{ fontSize: '0.75rem' }}>
+      Extra small — the quick brown fox jumps over the lazy dog.
+    </div>
   </div>
 </div>
 
 ## Mono
 
-<div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem', background: 'rgb(var(--surface))', padding: '16px', borderRadius: '8px', border: '1px solid rgb(var(--border))' }}>
+<div
+  style={{
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.875rem',
+    background: 'rgb(var(--surface))',
+    padding: '16px',
+    borderRadius: '8px',
+    border: '1px solid rgb(var(--border))',
+  }}
+>
   const greeting = "Hello, world!"
 </div>
