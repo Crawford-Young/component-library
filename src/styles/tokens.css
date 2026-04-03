@@ -1,0 +1,66 @@
+/* src/styles/tokens.css
+   RGB channel values — use as rgb(var(--token)) or rgb(var(--token) / 0.5)
+   Light mode is :root default; dark mode via .dark class.                    */
+
+:root {
+  /* Backgrounds */
+  --background: 255 255 255;
+  --surface: 250 250 250;
+  --surface-raised: 244 244 245;
+
+  /* Borders */
+  --border: 228 228 231;
+  --border-subtle: 244 244 245;
+  --input: 228 228 231;
+
+  /* Text */
+  --foreground: 9 9 11;
+  --muted: 244 244 245;
+  --muted-foreground: 113 113 122;
+
+  /* Brand */
+  --accent: 16 185 129;
+  --accent-foreground: 0 0 0;
+  --ring: 16 185 129;
+
+  /* Feedback */
+  --destructive: 239 68 68;
+  --destructive-foreground: 250 250 250;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Typography — filled by consuming project via next/font */
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+}
+
+.dark {
+  /* Backgrounds */
+  --background: 9 9 11;
+  --surface: 24 24 27;
+  --surface-raised: 39 39 42;
+
+  /* Borders */
+  --border: 39 39 42;
+  --border-subtle: 24 24 27;
+  --input: 39 39 42;
+
+  /* Text */
+  --foreground: 250 250 250;
+  --muted: 24 24 27;
+  --muted-foreground: 113 113 122;
+
+  /* Brand — same as light */
+  --accent: 16 185 129;
+  --accent-foreground: 0 0 0;
+  --ring: 16 185 129;
+
+  /* Feedback — same as light */
+  --destructive: 239 68 68;
+  --destructive-foreground: 250 250 250;
+}
