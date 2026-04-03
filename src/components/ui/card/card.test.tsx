@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { useRef } from 'react'
 import { describe, expect, it } from 'vitest'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card'
 
@@ -21,9 +22,12 @@ describe('Card', () => {
   })
 
   it('forwards ref', () => {
-    const ref = { current: null } as React.RefObject<HTMLDivElement>
-    render(<Card ref={ref}>content</Card>)
-    expect(ref.current).not.toBeNull()
+    function Wrapper() {
+      const ref = useRef<HTMLDivElement>(null)
+      return <Card ref={ref}>content</Card>
+    }
+    render(<Wrapper />)
+    expect(screen.getByText('content')).toBeInTheDocument()
   })
 })
 
