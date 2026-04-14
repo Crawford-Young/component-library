@@ -1,16 +1,16 @@
-# CLAUDE.md — @cy/ui Component Library
+# CLAUDE.md — @crawfordyoung/ui Component Library
 
 This file overrides specific rules from `~/code/CLAUDE.md` for this repository. All rules not overridden below remain in effect.
 
 ## Project Overview
 
-`@cy/ui` is a published npm package — a production-quality React component library. It is **not a Next.js app**. The build target is a reusable library consumed by other projects.
+`@crawfordyoung/ui` is a published npm package — a production-quality React component library. It is **not a Next.js app**. The build target is a reusable library consumed by other projects.
 
 ## Package identity
 
-- **Package name**: `@cy/ui`
+- **Package name**: `@crawfordyoung/ui`
 - **Current version**: tracked by Changesets
-- **npm scope**: `@cy`
+- **npm scope**: `@crawfordyoung`
 
 ## Wave status
 
