@@ -17,7 +17,7 @@ const stories = [
 for (const { name, id } of stories) {
   test(`${name} has no axe violations`, async ({ page }) => {
     await page.goto(`/iframe.html?id=${id}&viewMode=story`)
-    await page.waitForSelector('#storybook-root', { timeout: 10_000 })
+    await page.waitForSelector('#storybook-root:not([hidden]) > *', { timeout: 15_000 })
 
     const results = await new AxeBuilder({ page }).include('#storybook-root').analyze()
 
