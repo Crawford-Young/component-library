@@ -8,3 +8,5 @@ storybook-static/
 .DS_Store
 Thumbs.db
 .superpowers/
+test-results/
+playwright-report/

@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   webServer: {
     // On CI: serve the pre-built static output. Locally: spin up the dev server.
-    command: isStaticCI ? 'npx serve storybook-static -p 6006 --no-clipboard' : 'pnpm storybook',
+    command: isStaticCI ? 'pnpm exec serve storybook-static --listen 6006' : 'pnpm storybook',
     url: 'http://localhost:6006',
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
