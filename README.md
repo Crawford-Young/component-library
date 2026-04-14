@@ -1,4 +1,4 @@
-# @cy/ui
+# @crawfordyoung/ui
 
 Production-quality React component library built on [Radix UI](https://radix-ui.com) primitives with [Tailwind CSS](https://tailwindcss.com) and [CVA](https://cva.style). Dark-mode-first, fully accessible, 100% test coverage.
 
@@ -20,7 +20,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 ## Installation
 
 ```bash
-pnpm add @cy/ui
+pnpm add @crawfordyoung/ui
 ```
 
 Peer dependencies:
@@ -36,21 +36,21 @@ pnpm add react react-dom tailwindcss
 In your root layout or global CSS entry point:
 
 ```ts
-import '@cy/ui/styles.css'
+import '@crawfordyoung/ui/styles.css'
 ```
 
 ### 2. Add the Tailwind preset
 
 ```ts
 // tailwind.config.ts
-import { cyUIPreset } from '@cy/ui/tailwind'
+import { cyUIPreset } from '@crawfordyoung/ui/tailwind'
 import type { Config } from 'tailwindcss'
 
 export default {
   presets: [cyUIPreset],
   content: [
     './src/**/*.{ts,tsx}',
-    './node_modules/@cy/ui/src/**/*.{ts,tsx}', // required — Tailwind scans source at build time
+    './node_modules/@crawfordyoung/ui/src/**/*.{ts,tsx}', // required — Tailwind scans source at build time
   ],
 } satisfies Config
 ```
@@ -58,7 +58,7 @@ export default {
 ### 3. Use components
 
 ```tsx
-import { Button, Badge, Spinner } from '@cy/ui'
+import { Button, Badge, Spinner } from '@crawfordyoung/ui'
 
 export default function Page() {
   return (
