@@ -1,0 +1,117 @@
+{/* stories/foundation/Colors.mdx */}
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Foundation/Colors" />
+
+# Colors
+
+Design tokens use **RGB channel values** so opacity can be composed at the call site:
+
+```css
+rgb(var(--accent))         /* full opacity */
+rgb(var(--accent) / 0.5)   /* 50% opacity */
+```
+
+## Backgrounds
+
+<div style={{ display: 'grid', gap: '8px' }}>
+  {[
+    { token: '--background', label: 'background', light: 'rgb(255 255 255)', dark: 'rgb(9 9 11)' },
+    { token: '--surface', label: 'surface', light: 'rgb(250 250 250)', dark: 'rgb(24 24 27)' },
+    {
+      token: '--surface-raised',
+      label: 'surface-raised',
+      light: 'rgb(244 244 245)',
+      dark: 'rgb(39 39 42)',
+    },
+  ].map(({ token, label, light, dark }) => (
+    <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: `rgb(var(${token}))`,
+          border: '1px solid rgb(var(--border))',
+        }}
+      />
+      <div>
+        <code style={{ fontWeight: 600 }}>{token}</code>
+        <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
+        <span style={{ marginLeft: 12, fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+          light: {light} · dark: {dark}
+        </span>
+      </div>
+    </div>
+  ))}
+</div>
+
+## Brand
+
+<div style={{ display: 'grid', gap: '8px' }}>
+  {[
+    { token: '--accent', label: 'accent (emerald-500)', value: 'rgb(16 185 129)' },
+    { token: '--destructive', label: 'destructive (red-500)', value: 'rgb(239 68 68)' },
+  ].map(({ token, label, value }) => (
+    <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ width: 40, height: 40, borderRadius: 6, background: value }} />
+      <div>
+        <code style={{ fontWeight: 600 }}>{token}</code>
+        <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
+        <span style={{ marginLeft: 12, fontSize: 12, color: 'rgb(var(--muted-foreground))' }}>
+          {value}
+        </span>
+      </div>
+    </div>
+  ))}
+</div>
+
+## Text
+
+<div style={{ display: 'grid', gap: '8px' }}>
+  {[
+    { token: '--foreground', label: 'foreground' },
+    { token: '--muted-foreground', label: 'muted-foreground' },
+  ].map(({ token, label }) => (
+    <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: `rgb(var(${token}))`,
+          border: '1px solid rgb(var(--border))',
+        }}
+      />
+      <div>
+        <code style={{ fontWeight: 600 }}>{token}</code>
+        <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
+      </div>
+    </div>
+  ))}
+</div>
+
+## Border & Input
+
+<div style={{ display: 'grid', gap: '8px' }}>
+  {[
+    { token: '--border', label: 'border' },
+    { token: '--input', label: 'input' },
+  ].map(({ token, label }) => (
+    <div key={token} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: `rgb(var(${token}))`,
+          border: '1px solid rgb(var(--border))',
+        }}
+      />
+      <div>
+        <code style={{ fontWeight: 600 }}>{token}</code>
+        <span style={{ marginLeft: 12, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
+      </div>
+    </div>
+  ))}
+</div>
