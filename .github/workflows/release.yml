@@ -31,7 +31,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
