@@ -7,7 +7,7 @@ export default defineConfig([
     dts: true,
     clean: true,
     treeshake: true,
-    external: ['react', 'react-dom', 'tailwindcss'],
+    external: ['react', 'react-dom', 'tailwindcss', 'lucide-react'],
     outDir: 'dist',
   },
   {

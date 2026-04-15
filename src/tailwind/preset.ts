@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const tailwindAnimate = require('tailwindcss-animate') as typeof import('tailwindcss-animate')
+import tailwindAnimate from 'tailwindcss-animate'
 import type { Config } from 'tailwindcss'
 
 export const cyUIPreset: Partial<Config> = {
