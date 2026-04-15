@@ -93,6 +93,12 @@ describe('DialogHeader', () => {
     const { container } = render(<DialogHeader />)
     expect((container.firstChild as HTMLElement).className).toContain('flex-col')
   })
+
+  it('forwards ref', () => {
+    const ref = { current: null as HTMLDivElement | null }
+    render(<DialogHeader ref={ref} />)
+    expect(ref.current).toBeInstanceOf(HTMLDivElement)
+  })
 })
 
 describe('DialogFooter', () => {
@@ -103,12 +109,74 @@ describe('DialogFooter', () => {
 })
 
 describe('DialogTitle', () => {
+  it('renders children', async () => {
+    const user = userEvent.setup()
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>My title</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    )
+    await user.click(screen.getByText('Open'))
+    await waitFor(() => expect(screen.getByText('My title')).toBeInTheDocument())
+  })
+
+  it('applies font-semibold class', async () => {
+    const user = userEvent.setup()
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>T</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    )
+    await user.click(screen.getByText('Open'))
+    await waitFor(() => {
+      expect(screen.getByText('T').className).toContain('font-semibold')
+    })
+  })
+
   it('has correct displayName', () => {
     expect(DialogTitle.displayName).toBeDefined()
   })
 })
 
 describe('DialogDescription', () => {
+  it('renders children', async () => {
+    const user = userEvent.setup()
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Title</DialogTitle>
+          <DialogDescription>My description</DialogDescription>
+        </DialogContent>
+      </Dialog>,
+    )
+    await user.click(screen.getByText('Open'))
+    await waitFor(() => expect(screen.getByText('My description')).toBeInTheDocument())
+  })
+
+  it('applies text-sm class', async () => {
+    const user = userEvent.setup()
+    render(
+      <Dialog>
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Title</DialogTitle>
+          <DialogDescription>D</DialogDescription>
+        </DialogContent>
+      </Dialog>,
+    )
+    await user.click(screen.getByText('Open'))
+    await waitFor(() => {
+      expect(screen.getByText('D').className).toContain('text-sm')
+    })
+  })
+
   it('has correct displayName', () => {
     expect(DialogDescription.displayName).toBeDefined()
   })
