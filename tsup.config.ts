@@ -14,7 +14,7 @@ export default defineConfig([
     entry: { 'tailwind/index': 'src/tailwind/index.ts' },
     format: ['cjs', 'esm'],
     dts: true,
-    external: ['tailwindcss'],
+    external: ['tailwindcss', 'tailwindcss-animate'],
     outDir: 'dist',
   },
 ])
