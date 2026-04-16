@@ -7,14 +7,14 @@ export default defineConfig([
     dts: true,
     clean: true,
     treeshake: true,
-    external: ['react', 'react-dom', 'tailwindcss'],
+    external: ['react', 'react-dom', 'tailwindcss', 'lucide-react'],
     outDir: 'dist',
   },
   {
     entry: { 'tailwind/index': 'src/tailwind/index.ts' },
     format: ['cjs', 'esm'],
     dts: true,
-    external: ['tailwindcss'],
+    external: ['tailwindcss', 'tailwindcss-animate'],
     outDir: 'dist',
   },
 ])
