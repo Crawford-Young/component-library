@@ -1,6 +1,11 @@
 import type { Preview } from '@storybook/react'
+import { inject as injectAnalytics } from '@vercel/analytics'
+import { injectSpeedInsights } from '@vercel/speed-insights'
 import '../src/styles/index.css'
 import './tailwind.css'
+
+injectAnalytics()
+injectSpeedInsights()
 
 const preview: Preview = {
   parameters: {
