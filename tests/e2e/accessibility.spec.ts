@@ -2,16 +2,25 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 const stories = [
-  { name: 'Button', id: 'ui-button--default' },
+  { name: 'Alert', id: 'ui-alert--default' },
+  { name: 'Avatar', id: 'ui-avatar--with-fallback' },
   { name: 'Badge', id: 'ui-badge--default' },
+  { name: 'Button', id: 'ui-button--default' },
+  { name: 'Card', id: 'ui-card--default' },
+  { name: 'Checkbox', id: 'ui-checkbox--default' },
+  { name: 'Dialog', id: 'ui-dialog--default' },
   { name: 'Input', id: 'ui-input--default' },
   { name: 'Label', id: 'ui-label--default' },
-  { name: 'Textarea', id: 'ui-textarea--default' },
+  { name: 'Popover', id: 'ui-popover--default' },
+  { name: 'Progress', id: 'ui-progress--default' },
+  { name: 'RadioGroup', id: 'ui-radiogroup--default' },
+  { name: 'Select', id: 'ui-select--default' },
   { name: 'Separator', id: 'ui-separator--horizontal' },
-  { name: 'Card', id: 'ui-card--default' },
   { name: 'Skeleton', id: 'ui-skeleton--default' },
   { name: 'Spinner', id: 'ui-spinner--default' },
-  { name: 'Avatar', id: 'ui-avatar--with-fallback' },
+  { name: 'Switch', id: 'ui-switch--default' },
+  { name: 'Textarea', id: 'ui-textarea--default' },
+  { name: 'Tooltip', id: 'ui-tooltip--default' },
 ]
 
 for (const { name, id } of stories) {
