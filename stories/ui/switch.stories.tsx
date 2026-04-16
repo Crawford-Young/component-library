@@ -16,9 +16,16 @@ const meta: Meta<typeof Switch> = {
 export default meta
 type Story = StoryObj<typeof Switch>
 
-export const Default: Story = {}
-export const Checked: Story = { args: { defaultChecked: true } }
-export const Disabled: Story = { args: { disabled: true } }
+export const Default: Story = {
+  render: () => (
+    <div className="flex items-center gap-2">
+      <Switch id="default" />
+      <Label htmlFor="default">Toggle setting</Label>
+    </div>
+  ),
+}
+export const Checked: Story = { args: { defaultChecked: true, 'aria-label': 'Toggle setting' } }
+export const Disabled: Story = { args: { disabled: true, 'aria-label': 'Toggle setting' } }
 
 export const WithLabel: Story = {
   render: () => (

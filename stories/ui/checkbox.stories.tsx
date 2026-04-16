@@ -12,11 +12,22 @@ const meta: Meta<typeof Checkbox> = {
 export default meta
 type Story = StoryObj<typeof Checkbox>
 
-export const Default: Story = {}
-export const Checked: Story = { args: { defaultChecked: true } }
-export const Indeterminate: Story = { args: { checked: 'indeterminate' } }
-export const Disabled: Story = { args: { disabled: true } }
-export const DisabledChecked: Story = { args: { disabled: true, defaultChecked: true } }
+export const Default: Story = {
+  render: () => (
+    <div className="flex items-center gap-2">
+      <Checkbox id="default" />
+      <Label htmlFor="default">Accept terms</Label>
+    </div>
+  ),
+}
+export const Checked: Story = { args: { defaultChecked: true, 'aria-label': 'Accept terms' } }
+export const Indeterminate: Story = {
+  args: { checked: 'indeterminate', 'aria-label': 'Accept terms' },
+}
+export const Disabled: Story = { args: { disabled: true, 'aria-label': 'Accept terms' } }
+export const DisabledChecked: Story = {
+  args: { disabled: true, defaultChecked: true, 'aria-label': 'Accept terms' },
+}
 
 export const WithLabel: Story = {
   render: () => (

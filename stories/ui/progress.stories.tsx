@@ -14,10 +14,12 @@ const meta: Meta<typeof Progress> = {
 export default meta
 type Story = StoryObj<typeof Progress>
 
-export const Default: Story = { args: { value: 60 } }
-export const Small: Story = { args: { value: 40, size: 'sm' } }
-export const Large: Story = { args: { value: 80, size: 'lg' } }
-export const Indeterminate: Story = { args: { value: undefined } }
+export const Default: Story = { args: { value: 60, 'aria-label': 'Loading progress' } }
+export const Small: Story = { args: { value: 40, size: 'sm', 'aria-label': 'Loading progress' } }
+export const Large: Story = { args: { value: 80, size: 'lg', 'aria-label': 'Loading progress' } }
+export const Indeterminate: Story = {
+  args: { value: undefined, 'aria-label': 'Loading progress' },
+}
 export const AllSizes: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-80">
