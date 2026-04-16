@@ -17,6 +17,7 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | Wave | Components                                                                        | Status         |
 | ---- | --------------------------------------------------------------------------------- | -------------- |
 | 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea | Merged to main |
+| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip   | In progress    |
 
 Update this table whenever a wave PR is merged.
 
