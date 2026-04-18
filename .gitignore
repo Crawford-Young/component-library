@@ -9,4 +9,4 @@ storybook-static/
 Thumbs.db
 .superpowers/
 test-results/
-playwright-report/
+playwright-report/.worktrees/
