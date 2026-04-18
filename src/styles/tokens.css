@@ -16,7 +16,7 @@
 
   /* Text */
   --foreground: 15 14 12;
-  --muted: 236 234 223;
+  --muted: 236 234 223; /* intentionally mirrors --surface; used as bg for muted/disabled content */
   --muted-foreground: 107 102 89;
 
   /* Brand — Lime primary, Forest ambient, Sun active */
@@ -65,7 +65,7 @@
 
   /* Text */
   --foreground: 245 243 234;
-  --muted: 26 25 15;
+  --muted: 26 25 15; /* intentionally mirrors --surface */
   --muted-foreground: 155 154 138;
 
   /* Brand — Lime stays universal; foreground adapts to dark bg */
@@ -73,7 +73,7 @@
   --accent-foreground: 17 16 9;
   --accent-hover: 159 207 58;
   --accent-hover-foreground: 17 16 9;
-  --accent-subtle: 63 96 46;
+  --accent-subtle: 90 140 65;
   --accent-subtle-foreground: 245 243 234;
   --accent-active: 255 255 38;
   --accent-active-foreground: 17 16 9;
