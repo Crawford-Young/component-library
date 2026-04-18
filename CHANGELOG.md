@@ -4,6 +4,12 @@
 
 ### Minor Changes
 
+- 6b5c87c: Add Wave 2 components: Dialog, Tooltip, Popover, Alert, Progress, Checkbox, RadioGroup, Switch, Select
+
+## 0.2.0
+
+### Minor Changes
+
 - 87d4016: Wave 1: foundation component library
 
   First release of `@cy/ui`. Includes 10 production-ready components built on Radix UI primitives with Tailwind CSS and CVA:
