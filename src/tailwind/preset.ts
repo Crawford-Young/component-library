@@ -22,6 +22,12 @@ export const cyUIPreset: Partial<Config> = {
         accent: {
           DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
           foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
+          hover: 'rgb(var(--accent-hover) / <alpha-value>)',
+          'hover-foreground': 'rgb(var(--accent-hover-foreground) / <alpha-value>)',
+          subtle: 'rgb(var(--accent-subtle) / <alpha-value>)',
+          'subtle-foreground': 'rgb(var(--accent-subtle-foreground) / <alpha-value>)',
+          active: 'rgb(var(--accent-active) / <alpha-value>)',
+          'active-foreground': 'rgb(var(--accent-active-foreground) / <alpha-value>)',
         },
         destructive: {
           DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
