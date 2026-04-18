@@ -1,27 +1,34 @@
 /* src/styles/tokens.css
    RGB channel values — use as rgb(var(--token)) or rgb(var(--token) / 0.5)
-   Light mode is :root default; dark mode via .dark class.                    */
+   Light mode default (light); dark mode override (dark class).
+   Palette: Rockmont — Vercel precision, nature energy.                     */
 
 :root {
   /* Backgrounds */
-  --background: 255 255 255;
-  --surface: 250 250 250;
-  --surface-raised: 244 244 245;
+  --background: 245 243 234;
+  --surface: 236 234 223;
+  --surface-raised: 226 223 210;
 
   /* Borders */
-  --border: 228 228 231;
-  --border-subtle: 244 244 245;
-  --input: 228 228 231;
+  --border: 211 208 190;
+  --border-subtle: 226 223 210;
+  --input: 211 208 190;
 
   /* Text */
-  --foreground: 9 9 11;
-  --muted: 244 244 245;
-  --muted-foreground: 113 113 122;
+  --foreground: 15 14 12;
+  --muted: 236 234 223;
+  --muted-foreground: 107 102 89;
 
-  /* Brand */
-  --accent: 16 185 129;
-  --accent-foreground: 0 0 0;
-  --ring: 16 185 129;
+  /* Brand — Lime primary, Forest ambient, Sun active */
+  --accent: 139 186 52;
+  --accent-foreground: 15 14 12;
+  --accent-hover: 159 207 58;
+  --accent-hover-foreground: 15 14 12;
+  --accent-subtle: 63 96 46;
+  --accent-subtle-foreground: 245 243 234;
+  --accent-active: 255 255 38;
+  --accent-active-foreground: 15 14 12;
+  --ring: 139 186 52;
 
   /* Feedback */
   --destructive: 239 68 68;
@@ -47,26 +54,32 @@
 
 .dark {
   /* Backgrounds */
-  --background: 9 9 11;
-  --surface: 24 24 27;
-  --surface-raised: 39 39 42;
+  --background: 17 16 9;
+  --surface: 26 25 15;
+  --surface-raised: 36 35 24;
 
   /* Borders */
-  --border: 39 39 42;
-  --border-subtle: 24 24 27;
-  --input: 39 39 42;
+  --border: 48 47 34;
+  --border-subtle: 36 35 24;
+  --input: 48 47 34;
 
   /* Text */
-  --foreground: 250 250 250;
-  --muted: 24 24 27;
-  --muted-foreground: 161 161 170; /* zinc-400 — 7.9:1 on dark bg, passes WCAG AA */
+  --foreground: 245 243 234;
+  --muted: 26 25 15;
+  --muted-foreground: 155 154 138;
 
-  /* Brand — same as light */
-  --accent: 16 185 129;
-  --accent-foreground: 0 0 0;
-  --ring: 16 185 129;
+  /* Brand — Lime stays universal; foreground adapts to dark bg */
+  --accent: 139 186 52;
+  --accent-foreground: 17 16 9;
+  --accent-hover: 159 207 58;
+  --accent-hover-foreground: 17 16 9;
+  --accent-subtle: 63 96 46;
+  --accent-subtle-foreground: 245 243 234;
+  --accent-active: 255 255 38;
+  --accent-active-foreground: 17 16 9;
+  --ring: 139 186 52;
 
-  /* Feedback — same as light */
+  /* Feedback — unchanged */
   --destructive: 239 68 68;
   --destructive-foreground: 250 250 250;
   --success: 34 197 94;
