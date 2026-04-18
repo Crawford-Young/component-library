@@ -7,13 +7,16 @@ import './tailwind.css'
 injectAnalytics()
 injectSpeedInsights()
 
+const DARK_BG = '#111009'
+const LIGHT_BG = '#f5f3ea'
+
 const preview: Preview = {
   parameters: {
     backgrounds: {
       default: 'dark',
       values: [
-        { name: 'dark', value: '#09090b' },
-        { name: 'light', value: '#ffffff' },
+        { name: 'dark', value: DARK_BG },
+        { name: 'light', value: LIGHT_BG },
       ],
     },
     a11y: {
@@ -24,7 +27,7 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
-      const isDark = (context.globals['backgrounds']?.value ?? '#09090b') === '#09090b'
+      const isDark = (context.globals['backgrounds']?.value ?? DARK_BG) === DARK_BG
       document.documentElement.classList.toggle('dark', isDark)
       return Story()
     },
