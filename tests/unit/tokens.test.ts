@@ -22,8 +22,9 @@ import { describe, it, expect } from 'vitest'
 
 const css = readFileSync(join(__dirname, '../../src/styles/tokens.css'), 'utf-8')
 
+// NOTE: This parser does not handle nested braces. Never nest @layer/@supports inside :root or .dark.
 function extractBlock(source: string, selector: string): string {
-  const re = new RegExp(`${selector}\\s*\\{([^}]*)\\}`, 's')
+  const re = new RegExp(`${selector}(?=[\\s{])[^{]*\\{([^}]*)\\}`, 's')
   return re.exec(source)?.[1] ?? ''
 }
 
@@ -61,6 +62,15 @@ function contrastRatio(a: [number, number, number], b: [number, number, number])
   const l1 = Math.max(luminance(a), luminance(b))
   const l2 = Math.min(luminance(a), luminance(b))
   return (l1 + 0.05) / (l2 + 0.05)
+}
+
+function requireToken(
+  map: Map<string, [number, number, number]>,
+  name: string,
+): [number, number, number] {
+  const v = map.get(name)
+  if (!v) throw new Error(`Token ${name} not found in parsed CSS block`)
+  return v
 }
 
 // ---------------------------------------------------------------------------
@@ -163,6 +173,7 @@ describe('Rockmont dark mode palette values (.dark)', () => {
 describe('New token API surface (must exist in :root)', () => {
   for (const name of NEW_TOKEN_NAMES) {
     it(`${name} is defined in :root`, () => {
+      // has() implicitly validates RGB format — non-RGB tokens are not in the Map
       expect(
         lightTokens.has(name),
         `Expected token ${name} to be defined in :root but it was missing`,
@@ -206,47 +217,46 @@ describe('RGB format validation', () => {
 describe('WCAG AA contrast (≥ 4.5:1)', () => {
   describe('Light mode', () => {
     it('foreground on background', () => {
-      const fg = lightTokens.get('--foreground')!
-      const bg = lightTokens.get('--background')!
+      const fg = requireToken(lightTokens, '--foreground')
+      const bg = requireToken(lightTokens, '--background')
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
     })
 
     it('muted-foreground on background', () => {
-      const fg = lightTokens.get('--muted-foreground')!
-      const bg = lightTokens.get('--background')!
+      const fg = requireToken(lightTokens, '--muted-foreground')
+      const bg = requireToken(lightTokens, '--background')
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
     })
 
     it('accent-foreground on accent', () => {
-      const fg = lightTokens.get('--accent-foreground')!
-      const bg = lightTokens.get('--accent')!
+      const fg = requireToken(lightTokens, '--accent-foreground')
+      const bg = requireToken(lightTokens, '--accent')
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
     })
   })
 
   describe('Dark mode (using cascaded values)', () => {
     it('foreground on background', () => {
-      const fg = fullDark.get('--foreground')!
-      const bg = fullDark.get('--background')!
+      const fg = requireToken(fullDark, '--foreground')
+      const bg = requireToken(fullDark, '--background')
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
     })
 
     it('muted-foreground on background', () => {
-      const fg = fullDark.get('--muted-foreground')!
-      const bg = fullDark.get('--background')!
+      const fg = requireToken(fullDark, '--muted-foreground')
+      const bg = requireToken(fullDark, '--background')
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
     })
 
     it('accent on background', () => {
-      const fg = fullDark.get('--accent')!
-      const bg = fullDark.get('--background')!
+      const fg = requireToken(fullDark, '--accent')
+      const bg = requireToken(fullDark, '--background')
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
     })
 
     it('accent-active (Sun yellow) on background', () => {
-      // accent-active must exist in light (new token) and be usable in dark context
-      const yellow = lightTokens.get('--accent-active')!
-      const bg = fullDark.get('--background')!
+      const yellow = requireToken(fullDark, '--accent-active')
+      const bg = requireToken(fullDark, '--background')
       expect(contrastRatio(yellow, bg)).toBeGreaterThanOrEqual(4.5)
     })
   })
