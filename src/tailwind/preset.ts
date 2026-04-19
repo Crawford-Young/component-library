@@ -90,12 +90,32 @@ export const cyUIPreset: Partial<Config> = {
           '50%': { opacity: '0.6' },
           '100%': { transform: 'translateX(100%)', opacity: '1' },
         },
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+        'collapsible-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-collapsible-content-height)' },
+        },
+        'collapsible-up': {
+          from: { height: 'var(--radix-collapsible-content-height)' },
+          to: { height: '0' },
+        },
       },
       animation: {
         'draw-check': 'draw-check 150ms ease-out forwards',
         'radio-dot': 'radio-dot 120ms ease-out',
         'switch-thumb': 'switch-thumb 200ms ease-in-out',
         'progress-indeterminate': 'progress-indeterminate 1.4s ease-in-out infinite',
+        'accordion-down': 'accordion-down 200ms ease-out',
+        'accordion-up': 'accordion-up 200ms ease-out',
+        'collapsible-down': 'collapsible-down 200ms ease-out',
+        'collapsible-up': 'collapsible-up 200ms ease-out',
       },
     },
   },
