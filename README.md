@@ -1,4 +1,4 @@
-# @crawfordyoung/ui
+# @crawfordyoung/ui (outdated readme)
 
 Production-quality React component library built on [Radix UI](https://radix-ui.com) primitives with [Tailwind CSS](https://tailwindcss.com) and [CVA](https://cva.style). Dark-mode-first, fully accessible, 100% test coverage.
 
