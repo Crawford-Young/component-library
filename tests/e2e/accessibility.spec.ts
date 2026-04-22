@@ -21,6 +21,13 @@ const stories = [
   { name: 'Switch', id: 'ui-switch--default' },
   { name: 'Textarea', id: 'ui-textarea--default' },
   { name: 'Tooltip', id: 'ui-tooltip--default' },
+  { name: 'AlertDialog', id: 'ui-alertdialog--default' },
+  { name: 'Sheet', id: 'ui-sheet--default' },
+  { name: 'DropdownMenu', id: 'ui-dropdownmenu--default' },
+  { name: 'ContextMenu', id: 'ui-contextmenu--default' },
+  { name: 'Tabs', id: 'ui-tabs--default' },
+  { name: 'Accordion', id: 'ui-accordion--default' },
+  { name: 'Collapsible', id: 'ui-collapsible--default' },
 ]
 
 for (const { name, id } of stories) {
