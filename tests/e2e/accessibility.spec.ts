@@ -28,6 +28,13 @@ const stories = [
   { name: 'Tabs', id: 'ui-tabs--default' },
   { name: 'Accordion', id: 'ui-accordion--default' },
   { name: 'Collapsible', id: 'ui-collapsible--default' },
+  { name: 'NavigationMenu', id: 'ui-navigationmenu--default' },
+  { name: 'ScrollArea', id: 'ui-scrollarea--default' },
+  { name: 'AspectRatio', id: 'ui-aspectratio--default' },
+  { name: 'Table', id: 'ui-table--default' },
+  { name: 'Breadcrumb', id: 'ui-breadcrumb--default' },
+  { name: 'Pagination', id: 'ui-pagination--default' },
+  { name: 'Slider', id: 'ui-slider--default' },
 ]
 
 for (const { name, id } of stories) {
