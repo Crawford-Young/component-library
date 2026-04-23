@@ -104,4 +104,23 @@ describe('Slider', () => {
     expect(screen.getByRole('slider')).toBeInTheDocument()
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '0')
   })
+
+  it('uses default aria-label "Slider" when none provided', () => {
+    render(<Slider defaultValue={[50]} />)
+    expect(screen.getByRole('slider')).toHaveAttribute('aria-label', 'Slider')
+  })
+
+  it('uses indexed fallback labels for range thumbs when no aria-label provided', () => {
+    render(<Slider defaultValue={[20, 80]} />)
+    const thumbs = screen.getAllByRole('slider')
+    expect(thumbs[0]).toHaveAttribute('aria-label', 'Value 1')
+    expect(thumbs[1]).toHaveAttribute('aria-label', 'Value 2')
+  })
+
+  it('uses indexed aria-label for range thumbs when aria-label provided', () => {
+    render(<Slider defaultValue={[20, 80]} aria-label="Price range" />)
+    const thumbs = screen.getAllByRole('slider')
+    expect(thumbs[0]).toHaveAttribute('aria-label', 'Price range 1')
+    expect(thumbs[1]).toHaveAttribute('aria-label', 'Price range 2')
+  })
 })
