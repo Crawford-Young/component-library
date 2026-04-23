@@ -10,4 +10,6 @@ Thumbs.db
 .superpowers/
 test-results/
 playwright-report/
+# Sentry Config File
+.env.sentry-build-plugin
 .worktrees/
