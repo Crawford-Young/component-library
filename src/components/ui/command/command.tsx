@@ -107,6 +107,7 @@ const CommandSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Separator
     ref={ref}
+    role="none"
     className={cn('-mx-1 h-px bg-border', className)}
     {...props}
   />
@@ -121,7 +122,7 @@ const CommandItem = React.forwardRef<
     ref={ref}
     className={cn(
       'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none',
-      'aria-selected:bg-accent aria-selected:text-accent-foreground',
+      'data-[selected=true]:bg-accent/10 data-[selected=true]:text-foreground',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className,
     )}
