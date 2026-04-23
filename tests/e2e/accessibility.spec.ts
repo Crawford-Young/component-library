@@ -35,6 +35,13 @@ const stories = [
   { name: 'Breadcrumb', id: 'ui-breadcrumb--default' },
   { name: 'Pagination', id: 'ui-pagination--default' },
   { name: 'Slider', id: 'ui-slider--default' },
+  { name: 'FormField', id: 'ui-formfield--default' },
+  { name: 'Toggle', id: 'ui-toggle--default' },
+  { name: 'ToggleGroup', id: 'ui-togglegroup--default' },
+  { name: 'Command', id: 'ui-command--default' },
+  { name: 'Combobox', id: 'ui-combobox--default' },
+  { name: 'Toaster', id: 'ui-toaster--default' },
+  { name: 'DatePicker', id: 'ui-datepicker--default' },
 ]
 
 for (const { name, id } of stories) {
