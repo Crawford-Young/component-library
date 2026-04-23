@@ -44,7 +44,7 @@ export type SliderProps = React.ComponentPropsWithoutRef<typeof SliderPrimitive.
   VariantProps<typeof sliderVariants>
 
 const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, SliderProps>(
-  ({ className, size, ...props }, ref) => {
+  ({ className, size, 'aria-label': ariaLabel, ...props }, ref) => {
     const value = props.value ?? props.defaultValue ?? [0]
     return (
       <SliderPrimitive.Root
@@ -60,7 +60,13 @@ const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, S
           <SliderPrimitive.Range className="absolute h-full bg-accent" />
         </SliderPrimitive.Track>
         {value.map((_, i) => (
-          <SliderPrimitive.Thumb key={i} className={cn(sliderThumbVariants({ size }))} />
+          <SliderPrimitive.Thumb
+            key={i}
+            aria-label={
+              value.length > 1 ? `${ariaLabel ?? 'Value'} ${i + 1}` : (ariaLabel ?? 'Slider')
+            }
+            className={cn(sliderThumbVariants({ size }))}
+          />
         ))}
       </SliderPrimitive.Root>
     )
