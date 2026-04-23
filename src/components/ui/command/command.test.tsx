@@ -101,7 +101,7 @@ describe('Command', () => {
         </CommandList>
       </Command>,
     )
-    expect(container.querySelector('[role="separator"], hr, [data-cmdk-separator]')).toBeTruthy()
+    expect(container.querySelector('[cmdk-separator]')).toBeTruthy()
   })
 
   it('renders CommandShortcut', () => {

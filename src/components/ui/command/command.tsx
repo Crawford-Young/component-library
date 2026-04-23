@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Command as CommandPrimitive } from 'cmdk'
+import { Command as CommandPrimitive, useCommandState } from 'cmdk'
 import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
@@ -102,16 +102,22 @@ const CommandGroup = React.forwardRef<
 CommandGroup.displayName = CommandPrimitive.Group.displayName
 
 const CommandSeparator = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Separator
-    ref={ref}
-    role="none"
-    className={cn('-mx-1 h-px bg-border', className)}
-    {...props}
-  />
-))
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { alwaysRender?: boolean }
+>(({ className, alwaysRender, ...props }, ref) => {
+  const isSearching = useCommandState((state) => Boolean(state.search))
+  if (!alwaysRender && isSearching) return null
+  // eslint-disable-next-line react/no-unknown-property -- cmdk library attribute for CSS scoping
+  return (
+    <div
+      ref={ref}
+      role="none"
+      cmdk-separator=""
+      className={cn('-mx-1 h-px bg-border', className)}
+      {...props}
+    />
+  )
+})
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName
 
 const CommandItem = React.forwardRef<
