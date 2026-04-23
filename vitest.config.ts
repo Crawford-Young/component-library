@@ -24,7 +24,14 @@ export default defineConfig({
         lines: 100,
       },
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/index.ts', 'src/tailwind/**', 'src/styles/**', 'src/**/index.ts'],
+      exclude: [
+        'src/index.ts',
+        'src/tailwind/**',
+        'src/styles/**',
+        'src/**/index.ts',
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+      ],
     },
   },
 })
