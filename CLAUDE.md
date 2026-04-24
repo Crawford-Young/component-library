@@ -18,6 +18,9 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | ---- | --------------------------------------------------------------------------------- | -------------- |
 | 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea | Merged to main |
 | 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip   | Merged to main |
+| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible       | PR #22 open    |
+| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider    | PR #23 open    |
+| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker              | PR #24 open    |
 
 Update this table whenever a wave PR is merged.
 
@@ -72,6 +75,36 @@ tests/
     server.ts
   setup.ts
 ```
+
+## Known Gotchas
+
+- **Storybook build**: use `pnpm build-storybook` (or `just storybook-build`). `pnpm storybook build` opens the interactive dev server — wrong command.
+- **Changeset in agent/CI contexts**: `pnpm changeset` is interactive and cannot run non-interactively. Write the file manually instead:
+  ```
+  .changeset/<slug>.md
+  ---
+  "@crawfordyoung/ui": minor
+  ---
+  Description of change
+  ```
+- **Stories with hooks**: if a story's `render:` function uses `React.useState` or any hook, extract it into a named component first. Anonymous arrow functions in `render:` trigger `react-hooks/rules-of-hooks`:
+
+  ```tsx
+  // Wrong — ESLint error
+  export const Default: Story = {
+    render: () => {
+      const [x, setX] = useState(false)
+      return <Foo />
+    },
+  }
+
+  // Correct
+  function FooDemo() {
+    const [x, setX] = useState(false)
+    return <Foo />
+  }
+  export const Default: Story = { render: () => <FooDemo /> }
+  ```
 
 ## Justfile commands
 
