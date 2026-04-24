@@ -104,6 +104,52 @@ describe('Command', () => {
     expect(container.querySelector('[cmdk-separator]')).toBeTruthy()
   })
 
+  it('hides CommandSeparator during search', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <Command>
+        <CommandInput placeholder="Search…" />
+        <CommandList>
+          <CommandGroup>
+            <CommandItem value="apple">Apple</CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup>
+            <CommandItem value="banana">Banana</CommandItem>
+          </CommandGroup>
+          <CommandEmpty>No results.</CommandEmpty>
+        </CommandList>
+      </Command>,
+    )
+    await user.type(screen.getByPlaceholderText('Search…'), 'app')
+    await waitFor(() => {
+      expect(container.querySelector('[cmdk-separator]')).not.toBeInTheDocument()
+    })
+  })
+
+  it('keeps CommandSeparator visible during search when alwaysRender is true', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <Command>
+        <CommandInput placeholder="Search…" />
+        <CommandList>
+          <CommandGroup>
+            <CommandItem value="apple">Apple</CommandItem>
+          </CommandGroup>
+          <CommandSeparator alwaysRender />
+          <CommandGroup>
+            <CommandItem value="banana">Banana</CommandItem>
+          </CommandGroup>
+          <CommandEmpty>No results.</CommandEmpty>
+        </CommandList>
+      </Command>,
+    )
+    await user.type(screen.getByPlaceholderText('Search…'), 'app')
+    await waitFor(() => {
+      expect(container.querySelector('[cmdk-separator]')).toBeInTheDocument()
+    })
+  })
+
   it('renders CommandShortcut', () => {
     render(
       <Command>
