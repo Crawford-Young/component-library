@@ -1,5 +1,13 @@
 # @cy/ui
 
+## 0.3.0
+
+### Minor Changes
+
+- bcade2f: Add wave-3a components: AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible
+- 30dda4d: Add wave-3b components: NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider
+- 78dda5a: Add wave-3c components: FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker
+
 ## 0.2.0
 
 ### Minor Changes
