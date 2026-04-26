@@ -1,21 +1,101 @@
-# @crawfordyoung/ui (outdated readme)
+# @crawfordyoung/ui
 
 Production-quality React component library built on [Radix UI](https://radix-ui.com) primitives with [Tailwind CSS](https://tailwindcss.com) and [CVA](https://cva.style). Dark-mode-first, fully accessible, 100% test coverage.
 
-## Wave 1 — Components
+![npm version](https://img.shields.io/npm/v/@crawfordyoung/ui)
+![license](https://img.shields.io/npm/l/@crawfordyoung/ui)
 
-| Component   | Variants / Notes                                                                  |
+## Components
+
+### Display
+
+| Component   | Notes                                                                             |
 | ----------- | --------------------------------------------------------------------------------- |
 | `Avatar`    | `AvatarImage`, `AvatarFallback` — sm / md / lg                                    |
 | `Badge`     | default, secondary, destructive, outline                                          |
-| `Button`    | 6 variants × 4 sizes, `asChild` via Radix Slot                                    |
 | `Card`      | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` |
-| `Input`     | Forwarded ref, fully accessible                                                   |
-| `Label`     | Wraps `@radix-ui/react-label`                                                     |
 | `Separator` | Horizontal and vertical orientations                                              |
 | `Skeleton`  | `animate-pulse` loading placeholder                                               |
 | `Spinner`   | sm / md / lg, `role="status"` + `aria-label`                                      |
-| `Textarea`  | Forwarded ref, resizable                                                          |
+
+### Inputs
+
+| Component     | Notes                                                                   |
+| ------------- | ----------------------------------------------------------------------- |
+| `Button`      | 6 variants × 4 sizes, `asChild` via Radix Slot                          |
+| `Checkbox`    | Controlled and uncontrolled                                             |
+| `DatePicker`  | Popover + react-day-picker v9                                           |
+| `Input`       | Forwarded ref, fully accessible                                         |
+| `RadioGroup`  | `RadioGroup`, `RadioGroupItem`                                          |
+| `Select`      | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` |
+| `Slider`      | Single value, forwarded ref                                             |
+| `Switch`      | Controlled and uncontrolled                                             |
+| `Textarea`    | Forwarded ref, resizable                                                |
+| `Toggle`      | default / outline × sm / md / lg                                        |
+| `ToggleGroup` | single / multiple                                                       |
+
+### Form
+
+| Component   | Notes                                                            |
+| ----------- | ---------------------------------------------------------------- |
+| `FormField` | Compound: `FormField`, `FormLabel`, `FormControl`, `FormMessage` |
+| `Label`     | Wraps `@radix-ui/react-label`                                    |
+
+### Overlays
+
+| Component     | Notes                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| `AlertDialog` | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                 |
+| `Dialog`      | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` |
+| `Popover`     | `Popover`, `PopoverContent`, `PopoverTrigger`                                                 |
+| `Sheet`       | `Sheet`, `SheetContent` — side: top / right / bottom / left                                   |
+| `Toast`       | Sonner wrapper themed to design tokens                                                        |
+| `Tooltip`     | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                              |
+
+### Navigation
+
+| Component        | Notes                                                                      |
+| ---------------- | -------------------------------------------------------------------------- |
+| `Breadcrumb`     | `Breadcrumb`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbSeparator`    |
+| `NavigationMenu` | Full Radix NavigationMenu with link/dropdown items                         |
+| `Pagination`     | Semantic nav with `PaginationLink`, `PaginationPrevious`, `PaginationNext` |
+| `Tabs`           | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`                           |
+
+### Disclosure
+
+| Component     | Notes                                                     |
+| ------------- | --------------------------------------------------------- |
+| `Accordion`   | single / multiple, animated                               |
+| `Collapsible` | `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` |
+
+### Menus
+
+| Component      | Notes                                                                   |
+| -------------- | ----------------------------------------------------------------------- |
+| `Command`      | `Command`, `CommandInput`, `CommandList`, `CommandItem`, `CommandGroup` |
+| `Combobox`     | Popover + Command pattern                                               |
+| `ContextMenu`  | Full Radix ContextMenu                                                  |
+| `DropdownMenu` | Full Radix DropdownMenu                                                 |
+
+### Data
+
+| Component | Notes                                                                     |
+| --------- | ------------------------------------------------------------------------- |
+| `Table`   | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` |
+
+### Layout
+
+| Component     | Notes                                |
+| ------------- | ------------------------------------ |
+| `AspectRatio` | Wraps `@radix-ui/react-aspect-ratio` |
+| `ScrollArea`  | `ScrollArea`, `ScrollBar`            |
+
+### Feedback
+
+| Component  | Notes                                                             |
+| ---------- | ----------------------------------------------------------------- |
+| `Alert`    | `Alert`, `AlertTitle`, `AlertDescription` — default / destructive |
+| `Progress` | Animated progress bar                                             |
 
 ## Installation
 
@@ -28,6 +108,14 @@ Peer dependencies:
 ```bash
 pnpm add react react-dom tailwindcss
 ```
+
+Some components require additional peer deps:
+
+| Component             | Extra peer dep              |
+| --------------------- | --------------------------- |
+| `DatePicker`          | `react-day-picker date-fns` |
+| `Toast`               | `sonner`                    |
+| `Command`, `Combobox` | `cmdk`                      |
 
 ## Setup
 
@@ -58,16 +146,21 @@ export default {
 ### 3. Use components
 
 ```tsx
-import { Button, Badge, Spinner } from '@crawfordyoung/ui'
+import {
+  Button,
+  Badge,
+  Spinner,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@crawfordyoung/ui'
 
 export default function Page() {
   return (
     <div>
       <Button variant="default" size="lg">
         Get started
-      </Button>
-      <Button variant="outline" asChild>
-        <a href="/docs">Read docs</a>
       </Button>
       <Badge variant="secondary">Beta</Badge>
       <Spinner size="md" aria-label="Loading…" />
@@ -82,19 +175,20 @@ All colors are CSS custom properties mapped to Tailwind utilities via the preset
 
 ```css
 :root {
+  --accent: 16 185 129; /* your brand accent (R G B) */
   --background: 255 255 255;
-  --foreground: 15 15 15;
-  /* … */
 }
 
 .dark {
-  --background: 10 10 10;
-  --foreground: 250 250 250;
-  /* … */
+  --background: 9 9 11;
 }
 ```
 
 See [`src/styles/tokens.css`](src/styles/tokens.css) for the full token list.
+
+## Dark mode
+
+All components are designed dark-mode-first. Wrap your app with a `ThemeProvider` (e.g. `next-themes`) and add `class="dark"` to `<html>`. The Tailwind preset uses `darkMode: 'class'`.
 
 ## Development
 
@@ -127,6 +221,7 @@ GitHub Actions runs on every push to `main` and every PR:
 - Unit tests with 100% coverage (Vitest + v8)
 - Storybook build
 - Playwright axe accessibility E2E
+- Security audit (`pnpm audit --audit-level=high`)
 
 ## License
 
