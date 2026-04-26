@@ -1,6 +1,9 @@
 {
   "name": "@crawfordyoung/ui",
   "version": "0.3.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Production-quality React component library by Crawford Young",
   "license": "MIT",
   "author": "Crawford Young",
