@@ -18,6 +18,9 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | ---- | --------------------------------------------------------------------------------- | -------------- |
 | 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea | Merged to main |
 | 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip   | Merged to main |
+| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible       | Merged to main |
+| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider    | Merged to main |
+| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker              | Merged to main |
 
 Update this table whenever a wave PR is merged.
 
