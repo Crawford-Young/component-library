@@ -47,6 +47,27 @@ describe('Tooltip', () => {
   })
 })
 
+describe('TooltipProvider — delayDuration', () => {
+  it('has displayName', () => {
+    expect(TooltipProvider.displayName).toBe('TooltipProvider')
+  })
+
+  it('tooltip appears when delayDuration={0} is passed (verifies override)', async () => {
+    const user = userEvent.setup()
+    render(
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger>Hover me</TooltipTrigger>
+          <TooltipContent>Instant</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    )
+    await user.hover(screen.getByText('Hover me'))
+    const tooltip = await screen.findByRole('tooltip')
+    expect(tooltip).toHaveTextContent('Instant')
+  })
+})
+
 describe('TooltipContent', () => {
   it('has correct displayName', () => {
     expect(TooltipContent.displayName).toBeDefined()
