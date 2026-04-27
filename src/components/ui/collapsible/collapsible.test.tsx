@@ -1,7 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from './collapsible'
 
 function TestCollapsible({ defaultOpen = false }: { defaultOpen?: boolean }) {
   return (
@@ -53,5 +58,39 @@ describe('Collapsible', () => {
       </Collapsible>,
     )
     expect(ref.current).toBeInstanceOf(HTMLDivElement)
+  })
+
+  it('CollapsibleTrigger has group class', () => {
+    render(
+      <Collapsible>
+        <CollapsibleTrigger data-testid="trigger">Toggle</CollapsibleTrigger>
+        <CollapsibleContent>Content</CollapsibleContent>
+      </Collapsible>,
+    )
+    expect(screen.getByTestId('trigger')).toHaveClass('group')
+  })
+
+  it('CollapsibleIndicator renders a chevron svg', () => {
+    render(
+      <Collapsible>
+        <CollapsibleTrigger>
+          <CollapsibleIndicator data-testid="indicator" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>Content</CollapsibleContent>
+      </Collapsible>,
+    )
+    expect(screen.getByTestId('indicator')).toBeInTheDocument()
+  })
+
+  it('CollapsibleIndicator has rotate class for open state animation', () => {
+    render(
+      <Collapsible>
+        <CollapsibleTrigger>
+          <CollapsibleIndicator data-testid="indicator" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>Content</CollapsibleContent>
+      </Collapsible>,
+    )
+    expect(screen.getByTestId('indicator')).toHaveClass('group-data-[state=open]:rotate-180')
   })
 })
