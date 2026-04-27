@@ -39,8 +39,8 @@ function ComboboxDemo() {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          role="combobox"
           aria-expanded={open}
+          aria-haspopup="listbox"
           className="w-[200px] justify-between"
         >
           {value ? frameworks.find((f) => f.value === value)?.label : 'Select framework…'}
