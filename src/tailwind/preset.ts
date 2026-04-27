@@ -45,6 +45,7 @@ export const cyUIPreset: Partial<Config> = {
           DEFAULT: 'rgb(var(--info) / <alpha-value>)',
           foreground: 'rgb(var(--info-foreground) / <alpha-value>)',
         },
+        'item-hover': 'rgb(var(--item-hover) / <alpha-value>)',
         // Semantic aliases used by component CVA variants
         primary: {
           DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
