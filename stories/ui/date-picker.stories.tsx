@@ -14,3 +14,9 @@ type Story = StoryObj<typeof DatePicker>
 export const Default: Story = {
   render: () => <DatePicker placeholder="Pick a date" />,
 }
+
+export const WithDropdownNavigation: Story = {
+  render: () => (
+    <DatePicker placeholder="Pick a date" captionLayout="dropdown" fromYear={2000} toYear={2040} />
+  ),
+}
