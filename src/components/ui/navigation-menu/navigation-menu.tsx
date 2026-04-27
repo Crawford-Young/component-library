@@ -41,10 +41,10 @@ const NavigationMenuTrigger = React.forwardRef<
     className={cn(
       'group inline-flex h-9 w-max items-center justify-center rounded-md',
       'bg-background px-4 py-2 text-sm font-medium text-foreground',
-      'hover:bg-accent/10 hover:text-foreground',
-      'focus:bg-accent/10 focus:text-foreground focus:outline-none',
+      'hover:bg-item-hover hover:text-foreground',
+      'focus:bg-item-hover focus:text-foreground focus:outline-none',
       'disabled:pointer-events-none disabled:opacity-50',
-      'data-[active]:bg-accent/10 data-[state=open]:bg-accent/10',
+      'data-[active]:bg-item-hover data-[state=open]:bg-item-hover',
       'transition-colors duration-150',
       className,
     )}
@@ -93,8 +93,8 @@ const NavigationMenuLink = React.forwardRef<
     className={cn(
       'block select-none rounded-md p-3 leading-none no-underline outline-none',
       'text-sm text-foreground transition-colors duration-150',
-      'hover:bg-accent/10 hover:text-foreground',
-      'focus:bg-accent/10 focus:text-foreground',
+      'hover:bg-item-hover hover:text-foreground',
+      'focus:bg-item-hover focus:text-foreground',
       className,
     )}
     {...props}
