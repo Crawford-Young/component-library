@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 const meta: Meta<typeof AlertDialogContent> = {
-  title: 'UI/AlertDialog',
+  title: 'Overlays/AlertDialog',
   component: AlertDialogContent,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

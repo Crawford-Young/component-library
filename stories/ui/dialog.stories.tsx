@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 
 const meta: Meta<typeof DialogContent> = {
-  title: 'UI/Dialog',
+  title: 'Overlays/Dialog',
   component: DialogContent,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 
 const meta: Meta<typeof SelectTrigger> = {
-  title: 'UI/Select',
+  title: 'Inputs/Select',
   component: SelectTrigger,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

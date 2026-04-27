@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/command'
 
 const meta: Meta<typeof Command> = {
-  title: 'UI/Command',
+  title: 'Menus/Command',
   component: Command,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

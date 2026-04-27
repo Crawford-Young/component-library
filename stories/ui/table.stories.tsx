@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 
 const meta: Meta<typeof Table> = {
-  title: 'UI/Table',
+  title: 'Data/Table',
   component: Table,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

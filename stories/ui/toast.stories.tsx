@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Toaster, toast } from '@/components/ui/toast'
 
 const meta: Meta<typeof Toaster> = {
-  title: 'UI/Toaster',
+  title: 'Overlays/Toast',
   component: Toaster,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },
