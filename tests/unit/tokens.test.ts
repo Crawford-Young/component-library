@@ -73,6 +73,27 @@ describe('tokens.css — new token API exists in both modes', () => {
   }
 })
 
+// ─── --item-hover token ───────────────────────────────────────────────────────
+
+describe('tokens.css — --item-hover token', () => {
+  it('light has --item-hover as zinc-100 [244, 244, 245]', () => {
+    expect(lightTokens.get('--item-hover')).toEqual([244, 244, 245])
+  })
+  it('dark has --item-hover as zinc-800 [39, 39, 42]', () => {
+    expect(darkTokens.get('--item-hover')).toEqual([39, 39, 42])
+  })
+  it('dark: foreground on item-hover meets WCAG AA', () => {
+    expect(contrast(dark.get('--foreground')!, dark.get('--item-hover')!)).toBeGreaterThanOrEqual(
+      4.5,
+    )
+  })
+  it('light: foreground on item-hover meets WCAG AA', () => {
+    expect(
+      contrast(lightTokens.get('--foreground')!, lightTokens.get('--item-hover')!),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
 // ─── WCAG AA (≥ 4.5:1) ───────────────────────────────────────────────────────
 
 describe('tokens.css — WCAG AA contrast', () => {

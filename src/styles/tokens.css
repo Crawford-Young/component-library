@@ -28,6 +28,7 @@
   --accent-active: 110 231 183;
   --accent-active-foreground: 2 44 34;
   --ring: 16 185 129;
+  --item-hover: 244 244 245;
 
   /* Feedback */
   --destructive: 220 38 38;
@@ -77,6 +78,7 @@
   --accent-active: 110 231 183;
   --accent-active-foreground: 2 44 34;
   --ring: 16 185 129;
+  --item-hover: 39 39 42;
 
   /* Feedback — same as light */
   --destructive: 220 38 38;
