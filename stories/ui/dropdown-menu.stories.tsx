@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const meta: Meta<typeof DropdownMenuContent> = {
-  title: 'UI/DropdownMenu',
+  title: 'Menus/DropdownMenu',
   component: DropdownMenuContent,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/context-menu'
 
 const meta: Meta<typeof ContextMenuContent> = {
-  title: 'UI/ContextMenu',
+  title: 'Menus/ContextMenu',
   component: ContextMenuContent,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

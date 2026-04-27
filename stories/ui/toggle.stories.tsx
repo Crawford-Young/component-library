@@ -3,7 +3,7 @@ import { Bold } from 'lucide-react'
 import { Toggle } from '@/components/ui/toggle'
 
 const meta: Meta<typeof Toggle> = {
-  title: 'UI/Toggle',
+  title: 'Inputs/Toggle',
   component: Toggle,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sheet'
 
 const meta: Meta<typeof SheetContent> = {
-  title: 'UI/Sheet',
+  title: 'Overlays/Sheet',
   component: SheetContent,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

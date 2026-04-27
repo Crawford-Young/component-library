@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { Slider } from '@/components/ui/slider'
 
 const meta: Meta<typeof Slider> = {
-  title: 'UI/Slider',
+  title: 'Inputs/Slider',
   component: Slider,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

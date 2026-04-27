@@ -3,7 +3,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 
 const meta: Meta<typeof ScrollArea> = {
-  title: 'UI/ScrollArea',
+  title: 'Layout/ScrollArea',
   component: ScrollArea,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },

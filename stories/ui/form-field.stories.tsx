@@ -9,7 +9,7 @@ import {
 import { Input } from '@/components/ui/input'
 
 const meta: Meta<typeof FormField> = {
-  title: 'UI/FormField',
+  title: 'Form/FormField',
   component: FormField,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },
