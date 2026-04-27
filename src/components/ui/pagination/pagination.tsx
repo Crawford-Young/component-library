@@ -32,7 +32,7 @@ const PaginationLink = ({ className, isActive, children, ...props }: PaginationL
   <a
     aria-current={isActive ? 'page' : undefined}
     className={cn(
-      'inline-flex h-9 min-w-9 items-center justify-center rounded-md px-3',
+      'inline-flex h-9 min-w-9 items-center justify-center rounded px-3',
       'text-sm font-medium transition-colors duration-150',
       'border border-transparent',
       'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
