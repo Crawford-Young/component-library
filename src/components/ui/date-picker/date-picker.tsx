@@ -17,16 +17,27 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
     classNames={{
       months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
       month: 'space-y-4',
-      month_caption: 'flex justify-center pt-1 relative items-center',
+      month_caption: 'relative h-9 flex justify-center items-center',
       caption_label: 'text-sm font-medium text-foreground',
-      nav: 'space-x-1 flex items-center',
+      nav: 'absolute inset-x-0 top-0 flex items-center justify-between h-9',
       button_previous: cn(
         buttonVariants({ variant: 'outline' }),
-        'absolute left-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+        'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
       ),
       button_next: cn(
         buttonVariants({ variant: 'outline' }),
-        'absolute right-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+        'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      ),
+      dropdowns: 'flex items-center gap-2',
+      months_dropdown: cn(
+        'text-sm font-medium bg-background text-foreground cursor-pointer',
+        'rounded border border-input px-2 py-1',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      ),
+      years_dropdown: cn(
+        'text-sm font-medium bg-background text-foreground cursor-pointer',
+        'rounded border border-input px-2 py-1',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
       ),
       month_grid: 'w-full border-collapse space-y-1',
       weekdays: 'flex',
@@ -70,6 +81,9 @@ interface DatePickerProps {
   placeholder?: string
   className?: string
   disabled?: boolean
+  captionLayout?: React.ComponentProps<typeof DayPicker>['captionLayout']
+  fromYear?: number
+  toYear?: number
 }
 
 const DatePicker = ({
@@ -78,6 +92,9 @@ const DatePicker = ({
   placeholder = 'Pick a date',
   className,
   disabled,
+  captionLayout,
+  fromYear,
+  toYear,
 }: DatePickerProps) => {
   const [open, setOpen] = React.useState(false)
 
@@ -109,6 +126,9 @@ const DatePicker = ({
             onValueChange?.(day)
             setOpen(false)
           }}
+          captionLayout={captionLayout}
+          fromYear={fromYear}
+          toYear={toYear}
         />
       </PopoverContent>
     </Popover>
@@ -124,6 +144,9 @@ interface DateRangePickerProps {
   placeholder?: string
   className?: string
   disabled?: boolean
+  captionLayout?: React.ComponentProps<typeof DayPicker>['captionLayout']
+  fromYear?: number
+  toYear?: number
 }
 
 const DateRangePicker = ({
@@ -132,6 +155,9 @@ const DateRangePicker = ({
   placeholder = 'Pick a date range',
   className,
   disabled,
+  captionLayout,
+  fromYear,
+  toYear,
 }: DateRangePickerProps) => {
   const [open, setOpen] = React.useState(false)
 
@@ -162,7 +188,15 @@ const DateRangePicker = ({
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="range" selected={value} onSelect={onValueChange} numberOfMonths={2} />
+        <Calendar
+          mode="range"
+          selected={value}
+          onSelect={onValueChange}
+          numberOfMonths={2}
+          captionLayout={captionLayout}
+          fromYear={fromYear}
+          toYear={toYear}
+        />
       </PopoverContent>
     </Popover>
   )
