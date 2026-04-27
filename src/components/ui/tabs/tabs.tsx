@@ -46,7 +46,7 @@ const tabsTriggerVariants = cva(
           'data-[state=active]:after:bg-accent',
         ],
         pills: [
-          'rounded-md text-muted-foreground',
+          'rounded text-muted-foreground',
           'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
         ],
       },

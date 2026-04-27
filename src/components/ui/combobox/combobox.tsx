@@ -60,7 +60,7 @@ const Combobox = ({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            'inline-flex w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm',
+            'inline-flex w-[200px] items-center justify-between rounded border border-input bg-background px-3 py-2 text-sm',
             'ring-offset-background transition-colors',
             'hover:bg-accent hover:text-accent-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',

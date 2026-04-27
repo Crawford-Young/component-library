@@ -39,7 +39,7 @@ const NavigationMenuTrigger = React.forwardRef<
   <NavigationMenuPrimitive.Trigger
     ref={ref}
     className={cn(
-      'group inline-flex h-9 w-max items-center justify-center rounded-md',
+      'group inline-flex h-9 w-max items-center justify-center rounded',
       'bg-background px-4 py-2 text-sm font-medium text-foreground',
       'hover:bg-item-hover hover:text-foreground',
       'focus:bg-item-hover focus:text-foreground focus:outline-none',
@@ -91,7 +91,7 @@ const NavigationMenuLink = React.forwardRef<
   <NavigationMenuPrimitive.Link
     ref={ref}
     className={cn(
-      'block select-none rounded-md p-3 leading-none no-underline outline-none',
+      'block select-none rounded p-3 leading-none no-underline outline-none',
       'text-sm text-foreground transition-colors duration-150',
       'hover:bg-item-hover hover:text-foreground',
       'focus:bg-item-hover focus:text-foreground',

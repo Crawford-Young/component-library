@@ -16,7 +16,7 @@ describe('Skeleton', () => {
   it('applies rounded and background classes', () => {
     const { container } = render(<Skeleton />)
     const el = container.firstChild as HTMLElement
-    expect(el.className).toContain('rounded-md')
+    expect(el.className).toContain('rounded')
     expect(el.className).toContain('bg-muted')
   })
 
