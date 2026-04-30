@@ -42,6 +42,9 @@ const stories = [
   { name: 'Combobox', id: 'menus-combobox--default' },
   { name: 'Toaster', id: 'overlays-toast--default' },
   { name: 'DatePicker', id: 'inputs-datepicker--default' },
+  { name: 'PaginationControl', id: 'data-paginationcontrol--few-pages' },
+  { name: 'DataTable', id: 'data-datatable--default' },
+  { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
 ]
 
 for (const { name, id } of stories) {
