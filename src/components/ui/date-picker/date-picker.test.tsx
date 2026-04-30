@@ -34,6 +34,15 @@ describe('DatePicker', () => {
     await waitFor(() => expect(screen.getByRole('grid')).toBeInTheDocument())
   })
 
+  it('shows month and year dropdowns by default', async () => {
+    const user = userEvent.setup()
+    render(<DatePicker placeholder="Pick a date" />)
+    await user.click(screen.getByRole('button', { name: /pick a date/i }))
+    await waitFor(() => screen.getByRole('grid'))
+    const comboboxes = screen.getAllByRole('combobox')
+    expect(comboboxes.length).toBeGreaterThanOrEqual(2)
+  })
+
   it('calls onValueChange with selected date', async () => {
     const user = userEvent.setup()
     let selected: Date | undefined

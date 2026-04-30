@@ -92,9 +92,9 @@ const DatePicker = ({
   placeholder = 'Pick a date',
   className,
   disabled,
-  captionLayout,
-  fromYear,
-  toYear,
+  captionLayout = 'dropdown',
+  fromYear = new Date().getFullYear() - 100,
+  toYear = new Date().getFullYear() + 10,
 }: DatePickerProps) => {
   const [open, setOpen] = React.useState(false)
 
@@ -118,7 +118,7 @@ const DatePicker = ({
           {value ? format(value, 'MMMM d, yyyy') : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="center">
         <Calendar
           mode="single"
           selected={value}
@@ -155,9 +155,9 @@ const DateRangePicker = ({
   placeholder = 'Pick a date range',
   className,
   disabled,
-  captionLayout,
-  fromYear,
-  toYear,
+  captionLayout = 'dropdown',
+  fromYear = new Date().getFullYear() - 100,
+  toYear = new Date().getFullYear() + 10,
 }: DateRangePickerProps) => {
   const [open, setOpen] = React.useState(false)
 
@@ -187,7 +187,7 @@ const DateRangePicker = ({
           {label}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="center">
         <Calendar
           mode="range"
           selected={value}
