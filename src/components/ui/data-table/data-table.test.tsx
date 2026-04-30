@@ -123,4 +123,39 @@ describe('DataTable', () => {
     )
     expect(container.firstChild).toHaveClass('custom-class')
   })
+
+  it('renders page size selector when pageSizeOptions is provided', () => {
+    const manyRows: Person[] = Array.from({ length: 25 }, (_, i) => ({
+      name: `Person ${i + 1}`,
+      age: 20 + i,
+      role: 'Engineer',
+    }))
+    render(
+      <DataTable
+        columns={columns}
+        data={manyRows}
+        pagination={{ pageSize: 10, pageSizeOptions: [10, 25, 50] }}
+      />,
+    )
+    expect(screen.getByLabelText('Rows per page')).toBeInTheDocument()
+  })
+
+  it('changes page size when selector is changed', async () => {
+    const user = userEvent.setup()
+    const manyRows: Person[] = Array.from({ length: 50 }, (_, i) => ({
+      name: `Person ${i + 1}`,
+      age: 20 + i,
+      role: 'Engineer',
+    }))
+    render(
+      <DataTable
+        columns={columns}
+        data={manyRows}
+        pagination={{ pageSize: 10, pageSizeOptions: [10, 25, 50] }}
+      />,
+    )
+    expect(screen.getAllByRole('row').slice(1)).toHaveLength(10)
+    await user.selectOptions(screen.getByLabelText('Rows per page'), '25')
+    expect(screen.getAllByRole('row').slice(1)).toHaveLength(25)
+  })
 })
