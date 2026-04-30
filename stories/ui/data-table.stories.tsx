@@ -151,6 +151,16 @@ export const CustomPageSize: Story = {
   render: () => <DataTable columns={columns} data={employees} pagination={{ pageSize: 5 }} />,
 }
 
+export const WithPageSizeSelector: Story = {
+  render: () => (
+    <DataTable
+      columns={columns}
+      data={employees}
+      pagination={{ pageSize: 5, pageSizeOptions: [5, 10, 25] }}
+    />
+  ),
+}
+
 export const Empty: Story = {
   render: () => <DataTable columns={columns} data={[]} />,
 }
