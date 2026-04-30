@@ -3,12 +3,26 @@ import { DayPicker, type DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
 import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { buttonVariants } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 // ─── Calendar ────────────────────────────────────────────────────────────────
 
 type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+const navBtn = cn(
+  'inline-flex h-7 w-7 items-center justify-center rounded-md',
+  'text-muted-foreground transition-colors',
+  'hover:bg-item-hover hover:text-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+  'disabled:pointer-events-none disabled:opacity-30',
+)
+
+const dropdownSelect = cn(
+  'appearance-none bg-transparent cursor-pointer',
+  'text-sm font-semibold text-foreground',
+  'transition-colors hover:text-accent focus:text-accent',
+  'focus:outline-none px-0.5 py-0',
+)
 
 const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) => (
   <DayPicker
@@ -16,49 +30,40 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
     className={cn('p-3', className)}
     classNames={{
       months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-      month: 'space-y-4',
+      month: 'space-y-3',
       month_caption: 'relative h-9 flex justify-center items-center',
-      caption_label: 'text-sm font-medium text-foreground',
+      caption_label: 'text-sm font-semibold text-foreground tracking-tight',
       nav: 'absolute inset-x-0 top-0 flex items-center justify-between h-9',
-      button_previous: cn(
-        buttonVariants({ variant: 'outline' }),
-        'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-      ),
-      button_next: cn(
-        buttonVariants({ variant: 'outline' }),
-        'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-      ),
-      dropdowns: 'flex items-center gap-2',
-      months_dropdown: cn(
-        'text-sm font-medium bg-background text-foreground cursor-pointer',
-        'rounded border border-input px-2 py-1',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      ),
-      years_dropdown: cn(
-        'text-sm font-medium bg-background text-foreground cursor-pointer',
-        'rounded border border-input px-2 py-1',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      ),
+      button_previous: navBtn,
+      button_next: navBtn,
+      dropdowns: 'flex items-center gap-0.5',
+      months_dropdown: dropdownSelect,
+      years_dropdown: dropdownSelect,
       month_grid: 'w-full border-collapse space-y-1',
-      weekdays: 'flex',
-      weekday: 'text-muted-foreground rounded w-9 font-normal text-[0.8rem]',
-      week: 'flex w-full mt-2',
+      weekdays: 'flex mb-1',
+      weekday:
+        'w-9 text-center text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground py-1',
+      week: 'flex w-full',
       day: cn(
         'h-9 w-9 text-center text-sm p-0 relative',
         'focus-within:relative focus-within:z-20',
       ),
       day_button: cn(
-        buttonVariants({ variant: 'ghost' }),
-        'h-9 w-9 p-0 font-normal aria-selected:opacity-100',
+        'h-9 w-9 flex items-center justify-center rounded-md',
+        'text-sm font-normal transition-colors',
+        'hover:bg-item-hover hover:text-foreground',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'aria-selected:opacity-100',
       ),
       selected:
-        'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded',
-      today: 'bg-accent text-accent-foreground rounded',
-      outside: 'text-muted-foreground opacity-50',
-      disabled: 'text-muted-foreground opacity-50',
-      range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
-      range_start: 'rounded-l-md',
-      range_end: 'rounded-r-md',
+        'bg-accent text-accent-foreground hover:bg-accent-hover hover:text-accent-hover-foreground rounded-md font-medium',
+      today: 'font-semibold text-accent',
+      outside: 'opacity-25 aria-selected:opacity-50',
+      disabled: 'opacity-30 pointer-events-none',
+      range_middle:
+        'aria-selected:bg-accent-subtle aria-selected:text-accent-subtle-foreground rounded-none',
+      range_start: 'rounded-l-md rounded-r-none',
+      range_end: 'rounded-r-md rounded-l-none',
       hidden: 'invisible',
       ...classNames,
     }}
@@ -105,17 +110,18 @@ const DatePicker = ({
           disabled={disabled}
           aria-label={value ? format(value, 'MMMM d, yyyy') : placeholder}
           className={cn(
-            'inline-flex items-center gap-2 rounded border border-input bg-background px-3 py-2 text-sm',
+            'inline-flex min-w-[176px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm',
             'ring-offset-background transition-colors',
-            'hover:bg-accent hover:text-accent-foreground',
+            'hover:bg-item-hover',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            !value && 'text-muted-foreground',
             className,
           )}
         >
-          <CalendarIcon className="h-4 w-4" />
-          {value ? format(value, 'MMMM d, yyyy') : placeholder}
+          <CalendarIcon className="h-4 w-4 shrink-0 text-accent" />
+          <span className={cn('flex-1 text-left', !value && 'text-muted-foreground')}>
+            {value ? format(value, 'MMMM d, yyyy') : placeholder}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="center">
@@ -174,17 +180,18 @@ const DateRangePicker = ({
           disabled={disabled}
           aria-label={label}
           className={cn(
-            'inline-flex items-center gap-2 rounded border border-input bg-background px-3 py-2 text-sm',
+            'inline-flex min-w-[220px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm',
             'ring-offset-background transition-colors',
-            'hover:bg-accent hover:text-accent-foreground',
+            'hover:bg-item-hover',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            !value?.from && 'text-muted-foreground',
             className,
           )}
         >
-          <CalendarIcon className="h-4 w-4" />
-          {label}
+          <CalendarIcon className="h-4 w-4 shrink-0 text-accent" />
+          <span className={cn('flex-1 text-left', !value?.from && 'text-muted-foreground')}>
+            {label}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="center">
