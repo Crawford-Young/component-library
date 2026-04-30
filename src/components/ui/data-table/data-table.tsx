@@ -26,13 +26,15 @@ export type { ColumnDef } from '@tanstack/react-table'
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData>[]
   data: TData[]
-  pagination?: boolean | { pageSize?: number }
+  pagination?: boolean | { pageSize?: number; pageSizeOptions?: number[] }
   className?: string
 }
 
 export function DataTable<TData>({ columns, data, pagination, className }: DataTableProps<TData>) {
   const hasPagination = pagination !== undefined && pagination !== false
   const resolvedPageSize = typeof pagination === 'object' ? (pagination.pageSize ?? 10) : 10
+  const pageSizeOptions =
+    typeof pagination === 'object' ? (pagination.pageSizeOptions ?? null) : null
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
@@ -115,15 +117,38 @@ export function DataTable<TData>({ columns, data, pagination, className }: DataT
         </TableBody>
       </Table>
 
-      {hasPagination && table.getPageCount() > 1 && (
-        <div className="flex justify-end">
-          <PaginationControl
-            page={pageIndex + 1}
-            totalPages={table.getPageCount()}
-            onPageChange={(p) => table.setPageIndex(p - 1)}
-            pageSize={pageSize}
-            totalItems={data.length}
-          />
+      {hasPagination && (
+        <div className="flex items-center justify-center gap-4">
+          {pageSizeOptions && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <label htmlFor="page-size-select">Rows per page</label>
+              <select
+                id="page-size-select"
+                aria-label="Rows per page"
+                value={pageSize}
+                onChange={(e) => {
+                  table.setPageSize(Number(e.target.value))
+                  table.setPageIndex(0)
+                }}
+                className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {pageSizeOptions.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {table.getPageCount() > 1 && (
+            <PaginationControl
+              page={pageIndex + 1}
+              totalPages={table.getPageCount()}
+              onPageChange={(p) => table.setPageIndex(p - 1)}
+              pageSize={pageSize}
+              totalItems={data.length}
+            />
+          )}
         </div>
       )}
     </div>
