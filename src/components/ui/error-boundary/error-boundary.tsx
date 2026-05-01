@@ -36,7 +36,11 @@ export function ErrorPage({ code, title, description, action, className }: Error
         className,
       )}
     >
-      {code !== undefined && <p className="text-8xl font-bold text-muted-foreground/30">{code}</p>}
+      {code !== undefined && (
+        <p aria-hidden="true" className="text-8xl font-bold text-muted-foreground/30">
+          {code}
+        </p>
+      )}
       <h1 className="text-2xl font-semibold text-foreground">{title ?? defaults.title}</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
         {description ?? defaults.description}
