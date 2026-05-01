@@ -17,6 +17,102 @@ const navBtn = cn(
   'disabled:pointer-events-none disabled:opacity-30',
 )
 
+type DropdownProps =
+  React.ComponentProps<typeof DayPicker> extends {
+    components?: { Dropdown?: infer D }
+  }
+    ? D extends React.ComponentType<infer P>
+      ? P
+      : never
+    : never
+
+const CalendarDropdown = ({
+  options,
+  value,
+  onChange,
+  disabled,
+  'aria-label': ariaLabel,
+}: DropdownProps) => {
+  const [open, setOpen] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const listRef = React.useRef<HTMLDivElement>(null)
+  const selected = options?.find((o) => o.value === value)
+
+  React.useEffect(() => {
+    if (!open) return
+    const handle = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [open])
+
+  React.useEffect(() => {
+    if (open && listRef.current) {
+      const selectedEl = listRef.current.querySelector('[aria-current="true"]')
+      selectedEl?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [open])
+
+  const handleSelect = (val: number) => {
+    onChange?.({ target: { value: String(val) } } as React.ChangeEvent<HTMLSelectElement>)
+    setOpen(false)
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          'inline-flex items-center gap-1 rounded px-1 py-0',
+          'text-sm font-semibold text-foreground cursor-pointer',
+          'transition-colors hover:text-accent',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'disabled:opacity-50 disabled:pointer-events-none',
+        )}
+      >
+        {selected?.label}
+        <ChevronDown className="h-3.5 w-3.5" />
+      </button>
+      {open && (
+        <div
+          ref={listRef}
+          className={cn(
+            'absolute z-50 top-full mt-1 min-w-[7rem] max-h-52 overflow-y-auto',
+            'bg-surface border border-border rounded-md shadow-lg p-1',
+            'dark:[color-scheme:dark]',
+          )}
+        >
+          {options?.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={opt.disabled}
+              aria-current={opt.value === value ? 'true' : undefined}
+              onClick={() => handleSelect(opt.value)}
+              className={cn(
+                'w-full text-left px-2 py-1.5 text-sm rounded-sm transition-colors',
+                'disabled:opacity-30 disabled:pointer-events-none',
+                opt.value === value
+                  ? 'bg-accent text-accent-foreground font-medium hover:bg-accent-hover hover:text-accent-hover-foreground'
+                  : 'hover:bg-item-hover',
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) => (
   <DayPicker
     showOutsideDays={showOutsideDays}
@@ -26,17 +122,7 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
       months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
       month: 'relative flex flex-col gap-3',
       month_caption: 'relative h-9 flex justify-center items-center px-8',
-      caption_label:
-        'inline-flex items-center gap-1 text-sm font-semibold text-foreground pointer-events-none',
-      dropdowns: 'flex items-center gap-0.5',
-      dropdown_root: cn(
-        'relative inline-flex items-center gap-1 rounded px-1 cursor-pointer select-none',
-        'text-sm font-semibold text-foreground transition-colors hover:text-accent',
-      ),
-      months_dropdown:
-        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent dark:[color-scheme:dark]',
-      years_dropdown:
-        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent dark:[color-scheme:dark]',
+      dropdowns: 'flex items-center gap-1',
       button_previous: cn(navBtn, 'absolute left-0 top-1 z-10'),
       button_next: cn(navBtn, 'absolute right-0 top-1 z-10'),
       month_grid: 'w-full border-collapse space-y-1',
@@ -70,10 +156,9 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
     components={{
       Chevron: ({ orientation, className: cls, ...rest }) => {
         if (orientation === 'left') return <ChevronLeft className={cn('h-4 w-4', cls)} {...rest} />
-        if (orientation === 'down')
-          return <ChevronDown className={cn('h-3.5 w-3.5', cls)} {...rest} />
         return <ChevronRight className={cn('h-4 w-4', cls)} {...rest} />
       },
+      Dropdown: CalendarDropdown,
     }}
     {...props}
   />

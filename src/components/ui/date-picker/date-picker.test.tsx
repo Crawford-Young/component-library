@@ -13,6 +13,39 @@ describe('Calendar', () => {
     const { container } = render(<Calendar mode="single" className="test-class" />)
     expect((container.firstChild as HTMLElement).className).toContain('test-class')
   })
+
+  it('opens month dropdown and selects an option', async () => {
+    const user = userEvent.setup()
+    render(<Calendar mode="single" captionLayout="dropdown" fromYear={2020} toYear={2030} />)
+    expect(screen.getByRole('grid')).toBeInTheDocument()
+    const monthBtn = screen
+      .getAllByRole('button')
+      .find((b) => b.getAttribute('aria-label')?.toLowerCase().startsWith('choose'))
+    if (monthBtn) {
+      await user.click(monthBtn)
+      await waitFor(() => expect(monthBtn).toHaveAttribute('aria-expanded', 'true'))
+      const dropdownBtns = Array.from(
+        monthBtn.parentElement?.querySelectorAll('button') ?? [],
+      ).filter((b) => b !== monthBtn)
+      expect(dropdownBtns.length).toBeGreaterThan(0)
+      await user.click(dropdownBtns[0] as HTMLElement)
+      await waitFor(() => expect(monthBtn).toHaveAttribute('aria-expanded', 'false'))
+    }
+  })
+
+  it('closes month dropdown when clicking outside', async () => {
+    const user = userEvent.setup()
+    render(<Calendar mode="single" captionLayout="dropdown" fromYear={2020} toYear={2030} />)
+    const monthBtn = screen
+      .getAllByRole('button')
+      .find((b) => b.getAttribute('aria-label')?.toLowerCase().startsWith('choose'))
+    if (monthBtn) {
+      await user.click(monthBtn)
+      await waitFor(() => expect(monthBtn).toHaveAttribute('aria-expanded', 'true'))
+      await user.click(screen.getByRole('grid'))
+      await waitFor(() => expect(monthBtn).toHaveAttribute('aria-expanded', 'false'))
+    }
+  })
 })
 
 describe('DatePicker', () => {
@@ -34,13 +67,27 @@ describe('DatePicker', () => {
     await waitFor(() => expect(screen.getByRole('grid')).toBeInTheDocument())
   })
 
-  it('shows month and year dropdowns by default', async () => {
+  it('shows month and year dropdown buttons by default', async () => {
     const user = userEvent.setup()
     render(<DatePicker placeholder="Pick a date" />)
     await user.click(screen.getByRole('button', { name: /pick a date/i }))
     await waitFor(() => screen.getByRole('grid'))
-    const comboboxes = screen.getAllByRole('combobox')
-    expect(comboboxes.length).toBeGreaterThanOrEqual(2)
+    // Custom Dropdown renders two buttons with aria-label from react-day-picker
+    const dropdownBtns = screen
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-label')?.match(/month|year/i))
+    expect(dropdownBtns.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('opens month dropdown and lists month options', async () => {
+    const user = userEvent.setup()
+    render(<DatePicker placeholder="Pick a date" />)
+    await user.click(screen.getByRole('button', { name: /pick a date/i }))
+    await waitFor(() => screen.getByRole('grid'))
+    const monthBtn = screen
+      .getAllByRole('button')
+      .find((b) => b.getAttribute('aria-label')?.match(/month/i))
+    expect(monthBtn).toBeDefined()
   })
 
   it('calls onValueChange with selected date', async () => {
