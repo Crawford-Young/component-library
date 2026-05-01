@@ -12,31 +12,8 @@ rgb(var(--accent))         /* full opacity */
 rgb(var(--accent) / 0.5)   /* 50% opacity */
 ```
 
-Swatches update when you switch the Storybook theme.
-
-export const Pair = ({ fill, fg, label, note }) => (
-  <div
-    style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 10,
-      borderRadius: 8,
-      border: '1px solid rgb(var(--border))',
-      padding: '8px 12px',
-      background: `rgb(var(${fill}))`,
-    }}
-  >
-    <span style={{ color: fg ? `rgb(var(${fg}))` : 'rgb(var(--foreground))', fontWeight: 600, fontSize: 14 }}>Aa</span>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <code style={{ fontSize: 12, color: fg ? `rgb(var(${fg}))` : 'rgb(var(--foreground))' }}>{fill}</code>
-      {fg && <code style={{ fontSize: 11, color: fg ? `rgb(var(${fg}) / 0.7)` : 'rgb(var(--muted-foreground))' }}>{fg}</code>}
-    </div>
-    {note && <span style={{ fontSize: 11, color: fg ? `rgb(var(${fg}) / 0.6)` : 'rgb(var(--muted-foreground))', marginLeft: 4 }}>{note}</span>}
-  </div>
-)
-
-export const Solo = ({ token, label, note }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 0' }}>
+export const Swatch = ({ token, label }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '3px 0' }}>
     <div
       style={{
         width: 36,
@@ -48,71 +25,63 @@ export const Solo = ({ token, label, note }) => (
       }}
     />
     <div>
-      <code style={{ fontWeight: 600, fontSize: 13 }}>{token}</code>
-      <span style={{ marginLeft: 10, fontSize: 13, color: 'rgb(var(--muted-foreground))' }}>{label}</span>
-      {note && <span style={{ marginLeft: 8, fontSize: 11, color: 'rgb(var(--muted-foreground))', opacity: 0.75 }}>{note}</span>}
+      <code style={{ fontWeight: 600 }}>{token}</code>
+      {label && <span style={{ marginLeft: 10, color: 'rgb(var(--muted-foreground))' }}>{label}</span>}
     </div>
   </div>
 )
 
 export const Section = ({ title, children }) => (
-  <div style={{ marginBottom: 28 }}>
-    <h2 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgb(var(--muted-foreground))', marginBottom: 12, marginTop: 0 }}>{title}</h2>
+  <div style={{ marginBottom: 24 }}>
+    <h2>{title}</h2>
     {children}
   </div>
 )
 
-export const Row = ({ children }) => (
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>{children}</div>
-)
-
----
-
-<Section title="Accent Scale">
-  <p style={{ fontSize: 13, color: 'rgb(var(--muted-foreground))', marginTop: 0, marginBottom: 12 }}>
-    Each chip shows a fill/foreground pair as it would appear in use. Hover states, subtle fills, and active states are all drawn from the same emerald base.
-  </p>
-  <Row>
-    <Pair fill="--accent" fg="--accent-foreground" label="Default" note="emerald-500" />
-    <Pair fill="--accent-hover" fg="--accent-hover-foreground" label="Hover" note="emerald-400" />
-    <Pair fill="--accent-active" fg="--accent-active-foreground" label="Active" note="emerald-300 dark" />
-  </Row>
-  <Row>
-    <Pair fill="--accent-subtle" fg="--accent-subtle-foreground" label="Subtle" note="tinted bg" />
-  </Row>
-</Section>
-
 <Section title="Backgrounds">
-  <div style={{ display: 'grid', gap: 4 }}>
-    <Solo token="--background" label="Page background" note="zinc-950 dark · white light" />
-    <Solo token="--surface" label="Card / panel" note="zinc-900 dark · zinc-50 light" />
-    <Solo token="--surface-raised" label="Elevated surface (popovers, dropdowns)" note="zinc-800 dark · zinc-100 light" />
-    <Solo token="--item-hover" label="Hovered list row or menu item" note="zinc-800 dark · zinc-100 light" />
-    <Solo token="--muted" label="Muted fill" note="zinc-900 dark · zinc-100 light" />
-  </div>
+  <Swatch token="--background" label="Page background" />
+  <Swatch token="--surface" label="Card / panel" />
+  <Swatch token="--surface-raised" label="Elevated surface — popovers, dropdowns" />
+  <Swatch token="--item-hover" label="Hovered list row or menu item" />
+  <Swatch token="--muted" label="Muted fill" />
 </Section>
 
 <Section title="Text">
-  <div style={{ display: 'grid', gap: 4 }}>
-    <Solo token="--foreground" label="Primary text" />
-    <Solo token="--muted-foreground" label="Secondary / placeholder text" />
-  </div>
+  <Swatch token="--foreground" label="Primary text" />
+  <Swatch token="--muted-foreground" label="Secondary / placeholder" />
 </Section>
 
-<Section title="Borders & Inputs">
-  <div style={{ display: 'grid', gap: 4 }}>
-    <Solo token="--border" label="Default border" />
-    <Solo token="--border-subtle" label="Subtle divider" />
-    <Solo token="--input" label="Input field border" />
-    <Solo token="--ring" label="Focus ring" note="matches --accent" />
-  </div>
+<Section title="Borders & Ring">
+  <Swatch token="--border" label="Default border" />
+  <Swatch token="--border-subtle" label="Subtle divider" />
+  <Swatch token="--input" label="Input border" />
+  <Swatch token="--ring" label="Focus ring" />
 </Section>
 
-<Section title="Feedback">
-  <Row>
-    <Pair fill="--destructive" fg="--destructive-foreground" note="red-600" />
-    <Pair fill="--success" fg="--success-foreground" note="green-500" />
-    <Pair fill="--warning" fg="--warning-foreground" note="amber-500" />
-    <Pair fill="--info" fg="--info-foreground" note="sky-500" />
-  </Row>
+<Section title="Brand · Fills">
+  <Swatch token="--accent" label="Default — emerald-500" />
+  <Swatch token="--accent-hover" label="Hover — emerald-400" />
+  <Swatch token="--accent-active" label="Active / pressed — emerald-300 dark" />
+  <Swatch token="--accent-subtle" label="Subtle tinted fill" />
+</Section>
+
+<Section title="Brand · Text on fills">
+  <Swatch token="--accent-foreground" label="On accent" />
+  <Swatch token="--accent-hover-foreground" label="On accent-hover" />
+  <Swatch token="--accent-active-foreground" label="On accent-active" />
+  <Swatch token="--accent-subtle-foreground" label="On accent-subtle" />
+</Section>
+
+<Section title="Feedback · Fills">
+  <Swatch token="--destructive" label="Error — red-600" />
+  <Swatch token="--success" label="Success — green-500" />
+  <Swatch token="--warning" label="Warning — amber-500" />
+  <Swatch token="--info" label="Info — sky-500" />
+</Section>
+
+<Section title="Feedback · Text on fills">
+  <Swatch token="--destructive-foreground" label="On destructive" />
+  <Swatch token="--success-foreground" label="On success" />
+  <Swatch token="--warning-foreground" label="On warning" />
+  <Swatch token="--info-foreground" label="On info" />
 </Section>
