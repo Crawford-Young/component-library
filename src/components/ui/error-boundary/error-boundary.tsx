@@ -37,7 +37,7 @@ export function ErrorPage({ code, title, description, action, className }: Error
       )}
     >
       {code !== undefined && (
-        <p aria-hidden="true" className="text-8xl font-bold text-muted-foreground/30">
+        <p aria-hidden="true" className="text-8xl font-bold text-muted-foreground/60">
           {code}
         </p>
       )}
