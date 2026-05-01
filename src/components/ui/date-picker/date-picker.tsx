@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
-import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarIcon, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
@@ -17,28 +17,28 @@ const navBtn = cn(
   'disabled:pointer-events-none disabled:opacity-30',
 )
 
-const dropdownSelect = cn(
-  'appearance-none bg-transparent cursor-pointer',
-  'text-sm font-semibold text-foreground',
-  'transition-colors hover:text-accent focus:text-accent',
-  'focus:outline-none px-0.5 py-0',
-)
-
 const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) => (
   <DayPicker
     showOutsideDays={showOutsideDays}
+    navLayout="around"
     className={cn('p-3', className)}
     classNames={{
       months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-      month: 'space-y-3',
-      month_caption: 'relative h-9 flex justify-center items-center',
-      caption_label: 'text-sm font-semibold text-foreground tracking-tight',
-      nav: 'absolute inset-x-0 top-0 flex items-center justify-between h-9',
-      button_previous: navBtn,
-      button_next: navBtn,
+      month: 'relative flex flex-col gap-3',
+      month_caption: 'relative h-9 flex justify-center items-center px-8',
+      caption_label:
+        'inline-flex items-center gap-1 text-sm font-semibold text-foreground pointer-events-none',
       dropdowns: 'flex items-center gap-0.5',
-      months_dropdown: dropdownSelect,
-      years_dropdown: dropdownSelect,
+      dropdown_root: cn(
+        'relative inline-flex items-center gap-1 rounded px-1 cursor-pointer select-none',
+        'text-sm font-semibold text-foreground transition-colors hover:text-accent',
+      ),
+      months_dropdown:
+        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent',
+      years_dropdown:
+        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent',
+      button_previous: cn(navBtn, 'absolute left-0 top-1 z-10'),
+      button_next: cn(navBtn, 'absolute right-0 top-1 z-10'),
       month_grid: 'w-full border-collapse space-y-1',
       weekdays: 'flex mb-1',
       weekday:
@@ -68,9 +68,11 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
       ...classNames,
     }}
     components={{
-      Chevron: ({ orientation, ...rest }) => {
-        if (orientation === 'left') return <ChevronLeft className="h-4 w-4" {...rest} />
-        return <ChevronRight className="h-4 w-4" {...rest} />
+      Chevron: ({ orientation, className: cls, ...rest }) => {
+        if (orientation === 'left') return <ChevronLeft className={cn('h-4 w-4', cls)} {...rest} />
+        if (orientation === 'down')
+          return <ChevronDown className={cn('h-3.5 w-3.5', cls)} {...rest} />
+        return <ChevronRight className={cn('h-4 w-4', cls)} {...rest} />
       },
     }}
     {...props}
