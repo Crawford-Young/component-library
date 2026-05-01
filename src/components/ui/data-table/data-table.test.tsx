@@ -158,4 +158,33 @@ describe('DataTable', () => {
     await user.selectOptions(screen.getByLabelText('Rows per page'), '25')
     expect(screen.getAllByRole('row').slice(1)).toHaveLength(25)
   })
+
+  it('defaults to pageSize 10 when pagination object omits pageSize', () => {
+    const manyRows: Person[] = Array.from({ length: 25 }, (_, i) => ({
+      name: `Person ${i + 1}`,
+      age: 20 + i,
+      role: 'Engineer',
+    }))
+    render(
+      <DataTable columns={columns} data={manyRows} pagination={{ pageSizeOptions: [10, 25] }} />,
+    )
+    expect(screen.getAllByRole('row').slice(1)).toHaveLength(10)
+  })
+
+  it('renders null for placeholder header cells in column groups', () => {
+    const groupedColumns: ColumnDef<Person>[] = [
+      {
+        id: 'info',
+        header: 'Info',
+        columns: [
+          { accessorKey: 'name', header: 'Name' },
+          { accessorKey: 'age', header: 'Age' },
+        ],
+      },
+      { accessorKey: 'role', header: 'Role' },
+    ]
+    render(<DataTable columns={groupedColumns} data={data} />)
+    expect(screen.getByText('Info')).toBeInTheDocument()
+    expect(screen.getByText('Name')).toBeInTheDocument()
+  })
 })
