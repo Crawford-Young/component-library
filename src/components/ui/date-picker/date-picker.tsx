@@ -34,9 +34,9 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
         'text-sm font-semibold text-foreground transition-colors hover:text-accent',
       ),
       months_dropdown:
-        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent',
+        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent dark:[color-scheme:dark]',
       years_dropdown:
-        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent',
+        'opacity-0 absolute inset-0 w-full h-full cursor-pointer border-0 bg-transparent dark:[color-scheme:dark]',
       button_previous: cn(navBtn, 'absolute left-0 top-1 z-10'),
       button_next: cn(navBtn, 'absolute right-0 top-1 z-10'),
       month_grid: 'w-full border-collapse space-y-1',
