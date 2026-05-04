@@ -32,6 +32,12 @@ Update this table whenever a wave PR is merged.
 - **No database, auth, or backend concerns**
 - **Storybook is the dev environment** — `just dev` starts Storybook, not a Next.js dev server
 - **Releases via Changesets** — always run `just changeset` before opening a PR for a new component wave
+- **Additional dependency**: `@tanstack/react-table` — used by DataTable; install with `pnpm add @tanstack/react-table`
+
+## E2E / axe notes
+
+- Playwright tests run against a **built** Storybook (`just storybook-build` then `just e2e`), not the dev server. The E2E job navigates to `http://localhost:4173/` — `just e2e` starts a static server automatically via the Justfile.
+- `aria-hidden="true"` does **not** suppress axe `color-contrast` checks. axe 4.11+ evaluates visual elements regardless of aria semantics. Fix decorative text by raising its actual contrast, not by hiding it from the accessibility tree.
 
 ## Component requirements (Definition of Done)
 
