@@ -1,8 +1,13 @@
 import * as React from 'react'
-import { cn } from '@/lib/utils'
 
 function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = React.useState(false)
+  const [reduced, setReduced] = React.useState(() => {
+    // The true branch is only reachable in an SSR environment where window is
+    // not defined — unreachable in happy-dom/jsdom test environments.
+    /* c8 ignore next */
+    if (typeof window === 'undefined') return true
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  })
   React.useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReduced(mq.matches)
@@ -14,6 +19,7 @@ function usePrefersReducedMotion(): boolean {
 }
 
 export interface CountUpProps {
+  /** Target number to count up to. Animation plays once on first viewport entry; subsequent changes update the displayed value without re-animating. */
   to: number
   suffix?: string
   duration?: number
@@ -25,16 +31,16 @@ export const CountUp = React.forwardRef<HTMLSpanElement, CountUpProps>(
     const [value, setValue] = React.useState(to)
     const reduced = usePrefersReducedMotion()
     const started = React.useRef(false)
-    const internalRef = React.useRef<HTMLSpanElement>(null)
+    const internalRef = React.useRef<HTMLSpanElement | null>(null)
 
     // Merge forwarded ref with internal ref
     const setRef = React.useCallback(
       (node: HTMLSpanElement | null) => {
-        ;(internalRef as React.MutableRefObject<HTMLSpanElement | null>).current = node
+        internalRef.current = node
         if (typeof forwardedRef === 'function') {
           forwardedRef(node)
         } else if (forwardedRef) {
-          ;(forwardedRef as React.MutableRefObject<HTMLSpanElement | null>).current = node
+          forwardedRef.current = node
         }
       },
       [forwardedRef],
@@ -72,7 +78,7 @@ export const CountUp = React.forwardRef<HTMLSpanElement, CountUpProps>(
     }, [to, duration, reduced])
 
     return (
-      <span ref={setRef} className={cn(className)}>
+      <span ref={setRef} className={className}>
         {value}
         {suffix}
       </span>
