@@ -45,6 +45,7 @@ const stories = [
   { name: 'PaginationControl', id: 'data-paginationcontrol--few-pages' },
   { name: 'DataTable', id: 'data-datatable--default' },
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
+  { name: 'CountUp', id: 'display-countup--default' },
 ]
 
 for (const { name, id } of stories) {
