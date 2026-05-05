@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { render, screen, act } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CountUp } from './count-up'
@@ -167,5 +168,32 @@ describe('CountUp', () => {
 
     expect(disconnectSpy).toHaveBeenCalled()
     expect(cancelSpy).toHaveBeenCalledWith(42)
+  })
+
+  it('updates reduced state when matchMedia change event fires', () => {
+    const listeners = mockMatchMedia(false)
+    render(<CountUp to={42} />)
+    act(() => {
+      listeners.forEach((cb) => cb({ matches: true }))
+    })
+    expect(screen.getByText('42')).toBeInTheDocument()
+  })
+
+  it('forwards ref to the span element', () => {
+    mockMatchMedia(true)
+    const ref = React.createRef<HTMLSpanElement>()
+    render(<CountUp to={5} ref={ref} />)
+    expect(ref.current?.tagName).toBe('SPAN')
+  })
+
+  it('forwards callback ref to the span element', () => {
+    mockMatchMedia(true)
+    let capturedNode: HTMLSpanElement | null = null
+    const callbackRef = (node: HTMLSpanElement | null) => {
+      capturedNode = node
+    }
+    render(<CountUp to={7} ref={callbackRef} />)
+    expect(capturedNode).not.toBeNull()
+    expect((capturedNode as HTMLSpanElement | null)?.tagName).toBe('SPAN')
   })
 })
