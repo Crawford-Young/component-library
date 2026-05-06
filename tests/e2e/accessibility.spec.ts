@@ -47,6 +47,7 @@ const stories = [
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
   { name: 'CountUp', id: 'display-countup--default' },
   { name: 'BentoGrid', id: 'layout-bentogrid--default' },
+  { name: 'Timeline', id: 'display-timeline--default' },
 ]
 
 for (const { name, id } of stories) {
