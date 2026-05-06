@@ -46,6 +46,7 @@ const stories = [
   { name: 'DataTable', id: 'data-datatable--default' },
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
   { name: 'CountUp', id: 'display-countup--default' },
+  { name: 'BentoGrid', id: 'layout-bentogrid--default' },
 ]
 
 for (const { name, id } of stories) {
