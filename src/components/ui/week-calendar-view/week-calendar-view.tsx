@@ -78,8 +78,8 @@ export function WeekCalendarView({
   hourStart = 8,
   hourCount = 14,
   hourHeight = 56,
-  _onEventClick,
-  _renderEvent,
+  onEventClick: _onEventClick,
+  renderEvent: _renderEvent,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
