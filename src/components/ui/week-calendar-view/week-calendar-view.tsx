@@ -125,7 +125,8 @@ function EventChip({
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function getWeekDays(weekStart: string): Date[] {
-  const start = new Date(weekStart)
+  // Append time to force local-time parsing (date-only strings parse as UTC midnight)
+  const start = new Date(`${weekStart}T00:00:00`)
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start)
     d.setDate(start.getDate() + i)
@@ -157,6 +158,7 @@ export function WeekCalendarView({
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
+  const today = React.useMemo(() => new Date(), [])
 
   return (
     <div
@@ -165,18 +167,27 @@ export function WeekCalendarView({
       aria-label="Week calendar"
     >
       {/* Day headers */}
-      <div
-        className="grid border-b"
-        style={{ gridTemplateColumns: '3rem repeat(7, 1fr)' }}
-        aria-hidden
-      >
-        <div className="border-r" />
-        {days.map((day, i) => (
-          <div key={i} className="border-r py-2 text-center text-xs font-medium last:border-r-0">
-            <div>{DAY_LABELS[i]}</div>
-            <div className="text-muted-foreground">{day.getDate()}</div>
-          </div>
-        ))}
+      <div className="grid border-b" style={{ gridTemplateColumns: `3rem repeat(7, 1fr)` }}>
+        <div className="border-r" aria-hidden />
+        {days.map((day, i) => {
+          const dayIsToday = isSameDay(day, today)
+          return (
+            <button
+              key={i}
+              type="button"
+              className={cn(
+                'border-r py-2 text-center text-xs font-medium last:border-r-0',
+                dayIsToday && 'bg-primary/5',
+              )}
+              aria-label={`${DAY_LABELS[i]} ${day.getDate()}`}
+            >
+              <div aria-hidden>{DAY_LABELS[i]}</div>
+              <div className="text-muted-foreground" aria-hidden>
+                {day.getDate()}
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Hour grid */}
