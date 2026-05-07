@@ -1,21 +1,52 @@
 import * as React from 'react'
+import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 export interface CalendarEvent {
-  id: string
-  title: string
-  start: string
-  end: string
-  color?: string
+  readonly id: string
+  readonly title: string
+  readonly start: string
+  readonly end: string
+  readonly allDay?: boolean
+  readonly color?: CalendarEventColor
 }
 
+export type CalendarEventColor =
+  | 'default'
+  | 'blue'
+  | 'violet'
+  | 'green'
+  | 'red'
+  | 'amber'
+  | 'pink'
+  | 'cyan'
+
 export interface WeekCalendarViewProps {
-  weekStart: string
-  events: CalendarEvent[]
-  hourStart?: number
-  hourCount?: number
-  className?: string
+  readonly weekStart: string
+  readonly events: CalendarEvent[]
+  readonly hourStart?: number
+  readonly hourCount?: number
+  readonly hourHeight?: number
+  readonly onEventClick?: (event: CalendarEvent) => void
+  readonly renderEvent?: (event: CalendarEvent) => React.ReactNode
+  readonly className?: string
 }
+
+const eventColorVariants = cva('overflow-hidden rounded px-1 text-[10px] font-medium', {
+  variants: {
+    color: {
+      default: 'bg-accent text-accent-foreground',
+      blue: 'bg-blue-600 text-white',
+      violet: 'bg-violet-600 text-white',
+      green: 'bg-green-700 text-white',
+      red: 'bg-red-600 text-white',
+      amber: 'bg-amber-500 text-white',
+      pink: 'bg-pink-600 text-white',
+      cyan: 'bg-cyan-600 text-white',
+    },
+  },
+  defaultVariants: { color: 'default' },
+})
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -47,7 +78,7 @@ export function WeekCalendarView({
   hourStart = 8,
   hourCount = 14,
   className,
-}: WeekCalendarViewProps) {
+}: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
 
   return (
@@ -107,8 +138,8 @@ export function WeekCalendarView({
                   <div
                     key={evt.id}
                     className={cn(
-                      'absolute inset-x-0 mx-0.5 overflow-hidden rounded px-1 text-[10px] font-medium',
-                      evt.color ?? 'bg-accent text-accent-foreground',
+                      'absolute inset-x-0 mx-0.5',
+                      eventColorVariants({ color: evt.color }),
                     )}
                     style={{ top: `${top}%`, height: `${height}%` }}
                     aria-label={evt.title}
