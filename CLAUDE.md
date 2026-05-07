@@ -22,6 +22,8 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider     | Merged to main |
 | 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker               | Merged to main |
 | 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors | Merged to main |
+| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView              | Merged to main |
+| 5b   | Kbd, HoverCard, NumberInput                                                        | In PR #38      |
 
 Update this table whenever a wave PR is merged.
 
