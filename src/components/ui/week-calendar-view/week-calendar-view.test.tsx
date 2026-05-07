@@ -30,14 +30,13 @@ describe('WeekCalendarView', () => {
 
   it('renders day column headers', () => {
     render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
-    expect(screen.getByText('Mon')).toBeInTheDocument()
-    expect(screen.getByText('Sun')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Mon 4/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Sun 10/i })).toBeInTheDocument()
   })
 
   it('renders date numbers in headers', () => {
     render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
-    // Monday 4th May 2026
-    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Mon 4/i })).toBeInTheDocument()
   })
 
   it('renders hour labels', () => {
@@ -116,5 +115,27 @@ describe('WeekCalendarView', () => {
     )
     expect(screen.getByTestId('custom-chip')).toBeInTheDocument()
     expect(screen.getByTestId('custom-chip').textContent).toBe('Team standup-custom')
+  })
+})
+
+describe('today highlight', () => {
+  it('applies bg-primary/5 to today day header', () => {
+    // WEEK_START = '2026-05-04' (Monday). Set system time to Monday of that week.
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T10:00:00'))
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    // Monday header button should have today highlight class
+    const monHeader = screen.getByRole('button', { name: /Mon 4/i })
+    expect(monHeader.className).toContain('bg-primary/5')
+    vi.useRealTimers()
+  })
+
+  it('does not apply today highlight to other day headers', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T10:00:00'))
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    const tueHeader = screen.getByRole('button', { name: /Tue 5/i })
+    expect(tueHeader.className).not.toContain('bg-primary/5')
+    vi.useRealTimers()
   })
 })
