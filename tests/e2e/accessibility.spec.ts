@@ -45,6 +45,10 @@ const stories = [
   { name: 'PaginationControl', id: 'data-paginationcontrol--few-pages' },
   { name: 'DataTable', id: 'data-datatable--default' },
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
+  { name: 'CountUp', id: 'display-countup--default' },
+  { name: 'BentoGrid', id: 'layout-bentogrid--default' },
+  { name: 'Timeline', id: 'display-timeline--default' },
+  { name: 'WeekCalendarView', id: 'data-weekcalendarview--default' },
 ]
 
 for (const { name, id } of stories) {
