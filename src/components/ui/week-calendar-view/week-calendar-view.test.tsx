@@ -202,6 +202,41 @@ describe('time indicator', () => {
   })
 })
 
+describe('day expand', () => {
+  it('day header buttons have aria-pressed="false" by default', () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    const monButton = screen.getByRole('button', { name: /Mon 4/i })
+    expect(monButton).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('clicking a day header sets aria-pressed="true" on that button', async () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    const monButton = screen.getByRole('button', { name: /Mon 4/i })
+    await userEvent.click(monButton)
+    expect(monButton).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('clicking an expanded day header collapses it', async () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    const monButton = screen.getByRole('button', { name: /Mon 4/i })
+    await userEvent.click(monButton)
+    expect(monButton).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(monButton)
+    expect(monButton).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('only one day can be expanded at a time', async () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    const monButton = screen.getByRole('button', { name: /Mon 4/i })
+    const tueButton = screen.getByRole('button', { name: /Tue 5/i })
+    await userEvent.click(monButton)
+    expect(monButton).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(tueButton)
+    expect(monButton).toHaveAttribute('aria-pressed', 'false')
+    expect(tueButton).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
 describe('overlap layout', () => {
   it('renders two overlapping events side by side', () => {
     const overlapping: CalendarEvent[] = [
