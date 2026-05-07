@@ -86,4 +86,14 @@ describe('WeekCalendarView', () => {
     )
     expect((container.firstChild as HTMLElement).className).toContain('custom-class')
   })
+
+  it('applies custom hourHeight inline style to hour rows', () => {
+    const { container } = render(
+      <WeekCalendarView weekStart={WEEK_START} events={[]} hourHeight={80} />,
+    )
+    const rowsWithStyle = Array.from(container.querySelectorAll('div')).filter(
+      (el) => (el as HTMLElement).style.height === '80px',
+    )
+    expect(rowsWithStyle.length).toBeGreaterThan(0)
+  })
 })

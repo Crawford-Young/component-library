@@ -77,6 +77,9 @@ export function WeekCalendarView({
   events,
   hourStart = 8,
   hourCount = 14,
+  hourHeight = 56,
+  _onEventClick,
+  _renderEvent,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
@@ -109,7 +112,8 @@ export function WeekCalendarView({
           {Array.from({ length: hourCount }, (_, i) => (
             <div
               key={i}
-              className="flex h-14 items-start justify-end border-b border-r pr-1 text-[10px] text-muted-foreground"
+              className="flex items-start justify-end border-b border-r pr-1 text-[10px] text-muted-foreground"
+              style={{ height: hourHeight }}
               aria-hidden
             >
               {formatHour(hourStart + i)}
@@ -123,7 +127,7 @@ export function WeekCalendarView({
           return (
             <div key={dayIdx} className="relative border-r last:border-r-0">
               {Array.from({ length: hourCount }, (_, i) => (
-                <div key={i} className="h-14 border-b" />
+                <div key={i} className="border-b" style={{ height: hourHeight }} />
               ))}
               {dayEvents.map((evt) => {
                 const start = new Date(evt.start)
