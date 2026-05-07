@@ -222,7 +222,14 @@ export function WeekCalendarView({
   const allDayEvents = React.useMemo(() => events.filter((e) => e.allDay), [events])
   const timedEvents = React.useMemo(() => events.filter((e) => !e.allDay), [events])
 
-  const gridTemplateColumns = `3rem repeat(7, 1fr)`
+  const [expandedDayIndex, setExpandedDayIndex] = React.useState<number | null>(null)
+
+  const gridTemplateColumns = React.useMemo(() => {
+    const cols = Array.from({ length: 7 }, (_, i) => (i === expandedDayIndex ? '3fr' : '1fr')).join(
+      ' ',
+    )
+    return `3rem ${cols}`
+  }, [expandedDayIndex])
 
   return (
     <div
@@ -235,15 +242,19 @@ export function WeekCalendarView({
         <div className="border-r" aria-hidden />
         {days.map((day, i) => {
           const dayIsToday = isSameDay(day, today)
+          const isExpanded = expandedDayIndex === i
           return (
             <button
               key={i}
               type="button"
+              aria-pressed={isExpanded}
               className={cn(
                 'border-r py-2 text-center text-xs font-medium last:border-r-0',
                 dayIsToday && 'bg-primary/5',
+                isExpanded && 'bg-primary/10 ring-1 ring-inset ring-primary/20',
               )}
               aria-label={`${DAY_LABELS[i]} ${day.getDate()}`}
+              onClick={() => setExpandedDayIndex((prev) => (prev === i ? null : i))}
             >
               <div aria-hidden>{DAY_LABELS[i]}</div>
               <div className="text-muted-foreground" aria-hidden>
