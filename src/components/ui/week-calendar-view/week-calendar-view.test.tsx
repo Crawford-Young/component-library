@@ -139,3 +139,32 @@ describe('today highlight', () => {
     vi.useRealTimers()
   })
 })
+
+describe('time indicator', () => {
+  it('renders time indicator in today column when time is within visible hours', () => {
+    vi.useFakeTimers()
+    // 10am is within default hourStart=8, hourCount=14 (8am-10pm)
+    vi.setSystemTime(new Date('2026-05-04T10:00:00'))
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    expect(document.querySelector('[data-testid="time-indicator"]')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('does not render time indicator when current time is outside visible hours', () => {
+    vi.useFakeTimers()
+    // 3am is before hourStart=8
+    vi.setSystemTime(new Date('2026-05-04T03:00:00'))
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    expect(document.querySelector('[data-testid="time-indicator"]')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('does not render time indicator on non-today columns', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T10:00:00')) // Monday is today
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    // Only one indicator exists (not one per column)
+    expect(document.querySelectorAll('[data-testid="time-indicator"]').length).toBe(1)
+    vi.useRealTimers()
+  })
+})

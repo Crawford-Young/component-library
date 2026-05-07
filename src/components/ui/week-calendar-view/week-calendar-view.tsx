@@ -58,6 +58,35 @@ interface EventChipProps {
   readonly renderEvent?: (event: CalendarEvent) => React.ReactNode
 }
 
+interface TimeIndicatorProps {
+  readonly hourStart: number
+  readonly hourCount: number
+}
+
+function TimeIndicator({ hourStart, hourCount }: TimeIndicatorProps): React.ReactElement | null {
+  const [now, setNow] = React.useState(() => new Date())
+
+  React.useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const top = ((now.getHours() - hourStart + now.getMinutes() / 60) / hourCount) * 100
+  if (top < 0 || top > 100) return null
+
+  return (
+    <div
+      data-testid="time-indicator"
+      role="presentation"
+      className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
+      style={{ top: `${top}%` }}
+    >
+      <div className="h-2 w-2 rounded-full bg-primary" />
+      <div className="h-px flex-1 bg-primary" />
+    </div>
+  )
+}
+
 function EventChip({
   event,
   hourStart,
@@ -208,12 +237,14 @@ export function WeekCalendarView({
 
         {/* Day columns */}
         {days.map((day, dayIdx) => {
+          const dayIsToday = isSameDay(day, today)
           const dayEvents = events.filter((e) => isSameDay(new Date(e.start), day))
           return (
             <div key={dayIdx} className="relative border-r last:border-r-0">
               {Array.from({ length: hourCount }, (_, i) => (
                 <div key={i} className="border-b" style={{ height: hourHeight }} />
               ))}
+              {dayIsToday && <TimeIndicator hourStart={hourStart} hourCount={hourCount} />}
               {dayEvents.map((evt) => (
                 <EventChip
                   key={evt.id}
