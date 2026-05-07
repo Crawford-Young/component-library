@@ -24,7 +24,7 @@ export type CalendarEventColor =
 
 export interface WeekCalendarViewProps {
   readonly weekStart: string
-  readonly events: CalendarEvent[]
+  readonly events: readonly CalendarEvent[]
   readonly hourStart?: number
   readonly hourCount?: number
   readonly hourHeight?: number
@@ -218,7 +218,17 @@ export function WeekCalendarView({
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
-  const today = React.useMemo(() => new Date(), [])
+  const [today, setToday] = React.useState(() => new Date())
+  React.useEffect(() => {
+    const msUntilMidnight = () => {
+      const now = new Date()
+      return (
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
+      )
+    }
+    const id = setTimeout(() => setToday(new Date()), msUntilMidnight())
+    return () => clearTimeout(id)
+  }, [today])
   const allDayEvents = React.useMemo(() => events.filter((e) => e.allDay), [events])
   const timedEvents = React.useMemo(() => events.filter((e) => !e.allDay), [events])
 
