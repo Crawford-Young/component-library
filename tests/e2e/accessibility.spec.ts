@@ -51,6 +51,7 @@ const stories = [
   { name: 'WeekCalendarView', id: 'data-weekcalendarview--default' },
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
+  { name: 'NumberInput', id: 'inputs-numberinput--default' },
 ]
 
 for (const { name, id } of stories) {
