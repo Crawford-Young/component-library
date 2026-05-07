@@ -13,17 +13,19 @@ type Story = StoryObj<typeof NumberInput>
 
 function DefaultDemo() {
   const [value, setValue] = useState(0)
-  return <NumberInput value={value} onChange={setValue} />
+  return <NumberInput value={value} onChange={setValue} aria-label="Quantity" />
 }
 
 function WithBoundsDemo() {
   const [value, setValue] = useState(5)
-  return <NumberInput value={value} onChange={setValue} min={0} max={10} />
+  return <NumberInput value={value} onChange={setValue} min={0} max={10} aria-label="Rating" />
 }
 
 function CustomStepDemo() {
   const [value, setValue] = useState(0)
-  return <NumberInput value={value} onChange={setValue} step={5} min={0} max={100} />
+  return (
+    <NumberInput value={value} onChange={setValue} step={5} min={0} max={100} aria-label="Amount" />
+  )
 }
 
 export const Default: Story = {
@@ -39,5 +41,5 @@ export const CustomStep: Story = {
 }
 
 export const Disabled: Story = {
-  render: () => <NumberInput value={7} onChange={() => {}} disabled />,
+  render: () => <NumberInput value={7} onChange={() => {}} disabled aria-label="Quantity" />,
 }
