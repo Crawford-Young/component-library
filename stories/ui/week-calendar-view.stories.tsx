@@ -39,7 +39,7 @@ export const Default: Story = {
         title: 'Lunch',
         start: '2026-05-07T12:00:00',
         end: '2026-05-07T13:00:00',
-        color: 'bg-green-600 text-white',
+        color: 'bg-green-700 text-white',
       },
     ],
   },
