@@ -179,3 +179,33 @@ export const WithClickHandler: Story = {
     onEventClick: (event: CalendarEvent) => alert(`Clicked: ${event.title}`),
   },
 }
+
+// Click any day header to expand it; click again to collapse
+export const ExpandedDay: Story = {
+  args: {
+    weekStart: '2026-05-04',
+    events: [
+      {
+        id: '1',
+        title: 'Team standup',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T09:30:00',
+        color: 'blue',
+      },
+      {
+        id: '2',
+        title: 'Lunch',
+        start: '2026-05-04T12:00:00',
+        end: '2026-05-04T13:00:00',
+        color: 'green',
+      },
+      {
+        id: '3',
+        title: 'Design review',
+        start: '2026-05-05T14:00:00',
+        end: '2026-05-05T15:00:00',
+        color: 'violet',
+      },
+    ],
+  },
+}

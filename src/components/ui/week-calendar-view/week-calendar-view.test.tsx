@@ -247,8 +247,8 @@ describe('overlap layout', () => {
     const chipA = screen.getByLabelText('Event A')
     const chipB = screen.getByLabelText('Event B')
     // With 2-column overlap, each chip left should be different
-    expect(chipA.style.left).toContain('0%')
-    expect(chipB.style.left).toContain('50%')
+    expect(chipA.style.left).toBe('calc(0% + 1px)')
+    expect(chipB.style.left).toBe('calc(50% + 1px)')
   })
 })
 
