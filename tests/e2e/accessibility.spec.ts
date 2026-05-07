@@ -50,6 +50,7 @@ const stories = [
   { name: 'Timeline', id: 'display-timeline--default' },
   { name: 'WeekCalendarView', id: 'data-weekcalendarview--default' },
   { name: 'Kbd', id: 'display-kbd--default' },
+  { name: 'HoverCard', id: 'overlays-hovercard--default' },
 ]
 
 for (const { name, id } of stories) {
