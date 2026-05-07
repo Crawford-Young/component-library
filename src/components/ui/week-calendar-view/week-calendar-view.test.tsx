@@ -201,3 +201,18 @@ describe('time indicator', () => {
     vi.useRealTimers()
   })
 })
+
+describe('overlap layout', () => {
+  it('renders two overlapping events side by side', () => {
+    const overlapping: CalendarEvent[] = [
+      { id: 'o1', title: 'Event A', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
+      { id: 'o2', title: 'Event B', start: '2026-05-04T09:30:00', end: '2026-05-04T10:30:00' },
+    ]
+    render(<WeekCalendarView weekStart={WEEK_START} events={overlapping} />)
+    const chipA = screen.getByLabelText('Event A')
+    const chipB = screen.getByLabelText('Event B')
+    // With 2-column overlap, each chip left should be different
+    expect(chipA.style.left).toContain('0%')
+    expect(chipB.style.left).toContain('50%')
+  })
+})

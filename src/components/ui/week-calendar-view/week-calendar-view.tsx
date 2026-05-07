@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
+import { buildOverlapLayout } from './overlap'
 
 export interface CalendarEvent {
   readonly id: string
@@ -278,20 +279,21 @@ export function WeekCalendarView({
         {days.map((day, dayIdx) => {
           const dayIsToday = isSameDay(day, today)
           const dayTimedEvents = timedEvents.filter((e) => isSameDay(new Date(e.start), day))
+          const positioned = buildOverlapLayout(dayTimedEvents)
           return (
             <div key={dayIdx} className="relative border-r last:border-r-0">
               {Array.from({ length: hourCount }, (_, i) => (
                 <div key={i} className="border-b" style={{ height: hourHeight }} />
               ))}
               {dayIsToday && <TimeIndicator hourStart={hourStart} hourCount={hourCount} />}
-              {dayTimedEvents.map((evt) => (
+              {positioned.map(({ event, column, totalColumns }) => (
                 <EventChip
-                  key={evt.id}
-                  event={evt}
+                  key={event.id}
+                  event={event}
                   hourStart={hourStart}
                   hourCount={hourCount}
-                  column={0}
-                  totalColumns={1}
+                  column={column}
+                  totalColumns={totalColumns}
                   onEventClick={onEventClick}
                   renderEvent={renderEvent}
                 />
