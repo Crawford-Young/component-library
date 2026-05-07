@@ -151,6 +151,36 @@ function EventChip({
   )
 }
 
+interface AllDayRowProps {
+  readonly days: Date[]
+  readonly events: CalendarEvent[]
+  readonly gridTemplateColumns: string
+}
+
+function AllDayRow({ days, events, gridTemplateColumns }: AllDayRowProps): React.ReactElement {
+  return (
+    <div className="grid border-b" style={{ gridTemplateColumns }}>
+      <div className="border-r px-1 py-1 text-[10px] text-muted-foreground">All day</div>
+      {days.map((day, i) => {
+        const dayEvents = events.filter((e) => isSameDay(new Date(e.start), day))
+        return (
+          <div key={i} className="border-r px-0.5 py-0.5 last:border-r-0">
+            {dayEvents.map((evt) => (
+              <div
+                key={evt.id}
+                className={cn('mb-0.5 truncate', eventColorVariants({ color: evt.color }))}
+                aria-label={evt.title}
+              >
+                {evt.title}
+              </div>
+            ))}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function getWeekDays(weekStart: string): Date[] {
@@ -188,6 +218,10 @@ export function WeekCalendarView({
 }: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
   const today = React.useMemo(() => new Date(), [])
+  const allDayEvents = React.useMemo(() => events.filter((e) => e.allDay), [events])
+  const timedEvents = React.useMemo(() => events.filter((e) => !e.allDay), [events])
+
+  const gridTemplateColumns = `3rem repeat(7, 1fr)`
 
   return (
     <div
@@ -196,7 +230,7 @@ export function WeekCalendarView({
       aria-label="Week calendar"
     >
       {/* Day headers */}
-      <div className="grid border-b" style={{ gridTemplateColumns: `3rem repeat(7, 1fr)` }}>
+      <div className="grid border-b" style={{ gridTemplateColumns }}>
         <div className="border-r" aria-hidden />
         {days.map((day, i) => {
           const dayIsToday = isSameDay(day, today)
@@ -219,8 +253,13 @@ export function WeekCalendarView({
         })}
       </div>
 
+      {/* All-day row */}
+      {allDayEvents.length > 0 && (
+        <AllDayRow days={days} events={allDayEvents} gridTemplateColumns={gridTemplateColumns} />
+      )}
+
       {/* Hour grid */}
-      <div className="relative grid" style={{ gridTemplateColumns: '3rem repeat(7, 1fr)' }}>
+      <div className="relative grid" style={{ gridTemplateColumns }}>
         {/* Time labels */}
         <div className="flex flex-col">
           {Array.from({ length: hourCount }, (_, i) => (
@@ -238,14 +277,14 @@ export function WeekCalendarView({
         {/* Day columns */}
         {days.map((day, dayIdx) => {
           const dayIsToday = isSameDay(day, today)
-          const dayEvents = events.filter((e) => isSameDay(new Date(e.start), day))
+          const dayTimedEvents = timedEvents.filter((e) => isSameDay(new Date(e.start), day))
           return (
             <div key={dayIdx} className="relative border-r last:border-r-0">
               {Array.from({ length: hourCount }, (_, i) => (
                 <div key={i} className="border-b" style={{ height: hourHeight }} />
               ))}
               {dayIsToday && <TimeIndicator hourStart={hourStart} hourCount={hourCount} />}
-              {dayEvents.map((evt) => (
+              {dayTimedEvents.map((evt) => (
                 <EventChip
                   key={evt.id}
                   event={evt}
