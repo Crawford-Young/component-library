@@ -48,6 +48,80 @@ const eventColorVariants = cva('overflow-hidden rounded px-1 text-[10px] font-me
   defaultVariants: { color: 'default' },
 })
 
+interface EventChipProps {
+  readonly event: CalendarEvent
+  readonly hourStart: number
+  readonly hourCount: number
+  readonly column: number
+  readonly totalColumns: number
+  readonly onEventClick?: (event: CalendarEvent) => void
+  readonly renderEvent?: (event: CalendarEvent) => React.ReactNode
+}
+
+function EventChip({
+  event,
+  hourStart,
+  hourCount,
+  column,
+  totalColumns,
+  onEventClick,
+  renderEvent,
+}: EventChipProps): React.ReactElement {
+  const start = new Date(event.start)
+  const end = new Date(event.end)
+  const top = ((start.getHours() - hourStart + start.getMinutes() / 60) / hourCount) * 100
+  const height = Math.max(
+    ((end.getTime() - start.getTime()) / (hourCount * 3_600_000)) * 100,
+    (0.5 / hourCount) * 100,
+  )
+  const left = (column / totalColumns) * 100
+  const width = (1 / totalColumns) * 100
+
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    top: `${top}%`,
+    height: `${height}%`,
+    left: `calc(${left}% + 1px)`,
+    width: `calc(${width}% - 2px)`,
+  }
+
+  if (renderEvent) {
+    return (
+      <div style={style} aria-label={event.title}>
+        {renderEvent(event)}
+      </div>
+    )
+  }
+
+  if (onEventClick) {
+    return (
+      <div
+        className={cn(eventColorVariants({ color: event.color }))}
+        style={style}
+        aria-label={event.title}
+        role="button"
+        tabIndex={0}
+        onClick={() => onEventClick(event)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') onEventClick(event)
+        }}
+      >
+        {event.title}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(eventColorVariants({ color: event.color }))}
+      style={style}
+      aria-label={event.title}
+    >
+      {event.title}
+    </div>
+  )
+}
+
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function getWeekDays(weekStart: string): Date[] {
@@ -78,8 +152,8 @@ export function WeekCalendarView({
   hourStart = 8,
   hourCount = 14,
   hourHeight = 56,
-  onEventClick: _onEventClick,
-  renderEvent: _renderEvent,
+  onEventClick,
+  renderEvent,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const days = React.useMemo(() => getWeekDays(weekStart), [weekStart])
@@ -129,29 +203,18 @@ export function WeekCalendarView({
               {Array.from({ length: hourCount }, (_, i) => (
                 <div key={i} className="border-b" style={{ height: hourHeight }} />
               ))}
-              {dayEvents.map((evt) => {
-                const start = new Date(evt.start)
-                const end = new Date(evt.end)
-                const top =
-                  ((start.getHours() - hourStart + start.getMinutes() / 60) / hourCount) * 100
-                const height = Math.max(
-                  ((end.getTime() - start.getTime()) / (hourCount * 3_600_000)) * 100,
-                  2,
-                )
-                return (
-                  <div
-                    key={evt.id}
-                    className={cn(
-                      'absolute inset-x-0 mx-0.5',
-                      eventColorVariants({ color: evt.color }),
-                    )}
-                    style={{ top: `${top}%`, height: `${height}%` }}
-                    aria-label={evt.title}
-                  >
-                    {evt.title}
-                  </div>
-                )
-              })}
+              {dayEvents.map((evt) => (
+                <EventChip
+                  key={evt.id}
+                  event={evt}
+                  hourStart={hourStart}
+                  hourCount={hourCount}
+                  column={0}
+                  totalColumns={1}
+                  onEventClick={onEventClick}
+                  renderEvent={renderEvent}
+                />
+              ))}
             </div>
           )
         })}
