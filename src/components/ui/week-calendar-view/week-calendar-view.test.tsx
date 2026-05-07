@@ -140,6 +140,39 @@ describe('today highlight', () => {
   })
 })
 
+describe('all-day row', () => {
+  const allDayEvent: CalendarEvent = {
+    id: 'ad1',
+    title: 'Conference Day',
+    start: '2026-05-04T00:00:00',
+    end: '2026-05-04T23:59:59',
+    allDay: true,
+  }
+
+  it('renders all-day row label when allDay events present', () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[allDayEvent]} />)
+    expect(screen.getByText('All day')).toBeInTheDocument()
+  })
+
+  it('renders all-day event chip in the all-day row', () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[allDayEvent]} />)
+    expect(screen.getByLabelText('Conference Day')).toBeInTheDocument()
+  })
+
+  it('does not render all-day row when no allDay events', () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[]} />)
+    expect(screen.queryByText('All day')).not.toBeInTheDocument()
+  })
+
+  it('does not render allDay events in the time grid', () => {
+    render(<WeekCalendarView weekStart={WEEK_START} events={[allDayEvent]} />)
+    const chip = screen.getByLabelText('Conference Day')
+    // The all-day chip is NOT absolutely positioned (no top/height style)
+    expect(chip.style.top).toBe('')
+    expect(chip.style.height).toBe('')
+  })
+})
+
 describe('time indicator', () => {
   it('renders time indicator in today column when time is within visible hours', () => {
     vi.useFakeTimers()
