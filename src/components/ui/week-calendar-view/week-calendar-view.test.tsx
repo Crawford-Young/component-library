@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from './week-calendar-view'
@@ -249,5 +249,23 @@ describe('overlap layout', () => {
     // With 2-column overlap, each chip left should be different
     expect(chipA.style.left).toContain('0%')
     expect(chipB.style.left).toContain('50%')
+  })
+})
+
+describe('event keyboard accessibility', () => {
+  it('calls onEventClick when Enter key is pressed on event', () => {
+    const handler = vi.fn()
+    render(<WeekCalendarView weekStart={WEEK_START} events={[events[0]]} onEventClick={handler} />)
+    const eventChip = screen.getByRole('button', { name: 'Team standup' })
+    fireEvent.keyDown(eventChip, { key: 'Enter' })
+    expect(handler).toHaveBeenCalledWith(events[0])
+  })
+
+  it('calls onEventClick when Space key is pressed on event', () => {
+    const handler = vi.fn()
+    render(<WeekCalendarView weekStart={WEEK_START} events={[events[0]]} onEventClick={handler} />)
+    const eventChip = screen.getByRole('button', { name: 'Team standup' })
+    fireEvent.keyDown(eventChip, { key: ' ' })
+    expect(handler).toHaveBeenCalledWith(events[0])
   })
 })
