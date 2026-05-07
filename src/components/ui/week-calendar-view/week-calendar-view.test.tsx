@@ -16,7 +16,7 @@ const events = [
     title: 'Design review',
     start: '2026-05-06T14:00:00',
     end: '2026-05-06T15:00:00',
-    color: 'bg-blue-600 text-white',
+    color: 'blue' as const,
   },
 ]
 
@@ -56,7 +56,7 @@ describe('WeekCalendarView', () => {
     expect(chip.className).toContain('bg-accent')
   })
 
-  it('applies custom color class when color prop provided', () => {
+  it('applies named color class when color prop provided', () => {
     render(<WeekCalendarView weekStart={WEEK_START} events={[events[1]]} />)
     const chip = screen.getByLabelText('Design review')
     expect(chip.className).toContain('bg-blue-600')
