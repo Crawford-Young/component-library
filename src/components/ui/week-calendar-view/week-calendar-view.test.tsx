@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+import type { CalendarEvent } from './week-calendar-view'
 import { WeekCalendarView } from './week-calendar-view'
 
 const WEEK_START = '2026-05-04' // Monday
@@ -95,5 +97,24 @@ describe('WeekCalendarView', () => {
       (el) => (el as HTMLElement).style.height === '80px',
     )
     expect(rowsWithStyle.length).toBeGreaterThan(0)
+  })
+
+  it('calls onEventClick with the event when chip clicked', async () => {
+    const handler = vi.fn()
+    render(<WeekCalendarView weekStart={WEEK_START} events={[events[0]]} onEventClick={handler} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Team standup' }))
+    expect(handler).toHaveBeenCalledOnce()
+    expect(handler).toHaveBeenCalledWith(events[0])
+  })
+
+  it('renders custom renderEvent output instead of default chip', () => {
+    const renderEvent = (e: CalendarEvent) => (
+      <span data-testid="custom-chip">{e.title}-custom</span>
+    )
+    render(
+      <WeekCalendarView weekStart={WEEK_START} events={[events[0]]} renderEvent={renderEvent} />,
+    )
+    expect(screen.getByTestId('custom-chip')).toBeInTheDocument()
+    expect(screen.getByTestId('custom-chip').textContent).toBe('Team standup-custom')
   })
 })
