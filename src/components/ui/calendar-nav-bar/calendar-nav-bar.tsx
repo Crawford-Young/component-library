@@ -23,6 +23,8 @@ const MONTHS = [
   'December',
 ]
 
+const CURRENT_YEAR = new Date().getFullYear()
+
 function clampDay(day: number, year: number, month: number): number {
   return Math.min(day, new Date(year, month + 1, 0).getDate())
 }
@@ -36,8 +38,7 @@ export function CalendarNavBar({
   const month = currentDate.getMonth()
   const day = currentDate.getDate()
 
-  const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i)
+  const years = Array.from({ length: 21 }, (_, i) => CURRENT_YEAR - 10 + i)
 
   function handlePrev(): void {
     const d = new Date(currentDate)
