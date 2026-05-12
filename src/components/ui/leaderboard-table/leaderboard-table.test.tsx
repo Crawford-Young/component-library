@@ -35,4 +35,20 @@ describe('LeaderboardTable', () => {
     render(<LeaderboardTable rows={[]} />)
     expect(screen.getByText(/no entries/i)).toBeInTheDocument()
   })
+
+  it('renders avatar image when avatarUrl is provided', () => {
+    const { container } = render(
+      <LeaderboardTable
+        rows={[
+          {
+            rank: 1,
+            name: 'Crawford Young',
+            avatarUrl: 'https://example.com/avatar.jpg',
+            points: 520,
+          },
+        ]}
+      />,
+    )
+    expect(container.querySelector('img')).toBeInTheDocument()
+  })
 })

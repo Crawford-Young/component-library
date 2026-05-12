@@ -52,6 +52,19 @@ const stories = [
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
+  { name: 'AppShell', id: 'layout-appshell--default' },
+  { name: 'Sidebar', id: 'layout-sidebar--default' },
+  { name: 'TopBar', id: 'layout-topbar--default' },
+  { name: 'ChatPanel', id: 'overlays-chatpanel--with-fab' },
+  { name: 'HeroCard', id: 'display-herocard--plan-your-week' },
+  { name: 'StatChip', id: 'display-herocard--with-stat-chips' },
+  { name: 'PageHeader', id: 'layout-pageutilities--header' },
+  { name: 'FilterChip', id: 'layout-pageutilities--filters' },
+  { name: 'EmptyState', id: 'layout-pageutilities--empty' },
+  { name: 'XpBar', id: 'gamification-xpbar--seedling' },
+  { name: 'PointBadge', id: 'gamification-xpbar--points' },
+  { name: 'LeaderboardTable', id: 'gamification-leaderboard--table' },
+  { name: 'ScoreHistory', id: 'gamification-leaderboard--history' },
 ]
 
 for (const { name, id } of stories) {
