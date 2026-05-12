@@ -42,4 +42,17 @@ describe('ChatPanel', () => {
     )
     expect(screen.getByText('Schedule Advisor')).toBeInTheDocument()
   })
+
+  it('calls onOpenChange(false) when backdrop clicked', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    render(
+      <ChatPanel open onOpenChange={onOpenChange} title="AI Assistant">
+        <p>content</p>
+      </ChatPanel>,
+    )
+    const backdrop = document.querySelector('[aria-hidden="true"]') as HTMLElement
+    await user.click(backdrop)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
 })
