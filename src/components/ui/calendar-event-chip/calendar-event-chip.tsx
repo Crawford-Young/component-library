@@ -93,7 +93,7 @@ export function CalendarEventChip({
         <button
           type="button"
           className={cn(
-            'cursor-pointer text-left',
+            'cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             eventColorVariants({ color: event.color }),
             className,
           )}
