@@ -49,6 +49,8 @@ const stories = [
   { name: 'BentoGrid', id: 'layout-bentogrid--default' },
   { name: 'Timeline', id: 'display-timeline--default' },
   { name: 'WeekCalendarView', id: 'data-weekcalendarview--default' },
+  { name: 'CalendarEventChip', id: 'data-calendareventchip--default' },
+  { name: 'CalendarNavBar', id: 'data-calendarnavbar--default' },
 ]
 
 for (const { name, id } of stories) {
