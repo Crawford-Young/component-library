@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { WeekCalendarView } from '@/components/ui/week-calendar-view'
-import type { CalendarEvent } from '@/components/ui/week-calendar-view'
+import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 
 const meta: Meta<typeof WeekCalendarView> = {
   title: 'Data/WeekCalendarView',
@@ -13,7 +13,7 @@ type Story = StoryObj<typeof WeekCalendarView>
 
 export const Default: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     events: [
       { id: '1', title: 'Team standup', start: '2026-05-04T09:00:00', end: '2026-05-04T09:30:00' },
       {
@@ -43,7 +43,7 @@ export const Default: Story = {
 
 export const CustomHours: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     hourStart: 6,
     hourCount: 12,
     events: [
@@ -54,7 +54,7 @@ export const CustomHours: Story = {
 
 export const WithOverlap: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     events: [
       {
         id: '1',
@@ -83,7 +83,7 @@ export const WithOverlap: Story = {
 
 export const WithAllDay: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     events: [
       {
         id: 'ad1',
@@ -108,7 +108,7 @@ export const WithAllDay: Story = {
 
 export const WithCustomHeight: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     hourHeight: 80,
     events: [
       {
@@ -137,7 +137,7 @@ export const WithRenderEvent: Story = {
     />
   ),
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     events: [
       {
         id: '1',
@@ -159,7 +159,7 @@ export const WithRenderEvent: Story = {
 
 export const WithClickHandler: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     events: [
       {
         id: '1',
@@ -183,7 +183,7 @@ export const WithClickHandler: Story = {
 // Click any day header to expand it; click again to collapse
 export const ExpandedDay: Story = {
   args: {
-    weekStart: '2026-05-04',
+    defaultWeekStart: '2026-05-04',
     events: [
       {
         id: '1',
