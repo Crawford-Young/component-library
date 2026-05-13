@@ -52,6 +52,8 @@ const stories = [
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
+  { name: 'CalendarEventChip', id: 'data-calendareventchip--default' },
+  { name: 'CalendarNavBar', id: 'data-calendarnavbar--default' },
 ]
 
 for (const { name, id } of stories) {
