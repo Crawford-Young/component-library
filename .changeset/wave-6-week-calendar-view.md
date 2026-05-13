@@ -2,6 +2,4 @@
 '@crawfordyoung/ui': minor
 ---
 
-feat(week-calendar-view): overlap layout, all-day row, time indicator, today highlight, day expand, named color variants, hourHeight/onEventClick/renderEvent props
-
-**Breaking:** `CalendarEvent.color` changed from raw Tailwind class string to `CalendarEventColor` named token (`'blue' | 'violet' | 'green' | 'red' | 'amber' | 'pink' | 'cyan' | 'default'`).
+Add CalendarEventChip with Radix Popover (title, time range, description, edit/delete actions, custom renderPopover slot) and CalendarNavBar with week-navigation arrows and day/month/year dropdowns. WeekCalendarView now manages week state internally (defaultWeekStart replaces required weekStart) and renders both new components.
