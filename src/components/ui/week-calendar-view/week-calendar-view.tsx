@@ -6,7 +6,7 @@ import {
   eventColorVariants,
   type CalendarEvent,
 } from '@/components/ui/calendar-event-chip'
-import { CalendarNavBar } from '@/components/ui/calendar-nav-bar'
+import { CalendarNavBar, type CalendarNavSource } from '@/components/ui/calendar-nav-bar'
 
 export type { CalendarEvent, CalendarEventColor } from '@/components/ui/calendar-event-chip'
 
@@ -20,7 +20,6 @@ export interface WeekCalendarViewProps {
   readonly onEventEdit?: (event: CalendarEvent) => void
   readonly onEventDelete?: (event: CalendarEvent) => void
   readonly renderEventPopover?: (event: CalendarEvent) => React.ReactNode
-  readonly renderEvent?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
 
@@ -149,15 +148,20 @@ export function WeekCalendarView({
   onEventEdit,
   onEventDelete,
   renderEventPopover,
-  renderEvent,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const [currentWeek, setCurrentWeek] = React.useState<string>(
     () => defaultWeekStart ?? getMondayISO(new Date()),
   )
 
-  function handleDateChange(date: Date): void {
+  function handleDateChange(date: Date, source?: CalendarNavSource): void {
     setCurrentWeek(getMondayISO(date))
+    if (source === 'select') {
+      const dow = date.getDay()
+      setExpandedDayIndex(dow === 0 ? 6 : dow - 1)
+    } else {
+      setExpandedDayIndex(null)
+    }
   }
 
   const days = React.useMemo(() => getWeekDays(currentWeek), [currentWeek])
@@ -258,18 +262,12 @@ export function WeekCalendarView({
               {dayIsToday && <TimeIndicator hourStart={hourStart} hourCount={hourCount} />}
               {positioned.map(({ event: evt, column, totalColumns }) => {
                 const evtStyle = getEventStyle(column, totalColumns, hourStart, hourCount, evt)
-                if (renderEvent) {
-                  return (
-                    <div key={evt.id} style={evtStyle} aria-label={evt.title}>
-                      {renderEvent(evt)}
-                    </div>
-                  )
-                }
                 return (
                   <CalendarEventChip
                     key={evt.id}
                     event={evt}
                     style={evtStyle}
+                    expanded={dayIdx === expandedDayIndex}
                     onClick={onEventClick}
                     onEdit={onEventEdit}
                     onDelete={onEventDelete}

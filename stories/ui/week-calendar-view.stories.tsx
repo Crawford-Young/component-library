@@ -15,13 +15,21 @@ export const Default: Story = {
   args: {
     defaultWeekStart: '2026-05-04',
     events: [
-      { id: '1', title: 'Team standup', start: '2026-05-04T09:00:00', end: '2026-05-04T09:30:00' },
+      {
+        id: '1',
+        title: 'Team standup',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T09:30:00',
+        location: 'Google Meet',
+      },
       {
         id: '2',
         title: 'Design review',
         start: '2026-05-05T14:00:00',
         end: '2026-05-05T15:30:00',
         color: 'blue',
+        location: 'Figma',
+        description: 'Review new component specs and token updates',
       },
       {
         id: '3',
@@ -29,6 +37,8 @@ export const Default: Story = {
         start: '2026-05-06T10:00:00',
         end: '2026-05-06T11:00:00',
         color: 'violet',
+        location: 'Conference Room B',
+        description: 'Plan sprint 14 tickets',
       },
       {
         id: '4',
@@ -36,6 +46,7 @@ export const Default: Story = {
         start: '2026-05-07T12:00:00',
         end: '2026-05-07T13:00:00',
         color: 'green',
+        location: 'The Canteen',
       },
     ],
   },
@@ -47,7 +58,13 @@ export const CustomHours: Story = {
     hourStart: 6,
     hourCount: 12,
     events: [
-      { id: '1', title: 'Early meeting', start: '2026-05-04T06:30:00', end: '2026-05-04T07:00:00' },
+      {
+        id: '1',
+        title: 'Early meeting',
+        start: '2026-05-04T06:30:00',
+        end: '2026-05-04T07:00:00',
+        location: 'Zoom',
+      },
     ],
   },
 }
@@ -62,6 +79,7 @@ export const WithOverlap: Story = {
         start: '2026-05-04T09:00:00',
         end: '2026-05-04T09:30:00',
         color: 'blue',
+        location: 'Google Meet',
       },
       {
         id: '2',
@@ -69,6 +87,7 @@ export const WithOverlap: Story = {
         start: '2026-05-04T09:00:00',
         end: '2026-05-04T10:00:00',
         color: 'violet',
+        location: 'Figma',
       },
       {
         id: '3',
@@ -117,41 +136,8 @@ export const WithCustomHeight: Story = {
         start: '2026-05-04T09:00:00',
         end: '2026-05-04T10:00:00',
         color: 'blue',
-      },
-    ],
-  },
-}
-
-export const WithRenderEvent: Story = {
-  render: (args) => (
-    <WeekCalendarView
-      {...args}
-      renderEvent={(event) => (
-        <div className="flex h-full flex-col justify-between p-1">
-          <span className="truncate font-semibold text-white">{event.title}</span>
-          <span className="text-[9px] text-white/70">
-            {new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-      )}
-    />
-  ),
-  args: {
-    defaultWeekStart: '2026-05-04',
-    events: [
-      {
-        id: '1',
-        title: 'Team standup',
-        start: '2026-05-04T09:00:00',
-        end: '2026-05-04T09:30:00',
-        color: 'blue',
-      },
-      {
-        id: '2',
-        title: 'Design review',
-        start: '2026-05-05T14:00:00',
-        end: '2026-05-05T15:00:00',
-        color: 'violet',
+        location: 'Building A',
+        description: 'Weekly team sync',
       },
     ],
   },
@@ -167,6 +153,8 @@ export const WithClickHandler: Story = {
         start: '2026-05-04T09:00:00',
         end: '2026-05-04T10:00:00',
         color: 'cyan',
+        location: 'Zoom',
+        description: 'Click me to see the popover',
       },
       {
         id: '2',
@@ -191,6 +179,7 @@ export const ExpandedDay: Story = {
         start: '2026-05-04T09:00:00',
         end: '2026-05-04T09:30:00',
         color: 'blue',
+        location: 'Google Meet',
       },
       {
         id: '2',
@@ -198,6 +187,7 @@ export const ExpandedDay: Story = {
         start: '2026-05-04T12:00:00',
         end: '2026-05-04T13:00:00',
         color: 'green',
+        location: 'The Canteen',
       },
       {
         id: '3',
@@ -205,6 +195,60 @@ export const ExpandedDay: Story = {
         start: '2026-05-05T14:00:00',
         end: '2026-05-05T15:00:00',
         color: 'violet',
+        location: 'Figma',
+        description: 'Q2 component audit',
+      },
+    ],
+  },
+}
+
+export const GoogleCalendarEvents: Story = {
+  args: {
+    defaultWeekStart: '2026-05-04',
+    hourHeight: 72,
+    events: [
+      {
+        id: '1',
+        title: 'Team standup',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T09:30:00',
+        color: 'blue',
+        location: 'Google Meet · meet.google.com/abc-defg-hij',
+      },
+      {
+        id: '2',
+        title: 'Product roadmap review',
+        start: '2026-05-05T10:00:00',
+        end: '2026-05-05T11:30:00',
+        color: 'violet',
+        location: 'Conference Room A',
+        description: 'Review Q3 product priorities and resource allocation',
+      },
+      {
+        id: '3',
+        title: 'Lunch with investors',
+        start: '2026-05-06T12:00:00',
+        end: '2026-05-06T13:30:00',
+        color: 'amber',
+        location: 'Nobu, 105 Hudson St, New York',
+        description: 'Quarterly check-in with Series A investors',
+      },
+      {
+        id: '4',
+        title: 'Sprint retrospective',
+        start: '2026-05-07T15:00:00',
+        end: '2026-05-07T16:00:00',
+        color: 'green',
+        location: 'Zoom',
+        description: 'Sprint 13 retrospective — what went well, what to improve',
+      },
+      {
+        id: '5',
+        title: 'Weekly 1:1',
+        start: '2026-05-08T11:00:00',
+        end: '2026-05-08T11:30:00',
+        color: 'pink',
+        location: "Manager's office",
       },
     ],
   },

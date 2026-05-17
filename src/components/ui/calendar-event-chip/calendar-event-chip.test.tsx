@@ -56,6 +56,33 @@ describe('CalendarEventChip', () => {
     expect(screen.queryByText('Daily sync')).not.toBeInTheDocument()
   })
 
+  it('location rendered in popover when present', async () => {
+    const withLoc = { ...event, location: 'Zoom' }
+    render(<CalendarEventChip event={withLoc} style={style} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByText('Zoom')).toBeInTheDocument()
+  })
+
+  it('location omitted from popover when absent', async () => {
+    render(<CalendarEventChip event={event} style={style} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.queryByText('Zoom')).not.toBeInTheDocument()
+  })
+
+  it('shows location on chip when height > 10% and location present', () => {
+    const tallStyle = { ...style, height: '12%' }
+    const withLoc = { ...event, location: 'Building A' }
+    render(<CalendarEventChip event={withLoc} style={tallStyle} />)
+    expect(screen.getByText('Building A')).toBeInTheDocument()
+  })
+
+  it('hides location on chip when height <= 10%', () => {
+    const medStyle = { ...style, height: '8%' }
+    const withLoc = { ...event, location: 'Building A' }
+    render(<CalendarEventChip event={withLoc} style={medStyle} />)
+    expect(screen.queryByText('Building A')).not.toBeInTheDocument()
+  })
+
   it('edit button rendered when onEdit provided', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
@@ -189,5 +216,40 @@ describe('CalendarEventChip', () => {
     const numericHeightStyle = { ...style, height: 5 }
     render(<CalendarEventChip event={event} style={numericHeightStyle as React.CSSProperties} />)
     expect(screen.queryByText('9:00')).not.toBeInTheDocument()
+  })
+
+  describe('expanded mode', () => {
+    it('shows full time range in chip when expanded', () => {
+      const shortStyle = { ...style, height: '2%' }
+      render(<CalendarEventChip event={event} style={shortStyle} expanded />)
+      const chip = screen.getByRole('button', { name: /team standup/i })
+      expect(chip).toHaveTextContent('9:00–9:30 AM')
+    })
+
+    it('does not show bare start time when expanded', () => {
+      render(<CalendarEventChip event={event} style={style} expanded />)
+      expect(screen.queryByText('9:00')).not.toBeInTheDocument()
+    })
+
+    it('shows location in chip when expanded and location present', () => {
+      const withLoc = { ...event, location: 'Zoom' }
+      render(<CalendarEventChip event={withLoc} style={style} expanded />)
+      const chip = screen.getByRole('button', { name: /team standup/i })
+      expect(chip).toHaveTextContent('Zoom')
+    })
+
+    it('shows description in chip when expanded and description present', () => {
+      const withDesc = { ...event, description: 'Daily sync' }
+      render(<CalendarEventChip event={withDesc} style={style} expanded />)
+      const chip = screen.getByRole('button', { name: /team standup/i })
+      expect(chip).toHaveTextContent('Daily sync')
+    })
+
+    it('does not show description in chip when not expanded', () => {
+      const withDesc = { ...event, description: 'Daily sync' }
+      render(<CalendarEventChip event={withDesc} style={style} />)
+      const chip = screen.getByRole('button', { name: /team standup/i })
+      expect(chip).not.toHaveTextContent('Daily sync')
+    })
   })
 })

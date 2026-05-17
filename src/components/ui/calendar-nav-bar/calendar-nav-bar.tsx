@@ -2,9 +2,11 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
+export type CalendarNavSource = 'prev' | 'next' | 'select'
+
 export interface CalendarNavBarProps {
   readonly currentDate: Date
-  readonly onDateChange: (date: Date) => void
+  readonly onDateChange: (date: Date, source?: CalendarNavSource) => void
   readonly className?: string
 }
 
@@ -43,31 +45,31 @@ export function CalendarNavBar({
   function handlePrev(): void {
     const d = new Date(currentDate)
     d.setDate(d.getDate() - 7)
-    onDateChange(d)
+    onDateChange(d, 'prev')
   }
 
   function handleNext(): void {
     const d = new Date(currentDate)
     d.setDate(d.getDate() + 7)
-    onDateChange(d)
+    onDateChange(d, 'next')
   }
 
   function handleDayChange(e: React.ChangeEvent<HTMLSelectElement>): void {
-    onDateChange(new Date(year, month, clampDay(Number(e.target.value), year, month)))
+    onDateChange(new Date(year, month, clampDay(Number(e.target.value), year, month)), 'select')
   }
 
   function handleMonthChange(e: React.ChangeEvent<HTMLSelectElement>): void {
     const newMonth = Number(e.target.value)
-    onDateChange(new Date(year, newMonth, clampDay(day, year, newMonth)))
+    onDateChange(new Date(year, newMonth, clampDay(day, year, newMonth)), 'select')
   }
 
   function handleYearChange(e: React.ChangeEvent<HTMLSelectElement>): void {
     const newYear = Number(e.target.value)
-    onDateChange(new Date(newYear, month, clampDay(day, newYear, month)))
+    onDateChange(new Date(newYear, month, clampDay(day, newYear, month)), 'select')
   }
 
   return (
-    <div className={cn('flex items-center gap-1 border-b p-2', className)}>
+    <div className={cn('flex items-center justify-between border-b px-2 py-1.5', className)}>
       <Button
         type="button"
         variant="ghost"
@@ -77,42 +79,44 @@ export function CalendarNavBar({
       >
         ←
       </Button>
-      <select
-        aria-label="Day"
-        value={day}
-        onChange={handleDayChange}
-        className="rounded border bg-background px-1 py-0.5 text-xs"
-      >
-        {Array.from({ length: 31 }, (_, i) => (
-          <option key={i + 1} value={i + 1}>
-            {i + 1}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="Month"
-        value={month}
-        onChange={handleMonthChange}
-        className="rounded border bg-background px-1 py-0.5 text-xs"
-      >
-        {MONTHS.map((m, i) => (
-          <option key={i} value={i}>
-            {m}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="Year"
-        value={year}
-        onChange={handleYearChange}
-        className="rounded border bg-background px-1 py-0.5 text-xs"
-      >
-        {years.map((y) => (
-          <option key={y} value={y}>
-            {y}
-          </option>
-        ))}
-      </select>
+      <div className="flex items-center gap-1">
+        <select
+          aria-label="Day"
+          value={day}
+          onChange={handleDayChange}
+          className="rounded border bg-background px-1 py-0.5 text-xs"
+        >
+          {Array.from({ length: 31 }, (_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {i + 1}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Month"
+          value={month}
+          onChange={handleMonthChange}
+          className="rounded border bg-background px-1 py-0.5 text-xs"
+        >
+          {MONTHS.map((m, i) => (
+            <option key={i} value={i}>
+              {m}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Year"
+          value={year}
+          onChange={handleYearChange}
+          className="rounded border bg-background px-1 py-0.5 text-xs"
+        >
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+      </div>
       <Button type="button" variant="ghost" size="sm" aria-label="Next week" onClick={handleNext}>
         →
       </Button>

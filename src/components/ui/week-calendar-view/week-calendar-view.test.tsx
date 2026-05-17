@@ -119,21 +119,6 @@ describe('WeekCalendarView', () => {
     expect(handler).toHaveBeenCalledOnce()
     expect(handler).toHaveBeenCalledWith(events[0])
   })
-
-  it('renders custom renderEvent output instead of default chip', () => {
-    const renderEvent = (e: CalendarEvent) => (
-      <span data-testid="custom-chip">{e.title}-custom</span>
-    )
-    render(
-      <WeekCalendarView
-        defaultWeekStart={WEEK_START}
-        events={[events[0]]}
-        renderEvent={renderEvent}
-      />,
-    )
-    expect(screen.getByTestId('custom-chip')).toBeInTheDocument()
-    expect(screen.getByTestId('custom-chip').textContent).toBe('Team standup-custom')
-  })
 })
 
 describe('today highlight', () => {
@@ -204,6 +189,35 @@ describe('nav bar', () => {
     // Change day select to 13 (Wed May 13) — getMondayISO(May 13) = May 11
     fireEvent.change(screen.getByLabelText('Day'), { target: { value: '13' } })
     expect(screen.getByRole('button', { name: /Mon 11/i })).toBeInTheDocument()
+  })
+
+  it('selecting a day via nav auto-expands that day column', () => {
+    render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
+    // Day 13 = Wed May 13 2026 (index 2 in Mon-first week)
+    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '13' } })
+    expect(screen.getByRole('button', { name: /Wed 13/i })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('selecting a Sunday via nav auto-expands the Sunday column (index 6)', () => {
+    render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
+    // Day 10 = Sun May 10 2026 (index 6 in Mon-first week)
+    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '10' } })
+    expect(screen.getByRole('button', { name: /Sun 10/i })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('clicking next week collapses any expanded day', async () => {
+    render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
+    await userEvent.click(screen.getByRole('button', { name: /Mon 4/i }))
+    expect(screen.getByRole('button', { name: /Mon 4/i })).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(screen.getByRole('button', { name: /Mon 11/i })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('clicking previous week collapses any expanded day', async () => {
+    render(<WeekCalendarView defaultWeekStart="2026-05-11" events={[]} />)
+    await userEvent.click(screen.getByRole('button', { name: /Mon 11/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    expect(screen.getByRole('button', { name: /Mon 4/i })).toHaveAttribute('aria-pressed', 'false')
   })
 })
 

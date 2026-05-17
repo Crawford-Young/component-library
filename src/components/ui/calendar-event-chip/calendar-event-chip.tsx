@@ -22,12 +22,13 @@ export interface CalendarEvent {
   readonly allDay?: boolean
   readonly color?: CalendarEventColor
   readonly description?: string
+  readonly location?: string
 }
 
 export const eventColorVariants = cva('overflow-hidden rounded px-1 text-[10px] font-medium', {
   variants: {
     color: {
-      default: 'bg-accent text-accent-foreground',
+      default: 'bg-accent text-white',
       blue: 'bg-blue-600 text-white',
       violet: 'bg-violet-600 text-white',
       green: 'bg-green-700 text-white',
@@ -43,6 +44,7 @@ export const eventColorVariants = cva('overflow-hidden rounded px-1 text-[10px] 
 export interface CalendarEventChipProps {
   readonly event: CalendarEvent
   readonly style: React.CSSProperties
+  readonly expanded?: boolean
   readonly onClick?: (event: CalendarEvent) => void
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
@@ -68,9 +70,69 @@ function formatTimeRange(start: string, end: string): string {
   return `${fmt(s)} ${sPeriod}–${fmt(e)} ${ePeriod}`
 }
 
+function ClockIcon(): React.JSX.Element {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="mt-0.5 h-3 w-3 shrink-0"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
+function MapPinIcon(): React.JSX.Element {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="mt-0.5 h-3 w-3 shrink-0"
+    >
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  )
+}
+
+function NoteIcon(): React.JSX.Element {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="mt-0.5 h-3 w-3 shrink-0"
+    >
+      <line x1="21" y1="10" x2="7" y2="10" />
+      <line x1="21" y1="6" x2="3" y2="6" />
+      <line x1="21" y1="14" x2="3" y2="14" />
+      <line x1="21" y1="18" x2="7" y2="18" />
+    </svg>
+  )
+}
+
 export function CalendarEventChip({
   event,
   style,
+  expanded = false,
   onClick,
   onEdit,
   onDelete,
@@ -80,7 +142,12 @@ export function CalendarEventChip({
   const [open, setOpen] = React.useState(false)
 
   const heightPct = typeof style.height === 'string' ? parseFloat(style.height) : NaN
-  const showStartTime = !isNaN(heightPct) && heightPct > 4
+  const showTimeRange = expanded
+  const showStartTime = !expanded && !isNaN(heightPct) && heightPct > 4
+  const showLocation =
+    (expanded && event.location !== undefined) ||
+    (!expanded && !isNaN(heightPct) && heightPct > 10 && event.location !== undefined)
+  const showDescription = expanded && event.description !== undefined
 
   const timeRange = formatTimeRange(event.start, event.end)
   const startDate = new Date(event.start)
@@ -104,22 +171,45 @@ export function CalendarEventChip({
             if (e.key === 'Enter' || e.key === ' ') onClick?.(event)
           }}
         >
-          <div className="truncate">{event.title}</div>
+          <div className="truncate font-semibold">{event.title}</div>
+          {showTimeRange && <div className="text-[9px] opacity-90">{timeRange}</div>}
           {showStartTime && (
             <div className="text-[9px] opacity-80">
               {displayHour}:{displayMin}
             </div>
           )}
+          {showLocation && <div className="truncate text-[9px] opacity-80">{event.location}</div>}
+          {showDescription && (
+            <div className="line-clamp-2 text-[9px] opacity-70">{event.description}</div>
+          )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64">
-        <p className="text-sm font-semibold">{event.title}</p>
-        <p className="text-xs text-muted-foreground">{timeRange}</p>
-        {event.description && <p className="text-xs text-muted-foreground">{event.description}</p>}
+      <PopoverContent className="w-72 p-0">
+        <div className="border-b border-border px-3 pb-2 pt-3">
+          <p className="text-sm font-semibold text-foreground">{event.title}</p>
+        </div>
+        <div className="space-y-2 px-3 py-2">
+          <div className="flex items-start gap-2 text-muted-foreground">
+            <ClockIcon />
+            <p className="text-xs">{timeRange}</p>
+          </div>
+          {event.location !== undefined && (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <MapPinIcon />
+              <p className="text-xs">{event.location}</p>
+            </div>
+          )}
+          {event.description !== undefined && (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <NoteIcon />
+              <p className="text-xs">{event.description}</p>
+            </div>
+          )}
+        </div>
         {renderPopover?.(event)}
-        {(onEdit ?? onDelete) && (
-          <div className="mt-2 flex gap-2">
-            {onEdit && (
+        {(onEdit !== undefined || onDelete !== undefined) && (
+          <div className="flex gap-2 border-t border-border px-3 py-2">
+            {onEdit !== undefined && (
               <Button
                 variant="outline"
                 size="sm"
@@ -131,7 +221,7 @@ export function CalendarEventChip({
                 Edit
               </Button>
             )}
-            {onDelete && (
+            {onDelete !== undefined && (
               <Button
                 variant="destructive"
                 size="sm"
