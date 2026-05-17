@@ -95,13 +95,92 @@ describe('CalendarEventChip', () => {
     expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument()
   })
 
-  it('onEdit called and popover closes when edit button clicked', async () => {
+  it('clicking edit button opens inline edit form', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+    expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
+  })
+
+  it('saving inline edit calls onEdit with updated event', async () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: /edit/i }))
-    expect(onEdit).toHaveBeenCalledWith(event)
-    expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
+    const titleInput = screen.getByRole('textbox', { name: /title/i })
+    await userEvent.clear(titleInput)
+    await userEvent.type(titleInput, 'Updated standup')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Updated standup' }))
+  })
+
+  it('canceling edit form returns to view mode', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument()
+  })
+
+  it('edit form has color swatch buttons for all 15 colors', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    const swatches = screen.getAllByRole('button', { name: /^color:/i })
+    expect(swatches).toHaveLength(15)
+  })
+
+  it('selecting a color swatch marks it as pressed', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    const blueBtn = screen.getByRole('button', { name: /color: blue/i })
+    await userEvent.click(blueBtn)
+    expect(blueBtn).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('closing popover resets edit state', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument()
+    expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
+  })
+
+  it('edit form allows changing location and description', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.type(screen.getByRole('textbox', { name: /location/i }), 'Zoom')
+    await userEvent.type(screen.getByRole('textbox', { name: /description/i }), 'Daily sync')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ location: 'Zoom', description: 'Daily sync' }),
+    )
+  })
+
+  it('edit form allows changing start and end time', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    const startInput = screen.getByLabelText(/^start$/i)
+    const endInput = screen.getByLabelText(/^end$/i)
+    await userEvent.clear(startInput)
+    await userEvent.type(startInput, '10:00')
+    await userEvent.clear(endInput)
+    await userEvent.type(endInput, '11:00')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ start: '2026-05-04T10:00:00', end: '2026-05-04T11:00:00' }),
+    )
   })
 
   it('delete button rendered when onDelete provided', async () => {
@@ -257,12 +336,13 @@ describe('CalendarEventChip', () => {
     const cases: Array<[CalendarEventColor, string]> = [
       ['indigo', 'bg-indigo-600'],
       ['teal', 'bg-teal-700'],
-      ['orange', 'bg-orange-600'],
+      ['orange', 'bg-orange-700'],
       ['rose', 'bg-rose-600'],
       ['sky', 'bg-sky-700'],
       ['fuchsia', 'bg-fuchsia-700'],
       ['lime', 'bg-lime-700'],
       ['amber', 'bg-amber-700'],
+      ['cyan', 'bg-cyan-700'],
     ]
     it.each(cases)('applies %s color class to chip', (color, expectedClass) => {
       const coloredEvent: CalendarEvent = { ...event, color }

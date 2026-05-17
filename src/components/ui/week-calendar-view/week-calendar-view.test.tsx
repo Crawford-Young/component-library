@@ -61,7 +61,7 @@ describe('WeekCalendarView', () => {
   it('applies default event color class when color prop omitted', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
     const chip = screen.getByRole('button', { name: /team standup/i })
-    expect(chip.className).toContain('bg-accent')
+    expect(chip.className).toContain('bg-emerald-700')
   })
 
   it('applies named color class when color prop provided', () => {
@@ -253,14 +253,14 @@ describe('internal state', () => {
 })
 
 describe('event forwarding', () => {
-  it('forwards onEventEdit — shows edit button in popover', async () => {
+  it('forwards onEventEdit — shows edit button in popover that opens inline form', async () => {
     const onEdit = vi.fn()
     render(
       <WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} onEventEdit={onEdit} />,
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: /edit/i }))
-    expect(onEdit).toHaveBeenCalledWith(events[0])
+    expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
   })
 
   it('forwards onEventDelete — shows delete button in popover', async () => {
