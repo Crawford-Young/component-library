@@ -110,3 +110,48 @@ export const GoogleCalendarStyle: Story = {
     onDelete: () => {},
   },
 }
+
+export const ColorPalette: Story = {
+  render: () => (
+    <div className="relative h-[600px] w-72 rounded border p-2">
+      {(
+        [
+          'default',
+          'blue',
+          'violet',
+          'indigo',
+          'teal',
+          'cyan',
+          'sky',
+          'green',
+          'lime',
+          'amber',
+          'orange',
+          'red',
+          'rose',
+          'pink',
+          'fuchsia',
+        ] as const
+      ).map((color) => (
+        <div key={color} className="relative mb-1 h-8 w-full rounded border">
+          <CalendarEventChip
+            event={{
+              id: color,
+              title: color,
+              start: '2026-05-04T09:00:00',
+              end: '2026-05-04T10:00:00',
+              color,
+            }}
+            style={{
+              position: 'absolute',
+              top: '0%',
+              height: '100%',
+              left: 'calc(0% + 1px)',
+              width: 'calc(100% - 2px)',
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+}
