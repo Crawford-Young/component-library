@@ -153,8 +153,12 @@ export function WeekCalendarView({
   const [currentWeek, setCurrentWeek] = React.useState<string>(
     () => defaultWeekStart ?? getMondayISO(new Date()),
   )
+  const [navDate, setNavDate] = React.useState<Date>(() =>
+    defaultWeekStart ? new Date(`${defaultWeekStart}T00:00:00`) : new Date(),
+  )
 
   function handleDateChange(date: Date, source?: CalendarNavSource): void {
+    setNavDate(date)
     setCurrentWeek(getMondayISO(date))
     if (source === 'select') {
       const dow = date.getDay()
@@ -197,10 +201,7 @@ export function WeekCalendarView({
       role="region"
       aria-label="Week calendar"
     >
-      <CalendarNavBar
-        currentDate={new Date(`${currentWeek}T00:00:00`)}
-        onDateChange={handleDateChange}
-      />
+      <CalendarNavBar currentDate={navDate} onDateChange={handleDateChange} />
 
       {/* Day headers */}
       <div className="grid border-b" style={{ gridTemplateColumns }}>

@@ -219,6 +219,13 @@ describe('nav bar', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Previous week' }))
     expect(screen.getByRole('button', { name: /Mon 4/i })).toHaveAttribute('aria-pressed', 'false')
   })
+
+  it('Day select retains selected day number after auto-expand', () => {
+    render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
+    // May 15 = Thursday, getMondayISO → May 11; Day select should still show 15
+    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '15' } })
+    expect(screen.getByLabelText('Day')).toHaveValue('15')
+  })
 })
 
 describe('internal state', () => {

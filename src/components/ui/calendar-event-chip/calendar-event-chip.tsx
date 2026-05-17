@@ -13,6 +13,13 @@ export type CalendarEventColor =
   | 'amber'
   | 'pink'
   | 'cyan'
+  | 'indigo'
+  | 'teal'
+  | 'orange'
+  | 'rose'
+  | 'sky'
+  | 'fuchsia'
+  | 'lime'
 
 export interface CalendarEvent {
   readonly id: string
@@ -33,9 +40,16 @@ export const eventColorVariants = cva('overflow-hidden rounded px-1 text-[10px] 
       violet: 'bg-violet-600 text-white',
       green: 'bg-green-700 text-white',
       red: 'bg-red-600 text-white',
-      amber: 'bg-amber-500 text-white',
+      amber: 'bg-amber-700 text-white',
       pink: 'bg-pink-600 text-white',
       cyan: 'bg-cyan-600 text-white',
+      indigo: 'bg-indigo-600 text-white',
+      teal: 'bg-teal-700 text-white',
+      orange: 'bg-orange-600 text-white',
+      rose: 'bg-rose-600 text-white',
+      sky: 'bg-sky-700 text-white',
+      fuchsia: 'bg-fuchsia-700 text-white',
+      lime: 'bg-lime-700 text-white',
     },
   },
   defaultVariants: { color: 'default' },

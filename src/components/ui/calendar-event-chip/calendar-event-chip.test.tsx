@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { CalendarEventChip } from './calendar-event-chip'
-import type { CalendarEvent } from './calendar-event-chip'
+import type { CalendarEvent, CalendarEventColor } from './calendar-event-chip'
 
 const event: CalendarEvent = {
   id: '1',
@@ -250,6 +250,26 @@ describe('CalendarEventChip', () => {
       render(<CalendarEventChip event={withDesc} style={style} />)
       const chip = screen.getByRole('button', { name: /team standup/i })
       expect(chip).not.toHaveTextContent('Daily sync')
+    })
+  })
+
+  describe('color variants', () => {
+    const cases: Array<[CalendarEventColor, string]> = [
+      ['indigo', 'bg-indigo-600'],
+      ['teal', 'bg-teal-700'],
+      ['orange', 'bg-orange-600'],
+      ['rose', 'bg-rose-600'],
+      ['sky', 'bg-sky-700'],
+      ['fuchsia', 'bg-fuchsia-700'],
+      ['lime', 'bg-lime-700'],
+      ['amber', 'bg-amber-700'],
+    ]
+    it.each(cases)('applies %s color class to chip', (color, expectedClass) => {
+      const coloredEvent: CalendarEvent = { ...event, color }
+      render(<CalendarEventChip event={coloredEvent} style={style} />)
+      expect(screen.getAllByRole('button', { name: /team standup/i })[0].className).toContain(
+        expectedClass,
+      )
     })
   })
 })
