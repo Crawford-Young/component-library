@@ -18,6 +18,14 @@ const chipStyle: React.CSSProperties = {
   width: 'calc(100% - 2px)',
 }
 
+const tallChipStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '5%',
+  height: '30%',
+  left: 'calc(0% + 1px)',
+  width: 'calc(100% - 2px)',
+}
+
 export const Default: Story = {
   render: (args) => (
     <div className="relative h-48 w-56 rounded border">
@@ -54,6 +62,50 @@ export const WithDescription: Story = {
       color: 'violet',
     },
     style: chipStyle,
+    onEdit: () => {},
+    onDelete: () => {},
+  },
+}
+
+export const WithLocation: Story = {
+  render: (args) => (
+    <div className="relative h-64 w-56 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '3',
+      title: 'Sprint planning',
+      start: '2026-05-04T10:00:00',
+      end: '2026-05-04T11:30:00',
+      color: 'green',
+      location: 'Conference Room B',
+      description: 'Plan sprint 14 tickets and capacity',
+    },
+    style: tallChipStyle,
+    onEdit: () => {},
+    onDelete: () => {},
+  },
+}
+
+export const GoogleCalendarStyle: Story = {
+  render: (args) => (
+    <div className="relative h-64 w-72 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '4',
+      title: 'Product roadmap review',
+      start: '2026-05-05T10:00:00',
+      end: '2026-05-05T11:30:00',
+      color: 'violet',
+      location: 'Google Meet · meet.google.com/abc-defg',
+      description: 'Review Q3 product priorities and resource allocation with leadership',
+    },
+    style: tallChipStyle,
     onEdit: () => {},
     onDelete: () => {},
   },

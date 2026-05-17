@@ -101,4 +101,39 @@ describe('CalendarNavBar', () => {
     )
     expect((container.firstChild as HTMLElement).className).toContain('custom-nav')
   })
+
+  it('← passes source "prev" to onDateChange', async () => {
+    const handler = vi.fn()
+    render(<CalendarNavBar currentDate={date} onDateChange={handler} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    expect(handler.mock.calls[0][1]).toBe('prev')
+  })
+
+  it('→ passes source "next" to onDateChange', async () => {
+    const handler = vi.fn()
+    render(<CalendarNavBar currentDate={date} onDateChange={handler} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(handler.mock.calls[0][1]).toBe('next')
+  })
+
+  it('day select passes source "select" to onDateChange', () => {
+    const handler = vi.fn()
+    render(<CalendarNavBar currentDate={date} onDateChange={handler} />)
+    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '20' } })
+    expect(handler.mock.calls[0][1]).toBe('select')
+  })
+
+  it('month select passes source "select" to onDateChange', () => {
+    const handler = vi.fn()
+    render(<CalendarNavBar currentDate={date} onDateChange={handler} />)
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '0' } })
+    expect(handler.mock.calls[0][1]).toBe('select')
+  })
+
+  it('year select passes source "select" to onDateChange', () => {
+    const handler = vi.fn()
+    render(<CalendarNavBar currentDate={date} onDateChange={handler} />)
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
+    expect(handler.mock.calls[0][1]).toBe('select')
+  })
 })
