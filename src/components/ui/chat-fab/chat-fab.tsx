@@ -13,8 +13,9 @@ export function ChatFab({ onClick, className }: ChatFabProps): React.JSX.Element
       aria-label="Open AI assistant"
       onClick={onClick}
       className={cn(
-        'fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full',
-        'bg-accent text-accent-foreground shadow-lg',
+        'fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full',
+        'bg-accent text-accent-foreground',
+        'shadow-xl shadow-accent/30',
         'transition-transform duration-150 hover:scale-105 active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         'motion-reduce:transition-none motion-reduce:hover:scale-100',

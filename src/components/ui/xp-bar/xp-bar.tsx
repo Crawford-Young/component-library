@@ -19,10 +19,10 @@ export function XpBar({ levelName, currentXp, maxXp, className }: XpBarProps): R
           {currentXp} / {maxXp} pts
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="h-3 w-full overflow-hidden rounded-full bg-muted shadow-inner">
         <div
           data-testid="xp-indicator"
-          className="h-full rounded-full bg-accent transition-all duration-500 ease-out motion-reduce:transition-none"
+          className="h-full rounded-full bg-accent shadow-sm transition-all duration-500 ease-out motion-reduce:transition-none"
           style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={currentXp}

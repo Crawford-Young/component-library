@@ -10,12 +10,12 @@ describe('SidebarItem', () => {
 
   it('applies active styles when isActive=true', () => {
     render(<SidebarItem icon={<span />} label="Goals" href="/goals" isActive />)
-    expect(screen.getByRole('link').className).toContain('border-accent')
+    expect(screen.getByRole('link').className).toContain('bg-accent')
   })
 
   it('does not apply active styles when isActive=false', () => {
     render(<SidebarItem icon={<span />} label="Goals" href="/goals" isActive={false} />)
-    expect(screen.getByRole('link').className).not.toContain('border-accent')
+    expect(screen.getByRole('link').className).not.toContain('bg-accent text-accent-foreground')
   })
 
   it('merges custom className', () => {

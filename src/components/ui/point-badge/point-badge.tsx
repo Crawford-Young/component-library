@@ -10,8 +10,9 @@ export function PointBadge({ points, className }: PointBadgeProps): React.JSX.El
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full bg-accent-subtle px-2 py-0.5',
-        'text-xs font-semibold text-accent-subtle-foreground',
+        'inline-flex items-center rounded-full px-2.5 py-1',
+        'bg-amber-500/15 ring-1 ring-amber-500/30',
+        'text-xs font-bold text-amber-600 dark:text-amber-400',
         className,
       )}
     >
