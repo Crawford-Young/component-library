@@ -53,7 +53,7 @@ export function LeaderboardTable({ rows, className }: LeaderboardTableProps): Re
                     : row.rank === 2
                       ? 'text-slate-400'
                       : row.rank === 3
-                        ? 'text-amber-700'
+                        ? 'text-amber-600'
                         : 'text-muted-foreground',
                 )}
               >
