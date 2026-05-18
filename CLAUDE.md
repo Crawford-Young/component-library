@@ -14,16 +14,18 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 
 ## Wave status
 
-| Wave | Components                                                                         | Status         |
-| ---- | ---------------------------------------------------------------------------------- | -------------- |
-| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea  | Merged to main |
-| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip    | Merged to main |
-| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible        | Merged to main |
-| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider     | Merged to main |
-| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker               | Merged to main |
-| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors | Merged to main |
-| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView              | Merged to main |
-| 5b   | Kbd, HoverCard, NumberInput                                                        | In PR #38      |
+| Wave | Components                                                                                                                                                            | Status         |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                                                                     | Merged to main |
+| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                                                                       | Merged to main |
+| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                                                                           | Merged to main |
+| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                                                                        | Merged to main |
+| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                                                                                  | Merged to main |
+| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                                                                    | Merged to main |
+| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                                                                                 | Merged to main |
+| 5b   | Kbd, HoverCard, NumberInput                                                                                                                                           | Merged to main |
+| 6a   | WeekCalendarView enhancements (nav date fix, 15 colors, inline event edit)                                                                                            | Merged to main |
+| 6b   | AppShell, Sidebar, SidebarItem, TopBar, ChatPanel, ChatFab, HeroCard, StatChip, PageHeader, FilterChip, EmptyState, XpBar, PointBadge, LeaderboardTable, ScoreHistory | In progress    |
 
 Update this table whenever a wave PR is merged.
 
