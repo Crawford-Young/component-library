@@ -5,6 +5,8 @@ import { LeaderboardTable } from './leaderboard-table'
 const rows = [
   { rank: 1, name: 'Crawford Young', avatarUrl: undefined, points: 520 },
   { rank: 2, name: 'Alex Smith', avatarUrl: undefined, points: 310 },
+  { rank: 3, name: 'Jordan Lee', avatarUrl: undefined, points: 180 },
+  { rank: 4, name: 'Sam Taylor', avatarUrl: undefined, points: 90 },
 ]
 
 describe('LeaderboardTable', () => {
@@ -22,13 +24,13 @@ describe('LeaderboardTable', () => {
 
   it('renders point values', () => {
     render(<LeaderboardTable rows={rows} />)
-    expect(screen.getByText('520 pts')).toBeInTheDocument()
+    expect(screen.getByText('520')).toBeInTheDocument()
   })
 
-  it('applies accent to first row', () => {
+  it('applies gold styling to first row', () => {
     render(<LeaderboardTable rows={rows} />)
     const firstRow = screen.getByText('#1').closest('tr')
-    expect(firstRow?.className).toContain('bg-accent-subtle')
+    expect(firstRow?.className).toContain('bg-amber-500/5')
   })
 
   it('renders empty state when rows is empty', () => {

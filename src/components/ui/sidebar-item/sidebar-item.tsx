@@ -20,10 +20,10 @@ export function SidebarItem({
     <a
       href={href}
       className={cn(
-        'flex items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors',
+        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
         isActive
-          ? 'border-l-2 border-accent bg-accent-subtle text-accent-subtle-foreground'
-          : 'text-muted-foreground hover:bg-item-hover hover:text-foreground',
+          ? 'bg-accent text-accent-foreground'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         className,
       )}
       aria-current={isActive ? 'page' : undefined}

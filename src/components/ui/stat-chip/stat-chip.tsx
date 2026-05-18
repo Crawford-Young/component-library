@@ -11,12 +11,14 @@ export function StatChip({ label, value, className }: StatChipProps): React.JSX.
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5',
+        'flex flex-col items-center justify-center rounded-lg border border-border bg-surface px-4 py-2.5',
         className,
       )}
     >
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-xs font-semibold text-foreground">{value}</span>
+      <span className="text-base font-bold tabular-nums text-foreground">{value}</span>
+      <span className="mt-0.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
     </div>
   )
 }

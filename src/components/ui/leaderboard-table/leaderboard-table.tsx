@@ -37,22 +37,46 @@ export function LeaderboardTable({ rows, className }: LeaderboardTableProps): Re
             key={row.rank}
             className={cn(
               'border-b border-border transition-colors',
-              row.rank === 1 ? 'bg-accent-subtle' : 'hover:bg-item-hover',
+              row.rank === 1
+                ? 'bg-amber-500/5 hover:bg-amber-500/10'
+                : row.rank <= 3
+                  ? 'hover:bg-muted/50'
+                  : 'hover:bg-muted/30',
             )}
           >
-            <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">#{row.rank}</td>
+            <td className="w-10 py-3 pr-4">
+              <span
+                className={cn(
+                  'font-mono text-xs font-bold tabular-nums',
+                  row.rank === 1
+                    ? 'text-amber-500'
+                    : row.rank === 2
+                      ? 'text-slate-400'
+                      : row.rank === 3
+                        ? 'text-amber-700'
+                        : 'text-muted-foreground',
+                )}
+              >
+                #{row.rank}
+              </span>
+            </td>
             <td className="py-3 pr-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {row.avatarUrl !== undefined ? (
                   <img
                     src={row.avatarUrl}
                     alt=""
                     aria-hidden="true"
-                    className="h-6 w-6 rounded-full object-cover"
+                    className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
                   />
                 ) : (
                   <div
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-raised text-xs font-semibold text-foreground"
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
+                      row.rank === 1
+                        ? 'bg-amber-500/20 text-amber-600'
+                        : 'bg-muted text-muted-foreground',
+                    )}
                     aria-hidden="true"
                   >
                     {row.name[0]}
@@ -61,7 +85,17 @@ export function LeaderboardTable({ rows, className }: LeaderboardTableProps): Re
                 <span className="font-medium text-foreground">{row.name}</span>
               </div>
             </td>
-            <td className="py-3 text-right font-semibold text-foreground">{row.points} pts</td>
+            <td className="py-3 text-right">
+              <span
+                className={cn(
+                  'font-bold tabular-nums',
+                  row.rank === 1 ? 'text-amber-500' : 'text-foreground',
+                )}
+              >
+                {row.points}
+              </span>
+              <span className="ml-1 text-xs text-muted-foreground">pts</span>
+            </td>
           </tr>
         ))}
       </tbody>
