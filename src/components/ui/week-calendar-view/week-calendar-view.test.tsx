@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import { WeekCalendarView } from './week-calendar-view'
 import { SleepBand } from './sleep-band'
+import { GhostEvent } from './ghost-event'
 
 const WEEK_START = '2026-05-04' // Monday
 
@@ -468,5 +469,46 @@ describe('SleepBand', () => {
     regions.forEach((r) => {
       expect((r as HTMLElement).style.pointerEvents).toBe('auto')
     })
+  })
+})
+
+describe('GhostEvent', () => {
+  it('renders ghost with data-testid', () => {
+    render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <GhostEvent startSlot={32} endSlot={36} hourStart={8} hourCount={14} hourHeight={56} />
+      </div>,
+    )
+    expect(screen.getByTestId('ghost-event')).toBeInTheDocument()
+  })
+
+  it('ghost has aria-hidden', () => {
+    render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <GhostEvent startSlot={32} endSlot={36} hourStart={8} hourCount={14} hourHeight={56} />
+      </div>,
+    )
+    expect(screen.getByTestId('ghost-event')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('ghost top is 0% when startSlot matches hourStart', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <GhostEvent startSlot={32} endSlot={36} hourStart={8} hourCount={14} hourHeight={56} />
+      </div>,
+    )
+    const ghost = container.querySelector('[data-testid="ghost-event"]') as HTMLElement
+    expect(ghost.style.top).toBe('0%')
+  })
+
+  it('ghost height represents 1 hour (4 slots) correctly', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <GhostEvent startSlot={32} endSlot={36} hourStart={8} hourCount={14} hourHeight={56} />
+      </div>,
+    )
+    const ghost = container.querySelector('[data-testid="ghost-event"]') as HTMLElement
+    // 4 slots = 1 hour; hourCount=14 → 1/14 * 100 ≈ 7.14%
+    expect(parseFloat(ghost.style.height)).toBeCloseTo(7.14, 1)
   })
 })
