@@ -7,8 +7,19 @@ import {
   type CalendarEvent,
 } from '@/components/ui/calendar-event-chip'
 import { CalendarNavBar, type CalendarNavSource } from '@/components/ui/calendar-nav-bar'
+import { useDragState } from './drag'
+import { GhostEvent } from './ghost-event'
+import { SleepBand } from './sleep-band'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import type { DayOfWeek, RecurrenceFrequency } from '@/components/ui/calendar-event-chip'
 
-export type { CalendarEvent, CalendarEventColor } from '@/components/ui/calendar-event-chip'
+export type {
+  CalendarEvent,
+  CalendarEventColor,
+  DayOfWeek,
+  RecurrenceFrequency,
+} from '@/components/ui/calendar-event-chip'
 
 export interface WeekCalendarViewProps {
   readonly defaultWeekStart?: string
@@ -19,6 +30,13 @@ export interface WeekCalendarViewProps {
   readonly onEventClick?: (event: CalendarEvent) => void
   readonly onEventEdit?: (event: CalendarEvent) => void
   readonly onEventDelete?: (event: CalendarEvent) => void
+  readonly onEventCreate?: (event: Omit<CalendarEvent, 'id'>) => void
+  readonly onEventMove?: (event: CalendarEvent) => void
+  readonly onEventResize?: (event: CalendarEvent) => void
+  readonly onEventDuplicate?: (events: Array<Omit<CalendarEvent, 'id'>>) => void
+  readonly sleepEnabled?: boolean
+  readonly sleepStart?: number
+  readonly sleepEnd?: number
   readonly renderEventPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
@@ -168,6 +186,24 @@ function formatHour(hour: number): string {
   return `${h}${hour < 12 ? 'am' : 'pm'}`
 }
 
+function timeToSlot(iso: string): number {
+  const d = new Date(iso)
+  return d.getHours() * 4 + Math.floor(d.getMinutes() / 15)
+}
+
+function slotToTime(slot: number, datePart: string): string {
+  const h = Math.floor(slot / 4)
+  const m = (slot % 4) * 15
+  return `${datePart}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
+}
+
+function formatDateISO(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
 export function WeekCalendarView({
   defaultWeekStart,
   events,
@@ -177,6 +213,13 @@ export function WeekCalendarView({
   onEventClick,
   onEventEdit,
   onEventDelete,
+  onEventCreate,
+  onEventMove,
+  onEventResize,
+  onEventDuplicate,
+  sleepEnabled,
+  sleepStart,
+  sleepEnd,
   renderEventPopover,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
@@ -224,6 +267,101 @@ export function WeekCalendarView({
     return `3rem ${cols}`
   }, [expandedDayIndex])
 
+  const [dragMode, dragActions] = useDragState()
+  const gridRef = React.useRef<HTMLDivElement>(null)
+  const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
+
+  interface PendingCreate {
+    dayIdx: number
+    date: string
+    startSlot: number
+    endSlot: number
+  }
+  const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
+  const [createDraft, setCreateDraft] = React.useState<{
+    title: string
+    recurrenceDays: readonly DayOfWeek[]
+    recurrenceFrequency: RecurrenceFrequency | 'none'
+  }>({ title: '', recurrenceDays: [], recurrenceFrequency: 'none' })
+
+  const effectiveHourStart = sleepEnabled ? 0 : hourStart
+  const effectiveHourCount = sleepEnabled ? 24 : hourCount
+
+  function pointerToSlot(clientY: number): number {
+    const rect = gridRef.current?.getBoundingClientRect()
+    if (!rect) return effectiveHourStart * 4
+    const relY = clientY - rect.top
+    const slotHeight = hourHeight / 4
+    const raw = Math.floor(relY / slotHeight) + effectiveHourStart * 4
+    return Math.max(
+      effectiveHourStart * 4,
+      Math.min((effectiveHourStart + effectiveHourCount) * 4 - 1, raw),
+    )
+  }
+
+  function getPointerDayIdx(clientX: number): number {
+    for (let i = 0; i < dayColRefs.current.length; i++) {
+      const rect = dayColRefs.current[i]?.getBoundingClientRect()
+      if (rect && clientX >= rect.left && clientX < rect.right) return i
+    }
+    return 0
+  }
+
+  function handleGridPointerMove(e: React.PointerEvent): void {
+    if (dragMode.type === 'idle') return
+    const slot = pointerToSlot(e.clientY)
+    if (dragMode.type === 'creating' || dragMode.type === 'resizing') {
+      dragActions.updateSlot(dragMode.dayIdx, slot)
+    } else if (dragMode.type === 'moving') {
+      const dayIdx = getPointerDayIdx(e.clientX)
+      dragActions.updateSlot(dayIdx, slot)
+      dragActions.tryDisambiguate(
+        e.clientX - dragMode.initClientX,
+        e.clientY - dragMode.initClientY,
+      )
+    } else if (dragMode.type === 'duplicating') {
+      const dayIdx = getPointerDayIdx(e.clientX)
+      dragActions.updateSlot(dayIdx, slot)
+    }
+  }
+
+  function handleGridPointerUp(_e: React.PointerEvent): void {
+    if (dragMode.type === 'creating' && onEventCreate) {
+      const startSlot = Math.min(dragMode.startSlot, dragMode.currentSlot)
+      const endSlot = Math.max(dragMode.startSlot, dragMode.currentSlot) + 1
+      const day = days[dragMode.dayIdx]
+      setCreateDraft({ title: '', recurrenceDays: [], recurrenceFrequency: 'none' })
+      setPendingCreate({ dayIdx: dragMode.dayIdx, date: formatDateISO(day), startSlot, endSlot })
+    } else if (dragMode.type === 'moving' && onEventMove) {
+      const slotStart = dragMode.currentSlot - dragMode.slotOffset
+      const durationSlots = timeToSlot(dragMode.event.end) - timeToSlot(dragMode.event.start)
+      const dateStr = formatDateISO(days[dragMode.dayIdx])
+      onEventMove({
+        ...dragMode.event,
+        start: slotToTime(slotStart, dateStr),
+        end: slotToTime(slotStart + durationSlots, dateStr),
+      })
+    } else if (dragMode.type === 'resizing' && onEventResize) {
+      const dateStr = formatDateISO(days[dragMode.dayIdx])
+      onEventResize({ ...dragMode.event, end: slotToTime(dragMode.currentSlot + 1, dateStr) })
+    } else if (dragMode.type === 'duplicating' && onEventDuplicate) {
+      const minDay = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
+      const maxDay = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
+      const eventStartSlot = timeToSlot(dragMode.event.start)
+      const eventEndSlot = timeToSlot(dragMode.event.end)
+      const copies = Array.from({ length: maxDay - minDay + 1 }, (_, i) => {
+        const dateStr = formatDateISO(days[minDay + i])
+        return {
+          ...dragMode.event,
+          start: slotToTime(eventStartSlot, dateStr),
+          end: slotToTime(eventEndSlot, dateStr),
+        }
+      }) as Array<Omit<CalendarEvent, 'id'>>
+      onEventDuplicate(copies)
+    }
+    dragActions.reset()
+  }
+
   return (
     <div
       className={cn(
@@ -269,17 +407,25 @@ export function WeekCalendarView({
       )}
 
       {/* Hour grid */}
-      <div className="relative grid" style={{ gridTemplateColumns }}>
+      <div
+        ref={gridRef}
+        className="relative grid"
+        style={{ gridTemplateColumns }}
+        onPointerMove={handleGridPointerMove}
+        onPointerUp={handleGridPointerUp}
+      >
         <div className="relative flex flex-col">
-          {todayInWeek && <TimeGutterLabel hourStart={hourStart} hourCount={hourCount} />}
-          {Array.from({ length: hourCount }, (_, i) => (
+          {todayInWeek && (
+            <TimeGutterLabel hourStart={effectiveHourStart} hourCount={effectiveHourCount} />
+          )}
+          {Array.from({ length: effectiveHourCount }, (_, i) => (
             <div
               key={i}
               className="flex items-start justify-end border-b border-r pr-1 text-[10px] text-muted-foreground"
               style={{ height: hourHeight }}
               aria-hidden
             >
-              {formatHour(hourStart + i)}
+              {formatHour(effectiveHourStart + i)}
             </div>
           ))}
         </div>
@@ -289,13 +435,43 @@ export function WeekCalendarView({
           const dayTimedEvents = timedEvents.filter((e) => isSameDay(new Date(e.start), day))
           const positioned = buildOverlapLayout(dayTimedEvents)
           return (
-            <div key={dayIdx} className="relative border-r last:border-r-0">
-              {Array.from({ length: hourCount }, (_, i) => (
-                <div key={i} className="border-b" style={{ height: hourHeight }} />
+            <div
+              key={dayIdx}
+              ref={(el: HTMLDivElement | null) => {
+                dayColRefs.current[dayIdx] = el
+              }}
+              className="relative border-r last:border-r-0"
+            >
+              {Array.from({ length: effectiveHourCount }, (_, i) => (
+                <div
+                  key={i}
+                  data-drag-cell="true"
+                  className="border-b"
+                  style={{ height: hourHeight }}
+                  onPointerDown={
+                    onEventCreate
+                      ? (e) => {
+                          const slot =
+                            (effectiveHourStart + i) * 4 +
+                            Math.floor((e.nativeEvent.offsetY / hourHeight) * 4)
+                          dragActions.startCreate(dayIdx, slot)
+                          e.currentTarget.setPointerCapture(e.pointerId)
+                        }
+                      : undefined
+                  }
+                />
               ))}
-              {dayIsToday && <TimeIndicator hourStart={hourStart} hourCount={hourCount} />}
+              {dayIsToday && (
+                <TimeIndicator hourStart={effectiveHourStart} hourCount={effectiveHourCount} />
+              )}
               {positioned.map(({ event: evt, column, totalColumns }) => {
-                const evtStyle = getEventStyle(column, totalColumns, hourStart, hourCount, evt)
+                const evtStyle = getEventStyle(
+                  column,
+                  totalColumns,
+                  effectiveHourStart,
+                  effectiveHourCount,
+                  evt,
+                )
                 return (
                   <CalendarEventChip
                     key={evt.id}
@@ -306,9 +482,153 @@ export function WeekCalendarView({
                     onEdit={onEventEdit}
                     onDelete={onEventDelete}
                     renderPopover={renderEventPopover}
+                    onMoveStart={
+                      onEventMove
+                        ? (ev, clientY, clientX) => {
+                            const slot = pointerToSlot(clientY)
+                            const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
+                            dragActions.startMove(ev, dayIdx, slotOffset, clientX, clientY)
+                          }
+                        : undefined
+                    }
+                    onResizeStart={
+                      onEventResize
+                        ? (ev) => {
+                            dragActions.startResize(ev, dayIdx, timeToSlot(ev.end) - 1)
+                          }
+                        : undefined
+                    }
                   />
                 )
               })}
+              {dragMode.type === 'creating' && dragMode.dayIdx === dayIdx && (
+                <GhostEvent
+                  startSlot={Math.min(dragMode.startSlot, dragMode.currentSlot)}
+                  endSlot={Math.max(dragMode.startSlot, dragMode.currentSlot) + 1}
+                  hourStart={effectiveHourStart}
+                  hourCount={effectiveHourCount}
+                />
+              )}
+              {dragMode.type === 'moving' && dragMode.dayIdx === dayIdx && (
+                <GhostEvent
+                  startSlot={dragMode.currentSlot - dragMode.slotOffset}
+                  endSlot={
+                    dragMode.currentSlot -
+                    dragMode.slotOffset +
+                    (timeToSlot(dragMode.event.end) - timeToSlot(dragMode.event.start))
+                  }
+                  hourStart={effectiveHourStart}
+                  hourCount={effectiveHourCount}
+                  color={dragMode.event.color}
+                />
+              )}
+              {dragMode.type === 'resizing' && dragMode.dayIdx === dayIdx && (
+                <GhostEvent
+                  startSlot={timeToSlot(dragMode.event.start)}
+                  endSlot={dragMode.currentSlot + 1}
+                  hourStart={effectiveHourStart}
+                  hourCount={effectiveHourCount}
+                  color={dragMode.event.color}
+                />
+              )}
+              {dragMode.type === 'duplicating' &&
+                dayIdx >= Math.min(dragMode.startDayIdx, dragMode.currentDayIdx) &&
+                dayIdx <= Math.max(dragMode.startDayIdx, dragMode.currentDayIdx) && (
+                  <GhostEvent
+                    startSlot={timeToSlot(dragMode.event.start)}
+                    endSlot={timeToSlot(dragMode.event.end)}
+                    hourStart={effectiveHourStart}
+                    hourCount={effectiveHourCount}
+                    color={dragMode.event.color}
+                  />
+                )}
+              {sleepEnabled && sleepStart !== undefined && sleepEnd !== undefined && (
+                <SleepBand
+                  sleepStart={sleepStart}
+                  sleepEnd={sleepEnd}
+                  hourStart={effectiveHourStart}
+                  hourCount={effectiveHourCount}
+                  hourHeight={hourHeight}
+                />
+              )}
+              {pendingCreate?.dayIdx === dayIdx && (
+                <Popover
+                  open
+                  onOpenChange={(open) => {
+                    if (!open) setPendingCreate(null)
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        top: `${((pendingCreate.startSlot / 4 - effectiveHourStart) / effectiveHourCount) * 100}%`,
+                        height: 1,
+                        left: 0,
+                        right: 0,
+                      }}
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        onEventCreate!({
+                          title: createDraft.title,
+                          start: slotToTime(pendingCreate.startSlot, pendingCreate.date),
+                          end: slotToTime(pendingCreate.endSlot, pendingCreate.date),
+                          recurrenceDays:
+                            createDraft.recurrenceDays.length > 0
+                              ? createDraft.recurrenceDays
+                              : undefined,
+                          recurrenceFrequency:
+                            createDraft.recurrenceFrequency !== 'none'
+                              ? createDraft.recurrenceFrequency
+                              : undefined,
+                        })
+                        setPendingCreate(null)
+                      }}
+                      className="space-y-2"
+                    >
+                      <div>
+                        <label
+                          htmlFor="create-event-title"
+                          className="mb-0.5 block text-[11px] font-medium text-muted-foreground"
+                        >
+                          Title
+                        </label>
+                        <input
+                          id="create-event-title"
+                          aria-label="Event title"
+                          // autoFocus is intentional here — focus must jump to the title field
+                          // immediately when the create popover opens so keyboard users can type
+                          // without an extra Tab press. This is a popover triggered by a mouse/pointer
+                          // drag gesture, so no ambient focus disruption for keyboard-only navigation.
+                          // eslint-disable-next-line jsx-a11y/no-autofocus
+                          autoFocus
+                          className="w-full rounded border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          value={createDraft.title}
+                          onChange={(e) => setCreateDraft((d) => ({ ...d, title: e.target.value }))}
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <Button type="submit" size="sm">
+                          Create
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPendingCreate(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           )
         })}

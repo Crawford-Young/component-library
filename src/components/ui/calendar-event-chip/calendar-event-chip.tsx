@@ -68,7 +68,7 @@ export interface CalendarEventChipProps {
   readonly onClick?: (event: CalendarEvent) => void
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
-  readonly onMoveStart?: (event: CalendarEvent, clientY: number) => void
+  readonly onMoveStart?: (event: CalendarEvent, clientY: number, clientX: number) => void
   readonly onResizeStart?: (event: CalendarEvent) => void
   readonly renderPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
@@ -281,7 +281,7 @@ export function CalendarEventChip({
               e.stopPropagation()
               onResizeStart?.(event)
             } else {
-              onMoveStart?.(event, e.clientY)
+              onMoveStart?.(event, e.clientY, e.clientX)
             }
           }}
         >

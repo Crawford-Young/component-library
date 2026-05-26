@@ -512,3 +512,89 @@ describe('GhostEvent', () => {
     expect(parseFloat(ghost.style.height)).toBeCloseTo(7.14, 1)
   })
 })
+
+describe('drag to create', () => {
+  it('calls onEventCreate after drag-to-create and form save', async () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={onCreate}
+      />,
+    )
+    // pointerdown on first hour row of first day column
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    // create form should appear
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Event title'), 'New event')
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(onCreate).toHaveBeenCalledOnce()
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ title: 'New event' }))
+  })
+})
+
+describe('sleep mode', () => {
+  it('renders SleepBand when sleepEnabled=true with sleepStart and sleepEnd', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={0}
+        hourCount={24}
+        sleepEnabled={true}
+        sleepStart={23}
+        sleepEnd={7}
+      />,
+    )
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBeGreaterThan(0)
+  })
+
+  it('does not render SleepBand when sleepEnabled=false', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        sleepEnabled={false}
+        sleepStart={23}
+        sleepEnd={7}
+      />,
+    )
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(0)
+  })
+
+  it('overrides hourStart/hourCount to 0/24 when sleepEnabled=true', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        sleepEnabled={true}
+        sleepStart={23}
+        sleepEnd={7}
+      />,
+    )
+    // When sleep is on, 12am should appear
+    expect(screen.getAllByText('12am').length).toBeGreaterThan(0)
+  })
+})
+
+describe('Today nav source', () => {
+  it('clicking Today button in nav jumps to current week', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-20T10:00:00'))
+    render(<WeekCalendarView defaultWeekStart="2026-05-03" events={[]} />)
+    // Today button should be enabled (different week)
+    const todayBtn = screen.getByRole('button', { name: 'Today' })
+    await userEvent.click(todayBtn)
+    // May 20 → getSundayISO(May 20) = May 17
+    expect(screen.getByRole('button', { name: /Sun 17/i })).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})

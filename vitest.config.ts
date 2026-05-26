@@ -14,6 +14,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     exclude: ['**/node_modules/**', '**/tests/e2e/**'],
+    fakeTimers: {
+      toFake: ['Date'],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
