@@ -39,7 +39,7 @@ describe('WeekCalendarView', () => {
   it('renders day column headers', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
     expect(screen.getByRole('button', { name: /Mon 4/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Sun 10/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Sun 3/i })).toBeInTheDocument()
   })
 
   it('renders date numbers in headers', () => {
@@ -184,9 +184,9 @@ describe('nav bar', () => {
     expect(screen.getByRole('button', { name: /Mon 4/i })).toBeInTheDocument()
   })
 
-  it('navigating to a mid-week date shows the Monday of that week', () => {
+  it('navigating to a mid-week date shows the Sunday of that week', () => {
     render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
-    // Change day select to 13 (Wed May 13) — getMondayISO(May 13) = May 11
+    // Change day select to 13 (Wed May 13) — getSundayISO(May 13) = May 10
     fireEvent.change(screen.getByLabelText('Day'), { target: { value: '13' } })
     expect(screen.getByRole('button', { name: /Mon 11/i })).toBeInTheDocument()
   })
@@ -200,7 +200,7 @@ describe('nav bar', () => {
 
   it('selecting a Sunday via nav auto-expands the Sunday column (index 6)', () => {
     render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
-    // Day 10 = Sun May 10 2026 (index 6 in Mon-first week)
+    // Day 10 = Sun May 10 2026 (index 0 in Sun-first week)
     fireEvent.change(screen.getByLabelText('Day'), { target: { value: '10' } })
     expect(screen.getByRole('button', { name: /Sun 10/i })).toHaveAttribute('aria-pressed', 'true')
   })
@@ -237,12 +237,12 @@ describe('internal state', () => {
     vi.useRealTimers()
   })
 
-  it('defaults to Monday when current day is Sunday', () => {
+  it('defaults to Sunday when current day is Sunday', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-17T10:00:00')) // Sunday May 17
     render(<WeekCalendarView events={[]} />)
-    // getMondayISO(Sunday May 17) = May 11
-    expect(screen.getByRole('button', { name: /Mon 11/i })).toBeInTheDocument()
+    // getSundayISO(Sunday May 17) = May 17 itself
+    expect(screen.getByRole('button', { name: /Sun 17/i })).toBeInTheDocument()
     vi.useRealTimers()
   })
 

@@ -23,10 +23,9 @@ export interface WeekCalendarViewProps {
   readonly className?: string
 }
 
-function getMondayISO(date: Date): string {
+function getSundayISO(date: Date): string {
   const d = new Date(date)
-  const day = d.getDay()
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
+  d.setDate(d.getDate() - d.getDay())
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
@@ -114,7 +113,7 @@ function AllDayRow({ days, events, gridTemplateColumns }: AllDayRowProps): React
   )
 }
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getWeekDays(weekStart: string): Date[] {
   const start = new Date(`${weekStart}T00:00:00`)
@@ -150,8 +149,10 @@ export function WeekCalendarView({
   renderEventPopover,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
-  const [currentWeek, setCurrentWeek] = React.useState<string>(
-    () => defaultWeekStart ?? getMondayISO(new Date()),
+  const [currentWeek, setCurrentWeek] = React.useState<string>(() =>
+    defaultWeekStart
+      ? getSundayISO(new Date(`${defaultWeekStart}T00:00:00`))
+      : getSundayISO(new Date()),
   )
   const [navDate, setNavDate] = React.useState<Date>(() =>
     defaultWeekStart ? new Date(`${defaultWeekStart}T00:00:00`) : new Date(),
@@ -159,10 +160,9 @@ export function WeekCalendarView({
 
   function handleDateChange(date: Date, source?: CalendarNavSource): void {
     setNavDate(date)
-    setCurrentWeek(getMondayISO(date))
+    setCurrentWeek(getSundayISO(date))
     if (source === 'select') {
-      const dow = date.getDay()
-      setExpandedDayIndex(dow === 0 ? 6 : dow - 1)
+      setExpandedDayIndex(date.getDay())
     } else {
       setExpandedDayIndex(null)
     }

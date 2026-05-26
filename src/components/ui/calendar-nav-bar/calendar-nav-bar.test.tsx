@@ -137,3 +137,39 @@ describe('CalendarNavBar', () => {
     expect(handler.mock.calls[0][1]).toBe('select')
   })
 })
+
+describe('Today button', () => {
+  it('renders Today button', () => {
+    render(<CalendarNavBar currentDate={date} onDateChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Today' })).toBeInTheDocument()
+  })
+
+  it('Today button fires onDateChange with today date and source "today"', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 4, 20, 10, 0, 0))
+    const handler = vi.fn()
+    render(<CalendarNavBar currentDate={date} onDateChange={handler} />)
+    // Use fireEvent to avoid userEvent timer conflicts with vi.useFakeTimers
+    fireEvent.click(screen.getByRole('button', { name: 'Today' }))
+    const [calledDate, calledSource] = handler.mock.calls[0] as [Date, string]
+    expect(calledDate.toISOString().slice(0, 10)).toBe('2026-05-20')
+    expect(calledSource).toBe('today')
+    vi.useRealTimers()
+  })
+
+  it('Today button is disabled when current week contains today', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 4, 13, 10, 0, 0)) // Wed May 13 — in same week as date (Mon May 11)
+    render(<CalendarNavBar currentDate={date} onDateChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Today' })).toBeDisabled()
+    vi.useRealTimers()
+  })
+
+  it('Today button is enabled when current week does not contain today', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 4, 20, 10, 0, 0)) // May 20 — different week
+    render(<CalendarNavBar currentDate={date} onDateChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Today' })).not.toBeDisabled()
+    vi.useRealTimers()
+  })
+})

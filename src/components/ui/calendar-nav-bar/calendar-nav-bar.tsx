@@ -2,7 +2,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
-export type CalendarNavSource = 'prev' | 'next' | 'select'
+export type CalendarNavSource = 'prev' | 'next' | 'select' | 'today'
 
 export interface CalendarNavBarProps {
   readonly currentDate: Date
@@ -29,6 +29,12 @@ const CURRENT_YEAR = new Date().getFullYear()
 
 function clampDay(day: number, year: number, month: number): number {
   return Math.min(day, new Date(year, month + 1, 0).getDate())
+}
+
+function getSundayOf(d: Date): string {
+  const copy = new Date(d)
+  copy.setDate(copy.getDate() - copy.getDay())
+  return `${copy.getFullYear()}-${String(copy.getMonth() + 1).padStart(2, '0')}-${String(copy.getDate()).padStart(2, '0')}`
 }
 
 export function CalendarNavBar({
@@ -68,17 +74,34 @@ export function CalendarNavBar({
     onDateChange(new Date(newYear, month, clampDay(day, newYear, month)), 'select')
   }
 
+  const isCurrentWeek = getSundayOf(currentDate) === getSundayOf(new Date())
+
+  function handleToday(): void {
+    onDateChange(new Date(), 'today')
+  }
+
   return (
     <div className={cn('flex items-center justify-between border-b px-2 py-1.5', className)}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        aria-label="Previous week"
-        onClick={handlePrev}
-      >
-        ←
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isCurrentWeek}
+          onClick={handleToday}
+        >
+          Today
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="Previous week"
+          onClick={handlePrev}
+        >
+          ←
+        </Button>
+      </div>
       <div className="flex items-center gap-1">
         <select
           aria-label="Day"
