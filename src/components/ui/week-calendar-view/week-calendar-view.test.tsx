@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import { WeekCalendarView } from './week-calendar-view'
+import { SleepBand } from './sleep-band'
 
 const WEEK_START = '2026-05-04' // Monday
 
@@ -406,5 +407,66 @@ describe('event keyboard accessibility', () => {
     const eventChip = screen.getByRole('button', { name: /team standup/i })
     fireEvent.keyDown(eventChip, { key: ' ' })
     expect(handler).toHaveBeenCalledWith(events[0])
+  })
+})
+
+describe('SleepBand', () => {
+  it('renders two sleep regions', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand sleepStart={23} sleepEnd={7} hourStart={0} hourCount={24} hourHeight={30} />
+      </div>,
+    )
+    expect(container.querySelectorAll('[data-testid="sleep-region"]').length).toBe(2)
+  })
+
+  it('top region covers 00:00 to sleepEnd (7:00)', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand sleepStart={23} sleepEnd={7} hourStart={0} hourCount={24} hourHeight={30} />
+      </div>,
+    )
+    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
+    const topRegion = regions[0] as HTMLElement
+    // top=0, height = 7/24 * 100 ≈ 29.17%
+    expect(topRegion.style.top).toBe('0%')
+    expect(parseFloat(topRegion.style.height)).toBeCloseTo(29.17, 1)
+  })
+
+  it('bottom region covers sleepStart (23:00) to 24:00', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand sleepStart={23} sleepEnd={7} hourStart={0} hourCount={24} hourHeight={30} />
+      </div>,
+    )
+    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
+    const bottomRegion = regions[1] as HTMLElement
+    // top = 23/24 * 100 ≈ 95.83%, height = 1/24 * 100 ≈ 4.17%
+    expect(parseFloat(bottomRegion.style.top)).toBeCloseTo(95.83, 1)
+    expect(parseFloat(bottomRegion.style.height)).toBeCloseTo(4.17, 1)
+  })
+
+  it('clamps regions to visible hour range', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand sleepStart={23} sleepEnd={7} hourStart={8} hourCount={14} hourHeight={56} />
+      </div>,
+    )
+    // Top region: 0:00-7:00 is entirely before hourStart=8 → not rendered
+    // Bottom region: 23:00-24:00 is beyond hourStart+hourCount=22 → not rendered
+    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
+    expect(regions.length).toBe(0)
+  })
+
+  it('has pointer-events auto so drag is blocked in sleep hours', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand sleepStart={23} sleepEnd={7} hourStart={0} hourCount={24} hourHeight={30} />
+      </div>,
+    )
+    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
+    regions.forEach((r) => {
+      expect((r as HTMLElement).style.pointerEvents).toBe('auto')
+    })
   })
 })
