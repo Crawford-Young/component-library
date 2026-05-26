@@ -365,28 +365,25 @@ describe('recurrence fields in edit form', () => {
   }
 
   it('edit form shows day pill toggles', async () => {
-    render(
-      <CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />,
-    )
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
     await userEvent.click(screen.getByRole('button', { name: /edit/i }))
     expect(screen.getByRole('group', { name: /recurrence days/i })).toBeInTheDocument()
   })
 
   it('day pills are pre-checked based on recurrenceDays', async () => {
-    render(
-      <CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />,
-    )
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
     await userEvent.click(screen.getByRole('button', { name: /edit/i }))
     expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
 
   it('frequency select shows current recurrenceFrequency', async () => {
-    render(
-      <CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />,
-    )
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
     await userEvent.click(screen.getByRole('button', { name: /edit/i }))
     expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
