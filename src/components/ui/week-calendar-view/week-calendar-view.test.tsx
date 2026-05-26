@@ -193,7 +193,7 @@ describe('nav bar', () => {
 
   it('selecting a day via nav auto-expands that day column', () => {
     render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
-    // Day 13 = Wed May 13 2026 (index 2 in Mon-first week)
+    // Day 13 = Wed May 13 2026 (index 3 in Sun-first week)
     fireEvent.change(screen.getByLabelText('Day'), { target: { value: '13' } })
     expect(screen.getByRole('button', { name: /Wed 13/i })).toHaveAttribute('aria-pressed', 'true')
   })
@@ -222,7 +222,7 @@ describe('nav bar', () => {
 
   it('Day select retains selected day number after auto-expand', () => {
     render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
-    // May 15 = Thursday, getMondayISO → May 11; Day select should still show 15
+    // May 15 = Friday, getSundayISO → May 10; Day select should still show 15
     fireEvent.change(screen.getByLabelText('Day'), { target: { value: '15' } })
     expect(screen.getByLabelText('Day')).toHaveValue('15')
   })
