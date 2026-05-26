@@ -198,7 +198,7 @@ describe('nav bar', () => {
     expect(screen.getByRole('button', { name: /Wed 13/i })).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('selecting a Sunday via nav auto-expands the Sunday column (index 6)', () => {
+  it('selecting a Sunday via nav auto-expands the Sunday column (index 0)', () => {
     render(<WeekCalendarView defaultWeekStart="2026-05-04" events={[]} />)
     // Day 10 = Sun May 10 2026 (index 0 in Sun-first week)
     fireEvent.change(screen.getByLabelText('Day'), { target: { value: '10' } })
