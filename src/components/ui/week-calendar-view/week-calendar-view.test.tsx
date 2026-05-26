@@ -314,6 +314,23 @@ describe('time indicator', () => {
     expect(document.querySelectorAll('[data-testid="time-indicator"]').length).toBe(1)
     vi.useRealTimers()
   })
+
+  it('renders current time label in gutter when today is in view', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T14:34:00'))
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
+    expect(screen.getByTestId('time-gutter-label')).toBeInTheDocument()
+    expect(screen.getByTestId('time-gutter-label').textContent).toMatch(/2:34/i)
+    vi.useRealTimers()
+  })
+
+  it('does not render time gutter label when today is not visible', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T03:00:00'))
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
+    expect(screen.queryByTestId('time-gutter-label')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
 })
 
 describe('day expand', () => {

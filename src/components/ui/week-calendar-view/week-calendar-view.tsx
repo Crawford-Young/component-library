@@ -83,6 +83,37 @@ function TimeIndicator({ hourStart, hourCount }: TimeIndicatorProps): React.Reac
   )
 }
 
+interface TimeGutterLabelProps {
+  readonly hourStart: number
+  readonly hourCount: number
+}
+
+function TimeGutterLabel({
+  hourStart,
+  hourCount,
+}: TimeGutterLabelProps): React.ReactElement | null {
+  const [now, setNow] = React.useState(() => new Date())
+  React.useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+  const top = ((now.getHours() - hourStart + now.getMinutes() / 60) / hourCount) * 100
+  if (top < 0 || top > 100) return null
+  const h = now.getHours() % 12 || 12
+  const m = String(now.getMinutes()).padStart(2, '0')
+  const period = now.getHours() < 12 ? 'AM' : 'PM'
+  return (
+    <div
+      data-testid="time-gutter-label"
+      aria-hidden="true"
+      className="pointer-events-none absolute right-1 z-10 text-[9px] font-medium text-primary"
+      style={{ top: `${top}%`, transform: 'translateY(-50%)' }}
+    >
+      {h}:{m} {period}
+    </div>
+  )
+}
+
 interface AllDayRowProps {
   readonly days: Date[]
   readonly events: CalendarEvent[]
@@ -183,6 +214,7 @@ export function WeekCalendarView({
 
   const allDayEvents = React.useMemo(() => events.filter((e) => e.allDay), [events])
   const timedEvents = React.useMemo(() => events.filter((e) => !e.allDay), [events])
+  const todayInWeek = React.useMemo(() => days.some((d) => isSameDay(d, today)), [days, today])
   const [expandedDayIndex, setExpandedDayIndex] = React.useState<number | null>(null)
 
   const gridTemplateColumns = React.useMemo(() => {
@@ -238,7 +270,8 @@ export function WeekCalendarView({
 
       {/* Hour grid */}
       <div className="relative grid" style={{ gridTemplateColumns }}>
-        <div className="flex flex-col">
+        <div className="relative flex flex-col">
+          {todayInWeek && <TimeGutterLabel hourStart={hourStart} hourCount={hourCount} />}
           {Array.from({ length: hourCount }, (_, i) => (
             <div
               key={i}
