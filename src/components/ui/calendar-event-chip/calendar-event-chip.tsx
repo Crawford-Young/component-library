@@ -21,6 +21,9 @@ export type CalendarEventColor =
   | 'fuchsia'
   | 'lime'
 
+export type DayOfWeek = 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat'
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
 export interface CalendarEvent {
   readonly id: string
   readonly title: string
@@ -30,6 +33,8 @@ export interface CalendarEvent {
   readonly color?: CalendarEventColor
   readonly description?: string
   readonly location?: string
+  readonly recurrenceDays?: readonly DayOfWeek[]
+  readonly recurrenceFrequency?: RecurrenceFrequency
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
