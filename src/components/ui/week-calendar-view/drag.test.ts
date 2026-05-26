@@ -133,4 +133,16 @@ describe('useDragState', () => {
     act(() => result.current[1].reset())
     expect(result.current[0].type).toBe('idle')
   })
+
+  it('updateSlot is a no-op in idle mode', () => {
+    const { result } = renderHook(() => useDragState())
+    act(() => result.current[1].updateSlot(1, 20))
+    expect(result.current[0].type).toBe('idle')
+  })
+
+  it('tryDisambiguate is a no-op when not in moving mode', () => {
+    const { result } = renderHook(() => useDragState())
+    act(() => result.current[1].tryDisambiguate(50, 0))
+    expect(result.current[0].type).toBe('idle')
+  })
 })

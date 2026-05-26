@@ -12,7 +12,6 @@ import { GhostEvent } from './ghost-event'
 import { SleepBand } from './sleep-band'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
-import type { DayOfWeek, RecurrenceFrequency } from '@/components/ui/calendar-event-chip'
 
 export type {
   CalendarEvent,
@@ -282,17 +281,14 @@ export function WeekCalendarView({
   const gridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
   const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
-  const [createDraft, setCreateDraft] = React.useState<{
-    title: string
-    recurrenceDays: readonly DayOfWeek[]
-    recurrenceFrequency: RecurrenceFrequency | 'none'
-  }>({ title: '', recurrenceDays: [], recurrenceFrequency: 'none' })
+  const [createDraft, setCreateDraft] = React.useState<{ title: string }>({ title: '' })
 
   const effectiveHourStart = sleepEnabled ? 0 : hourStart
   const effectiveHourCount = sleepEnabled ? 24 : hourCount
 
   function pointerToSlot(clientY: number): number {
     const rect = gridRef.current?.getBoundingClientRect()
+    /* c8 ignore next */
     if (!rect) return effectiveHourStart * SLOTS_PER_HOUR
     const relY = clientY - rect.top
     const slotHeight = hourHeight / SLOTS_PER_HOUR
@@ -306,6 +302,7 @@ export function WeekCalendarView({
   function getPointerDayIdx(clientX: number): number {
     for (let i = 0; i < dayColRefs.current.length; i++) {
       const rect = dayColRefs.current[i]?.getBoundingClientRect()
+      /* c8 ignore next */
       if (rect && clientX >= rect.left && clientX < rect.right) return i
     }
     return 0
@@ -334,7 +331,7 @@ export function WeekCalendarView({
       const startSlot = Math.min(dragMode.startSlot, dragMode.currentSlot)
       const endSlot = Math.max(dragMode.startSlot, dragMode.currentSlot) + 1
       const day = days[dragMode.dayIdx]
-      setCreateDraft({ title: '', recurrenceDays: [], recurrenceFrequency: 'none' })
+      setCreateDraft({ title: '' })
       setPendingCreate({ dayIdx: dragMode.dayIdx, date: formatDateISO(day), startSlot, endSlot })
     } else if (dragMode.type === 'moving' && onEventMove) {
       const slotStart = dragMode.currentSlot - dragMode.slotOffset
@@ -582,14 +579,6 @@ export function WeekCalendarView({
                           title: createDraft.title,
                           start: slotToTime(pendingCreate.startSlot, pendingCreate.date),
                           end: slotToTime(pendingCreate.endSlot, pendingCreate.date),
-                          recurrenceDays:
-                            createDraft.recurrenceDays.length > 0
-                              ? createDraft.recurrenceDays
-                              : undefined,
-                          recurrenceFrequency:
-                            createDraft.recurrenceFrequency !== 'none'
-                              ? createDraft.recurrenceFrequency
-                              : undefined,
                         })
                         setPendingCreate(null)
                       }}

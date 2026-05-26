@@ -141,6 +141,16 @@ describe('today highlight', () => {
     expect(tueHeader.className).not.toContain('bg-item-hover')
     vi.useRealTimers()
   })
+
+  it('renders time gutter label showing 12 at noon when today is in week', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T12:00:00'))
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} hourStart={8} hourCount={14} />,
+    )
+    expect(screen.getByTestId('time-gutter-label')).toHaveTextContent('12:00 PM')
+    vi.useRealTimers()
+  })
 })
 
 describe('all-day row', () => {
@@ -536,6 +546,165 @@ describe('drag to create', () => {
     await userEvent.click(screen.getByRole('button', { name: /create/i }))
     expect(onCreate).toHaveBeenCalledOnce()
     expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ title: 'New event' }))
+  })
+
+  it('dismisses create popover when Escape is pressed', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('dismisses create popover when Cancel button is clicked', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+})
+
+describe('drag ghost — resizing and duplicating', () => {
+  it('renders ghost event when drag state transitions to resizing', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventResize={vi.fn()}
+      />,
+    )
+    const resizeHandle = document.querySelector('[data-resize="true"]')
+    expect(resizeHandle).toBeInTheDocument()
+    fireEvent.pointerDown(resizeHandle!, { pointerId: 1 })
+    expect(screen.getByTestId('ghost-event')).toBeInTheDocument()
+  })
+
+  it('calls onEventResize with updated end time when pointerUp after resizing', () => {
+    const onResize = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventResize={onResize}
+      />,
+    )
+    const resizeHandle = document.querySelector('[data-resize="true"]')!
+    fireEvent.pointerDown(resizeHandle, { pointerId: 1 })
+    fireEvent.pointerMove(resizeHandle, { pointerId: 1, clientY: 300 })
+    fireEvent.pointerUp(resizeHandle, { pointerId: 1 })
+    expect(onResize).toHaveBeenCalledOnce()
+    expect(onResize).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }))
+  })
+
+  it('renders ghost event when drag state transitions to duplicating', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200 })
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 130, clientY: 201 })
+    expect(screen.getByTestId('ghost-event')).toBeInTheDocument()
+  })
+
+  it('calls onEventDuplicate with copies when pointerUp after duplicating', () => {
+    const onDuplicate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+        onEventDuplicate={onDuplicate}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200 })
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 130, clientY: 201 })
+    fireEvent.pointerUp(chip, { pointerId: 1 })
+    expect(onDuplicate).toHaveBeenCalledOnce()
+    expect(onDuplicate).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ title: 'Team standup' })]),
+    )
+  })
+
+  it('updateSlot fires again during a second pointerMove in duplicating mode', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+        onEventDuplicate={vi.fn()}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200 })
+    // First move transitions moving → duplicating
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 130, clientY: 201 })
+    // Second move exercises the duplicating branch in handleGridPointerMove
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 150, clientY: 202 })
+    expect(screen.getByTestId('ghost-event')).toBeInTheDocument()
+  })
+
+  it('calls onEventMove when pointerUp while still in moving state', () => {
+    const onMove = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    // Small move — stays moving (below 8px threshold)
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200 })
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 102, clientY: 203 })
+    fireEvent.pointerUp(chip, { pointerId: 1 })
+    expect(onMove).toHaveBeenCalledOnce()
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }))
   })
 })
 

@@ -402,6 +402,40 @@ describe('recurrence fields in edit form', () => {
       }),
     )
   })
+
+  it('toggling an inactive day pill adds it to recurrenceDays', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Tue' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: expect.arrayContaining(['Mon', 'Tue', 'Wed']) }),
+    )
+  })
+
+  it('toggling an active day pill removes it from recurrenceDays', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    const savedDays = (onEdit.mock.calls[0][0] as { recurrenceDays: string[] }).recurrenceDays
+    expect(savedDays).not.toContain('Mon')
+    expect(savedDays).toContain('Wed')
+  })
+
+  it('changing repeat select updates recurrenceFrequency in draft', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceFrequency: 'daily' }))
+  })
 })
 
 describe('resize handle', () => {
