@@ -68,6 +68,8 @@ export interface CalendarEventChipProps {
   readonly onClick?: (event: CalendarEvent) => void
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
+  readonly onMoveStart?: (event: CalendarEvent, clientY: number) => void
+  readonly onResizeStart?: (event: CalendarEvent) => void
   readonly renderPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
@@ -97,6 +99,8 @@ interface DraftEvent {
   description: string
   startTime: string
   endTime: string
+  recurrenceDays: readonly DayOfWeek[]
+  recurrenceFrequency: RecurrenceFrequency | 'none'
 }
 
 function toDraft(ev: CalendarEvent): DraftEvent {
@@ -107,6 +111,8 @@ function toDraft(ev: CalendarEvent): DraftEvent {
     description: ev.description ?? '',
     startTime: ev.start.substring(11, 16),
     endTime: ev.end.substring(11, 16),
+    recurrenceDays: ev.recurrenceDays ?? [],
+    recurrenceFrequency: ev.recurrenceFrequency ?? 'none',
   }
 }
 
@@ -199,6 +205,8 @@ export function CalendarEventChip({
   onClick,
   onEdit,
   onDelete,
+  onMoveStart,
+  onResizeStart,
   renderPopover,
   className,
 }: CalendarEventChipProps): React.JSX.Element {
@@ -228,6 +236,9 @@ export function CalendarEventChip({
       color: draft.color,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
+      recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays : undefined,
+      recurrenceFrequency:
+        draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
       start,
       end,
     })
@@ -254,7 +265,7 @@ export function CalendarEventChip({
         <button
           type="button"
           className={cn(
-            'cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'relative cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             eventColorVariants({ color: event.color }),
             className,
           )}
@@ -263,6 +274,15 @@ export function CalendarEventChip({
           onClick={() => onClick?.(event)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') onClick?.(event)
+          }}
+          onPointerDown={(e) => {
+            const target = e.target as HTMLElement
+            if (target.dataset.resize === 'true') {
+              e.stopPropagation()
+              onResizeStart?.(event)
+            } else {
+              onMoveStart?.(event, e.clientY)
+            }
           }}
         >
           <div className="truncate font-semibold">{event.title}</div>
@@ -274,6 +294,11 @@ export function CalendarEventChip({
           )}
           {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
           {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
+          <div
+            data-resize="true"
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-1 cursor-ns-resize"
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0">
@@ -317,6 +342,64 @@ export function CalendarEventChip({
                       )}
                     />
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <p className={labelCls} aria-hidden="true">
+                  Repeat
+                </p>
+                <select
+                  aria-label="Repeat"
+                  className={cn(inputCls, 'mt-1')}
+                  value={draft.recurrenceFrequency}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      recurrenceFrequency: e.target.value as RecurrenceFrequency | 'none',
+                    }))
+                  }
+                >
+                  <option value="none">None</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+
+              <div>
+                <p className={labelCls} aria-hidden="true">
+                  Days
+                </p>
+                <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
+                  {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as DayOfWeek[]).map((d) => {
+                    const active = draft.recurrenceDays.includes(d)
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-label={`Day: ${d}`}
+                        aria-pressed={active}
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            recurrenceDays: active
+                              ? prev.recurrenceDays.filter((x) => x !== d)
+                              : [...prev.recurrenceDays, d],
+                          }))
+                        }
+                        className={cn(
+                          'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          active
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                        )}
+                      >
+                        {d[0]}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

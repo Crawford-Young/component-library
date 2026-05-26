@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { CalendarEventChip } from './calendar-event-chip'
@@ -351,5 +351,83 @@ describe('CalendarEventChip', () => {
         expectedClass,
       )
     })
+  })
+})
+
+describe('recurrence fields in edit form', () => {
+  const eventWithRecurrence: CalendarEvent = {
+    id: 'r1',
+    title: 'Morning run',
+    start: '2026-05-04T07:00:00',
+    end: '2026-05-04T07:30:00',
+    recurrenceDays: ['Mon', 'Wed', 'Fri'],
+    recurrenceFrequency: 'weekly',
+  }
+
+  it('edit form shows day pill toggles', async () => {
+    render(
+      <CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByRole('group', { name: /recurrence days/i })).toBeInTheDocument()
+  })
+
+  it('day pills are pre-checked based on recurrenceDays', async () => {
+    render(
+      <CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('frequency select shows current recurrenceFrequency', async () => {
+    render(
+      <CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
+  })
+
+  it('saving edit form calls onEdit with recurrence fields', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recurrenceDays: ['Mon', 'Wed', 'Fri'],
+        recurrenceFrequency: 'weekly',
+      }),
+    )
+  })
+})
+
+describe('resize handle', () => {
+  it('renders resize handle in chip', () => {
+    const { container } = render(<CalendarEventChip event={event} style={style} />)
+    expect(container.querySelector('[data-resize="true"]')).toBeInTheDocument()
+  })
+
+  it('pointerdown on resize handle calls onResizeStart', () => {
+    const onResizeStart = vi.fn()
+    const { container } = render(
+      <CalendarEventChip event={event} style={style} onResizeStart={onResizeStart} />,
+    )
+    const handle = container.querySelector('[data-resize="true"]') as HTMLElement
+    fireEvent.pointerDown(handle)
+    expect(onResizeStart).toHaveBeenCalledWith(event)
+  })
+
+  it('pointerdown on chip body calls onMoveStart with clientY', () => {
+    const onMoveStart = vi.fn()
+    render(<CalendarEventChip event={event} style={style} onMoveStart={onMoveStart} />)
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    fireEvent.pointerDown(chip, { clientY: 250 })
+    expect(onMoveStart).toHaveBeenCalledWith(event, 250)
   })
 })
