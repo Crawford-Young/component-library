@@ -1,3 +1,4 @@
+import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { WeekCalendarView } from '@/components/ui/week-calendar-view'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
@@ -260,5 +261,63 @@ export const GoogleCalendarEvents: Story = {
         description: 'Review color and spacing tokens across all components',
       },
     ],
+  },
+}
+
+export const WithSleepMode: Story = {
+  args: {
+    defaultWeekStart: '2026-05-04',
+    hourStart: 0,
+    hourCount: 24,
+    hourHeight: 28,
+    sleepEnabled: true,
+    sleepStart: 23,
+    sleepEnd: 7,
+    events: [
+      {
+        id: '1',
+        title: 'Team standup',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T09:30:00',
+      },
+    ],
+  },
+}
+
+function WithDragCallbacksDemo() {
+  const [events, setEvents] = React.useState<CalendarEvent[]>([
+    {
+      id: '1',
+      title: 'Moveable event',
+      start: '2026-05-05T10:00:00',
+      end: '2026-05-05T11:00:00',
+      color: 'blue',
+    },
+  ])
+  return (
+    <WeekCalendarView
+      defaultWeekStart="2026-05-04"
+      events={events}
+      onEventCreate={(e) => setEvents((prev) => [...prev, { ...e, id: String(Date.now()) }])}
+      onEventMove={(e) => setEvents((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))}
+      onEventResize={(e) => setEvents((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))}
+      onEventDuplicate={(copies) =>
+        setEvents((prev) => [
+          ...prev,
+          ...copies.map((e) => ({ ...e, id: String(Date.now() + Math.random()) })),
+        ])
+      }
+    />
+  )
+}
+
+export const WithDragCallbacks: Story = {
+  render: () => <WithDragCallbacksDemo />,
+}
+
+export const TodayButton: Story = {
+  args: {
+    defaultWeekStart: '2026-04-06',
+    events: [],
   },
 }
