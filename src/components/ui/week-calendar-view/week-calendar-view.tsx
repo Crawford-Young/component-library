@@ -61,7 +61,7 @@ function getEventStyle(
   const end = new Date(event.end)
   const top = ((start.getHours() - hourStart + start.getMinutes() / 60) / hourCount) * 100
   const height = Math.max(
-    ((end.getTime() - start.getTime()) / (hourCount * 3_600_000)) * 100,
+    ((end.getTime() - start.getTime()) / (hourCount * MS_PER_HOUR)) * 100,
     (0.5 / hourCount) * 100,
   )
   const left = (column / totalColumns) * 100
@@ -186,15 +186,26 @@ function formatHour(hour: number): string {
   return `${h}${hour < 12 ? 'am' : 'pm'}`
 }
 
+const MS_PER_HOUR = 3_600_000
+const SLOTS_PER_HOUR = 4
+const SLOT_MINS = 15
+
 function timeToSlot(iso: string): number {
   const d = new Date(iso)
-  return d.getHours() * 4 + Math.floor(d.getMinutes() / 15)
+  return d.getHours() * SLOTS_PER_HOUR + Math.floor(d.getMinutes() / SLOT_MINS)
 }
 
 function slotToTime(slot: number, datePart: string): string {
-  const h = Math.floor(slot / 4)
-  const m = (slot % 4) * 15
+  const h = Math.floor(slot / SLOTS_PER_HOUR)
+  const m = (slot % SLOTS_PER_HOUR) * SLOT_MINS
   return `${datePart}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
+}
+
+interface PendingCreate {
+  dayIdx: number
+  date: string
+  startSlot: number
+  endSlot: number
 }
 
 function formatDateISO(d: Date): string {
@@ -270,13 +281,6 @@ export function WeekCalendarView({
   const [dragMode, dragActions] = useDragState()
   const gridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
-
-  interface PendingCreate {
-    dayIdx: number
-    date: string
-    startSlot: number
-    endSlot: number
-  }
   const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
   const [createDraft, setCreateDraft] = React.useState<{
     title: string
@@ -289,13 +293,13 @@ export function WeekCalendarView({
 
   function pointerToSlot(clientY: number): number {
     const rect = gridRef.current?.getBoundingClientRect()
-    if (!rect) return effectiveHourStart * 4
+    if (!rect) return effectiveHourStart * SLOTS_PER_HOUR
     const relY = clientY - rect.top
-    const slotHeight = hourHeight / 4
-    const raw = Math.floor(relY / slotHeight) + effectiveHourStart * 4
+    const slotHeight = hourHeight / SLOTS_PER_HOUR
+    const raw = Math.floor(relY / slotHeight) + effectiveHourStart * SLOTS_PER_HOUR
     return Math.max(
-      effectiveHourStart * 4,
-      Math.min((effectiveHourStart + effectiveHourCount) * 4 - 1, raw),
+      effectiveHourStart * SLOTS_PER_HOUR,
+      Math.min((effectiveHourStart + effectiveHourCount) * SLOTS_PER_HOUR - 1, raw),
     )
   }
 
@@ -452,8 +456,8 @@ export function WeekCalendarView({
                     onEventCreate
                       ? (e) => {
                           const slot =
-                            (effectiveHourStart + i) * 4 +
-                            Math.floor((e.nativeEvent.offsetY / hourHeight) * 4)
+                            (effectiveHourStart + i) * SLOTS_PER_HOUR +
+                            Math.floor((e.nativeEvent.offsetY / hourHeight) * SLOTS_PER_HOUR)
                           dragActions.startCreate(dayIdx, slot)
                           e.currentTarget.setPointerCapture(e.pointerId)
                         }
@@ -563,7 +567,7 @@ export function WeekCalendarView({
                       aria-hidden="true"
                       style={{
                         position: 'absolute',
-                        top: `${((pendingCreate.startSlot / 4 - effectiveHourStart) / effectiveHourCount) * 100}%`,
+                        top: `${((pendingCreate.startSlot / SLOTS_PER_HOUR - effectiveHourStart) / effectiveHourCount) * 100}%`,
                         height: 1,
                         left: 0,
                         right: 0,
@@ -601,10 +605,6 @@ export function WeekCalendarView({
                         <input
                           id="create-event-title"
                           aria-label="Event title"
-                          // autoFocus is intentional here — focus must jump to the title field
-                          // immediately when the create popover opens so keyboard users can type
-                          // without an extra Tab press. This is a popover triggered by a mouse/pointer
-                          // drag gesture, so no ambient focus disruption for keyboard-only navigation.
                           // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
                           className="w-full rounded border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
