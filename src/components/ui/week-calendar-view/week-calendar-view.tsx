@@ -11,7 +11,7 @@ import { useDragState } from './drag'
 import { GhostEvent } from './ghost-event'
 import { SleepBand } from './sleep-band'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
+import { EventCreateForm } from './event-create-form'
 
 export type {
   CalendarEvent,
@@ -117,7 +117,7 @@ function TimeGutterLabel({
   const top = ((now.getHours() - hourStart + now.getMinutes() / 60) / hourCount) * 100
   if (top < 0 || top > 100) return null
   const h = now.getHours() % 12 || 12
-  const m = String(now.getMinutes()).padStart(2, '0')
+  const m = String(now.getMinutes()).padStart(2, '00')
   const period = now.getHours() < 12 ? 'AM' : 'PM'
   return (
     <div
@@ -201,7 +201,8 @@ function slotToTime(slot: number, datePart: string): string {
 }
 
 interface PendingCreate {
-  dayIdx: number
+  startDayIdx: number
+  currentDayIdx: number
   date: string
   startSlot: number
   endSlot: number
@@ -281,7 +282,14 @@ export function WeekCalendarView({
   const gridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
   const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
-  const [createDraft, setCreateDraft] = React.useState<{ title: string }>({ title: '' })
+
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if (e.key === 'Escape') dragActions.reset()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [dragActions])
 
   const effectiveHourStart = sleepEnabled ? 0 : hourStart
   const effectiveHourCount = sleepEnabled ? 24 : hourCount
@@ -311,28 +319,31 @@ export function WeekCalendarView({
   function handleGridPointerMove(e: React.PointerEvent): void {
     if (dragMode.type === 'idle') return
     const slot = pointerToSlot(e.clientY)
-    if (dragMode.type === 'creating' || dragMode.type === 'resizing') {
-      dragActions.updateSlot(dragMode.dayIdx, slot)
-    } else if (dragMode.type === 'moving') {
-      const dayIdx = getPointerDayIdx(e.clientX)
-      dragActions.updateSlot(dayIdx, slot)
-      dragActions.tryDisambiguate(
-        e.clientX - dragMode.initClientX,
-        e.clientY - dragMode.initClientY,
-      )
-    } else if (dragMode.type === 'duplicating') {
-      const dayIdx = getPointerDayIdx(e.clientX)
-      dragActions.updateSlot(dayIdx, slot)
-    }
+    const dayIdx = getPointerDayIdx(e.clientX)
+    dragActions.updateSlot(dayIdx, slot)
   }
 
   function handleGridPointerUp(_e: React.PointerEvent): void {
     if (dragMode.type === 'creating' && onEventCreate) {
       const startSlot = Math.min(dragMode.startSlot, dragMode.currentSlot)
       const endSlot = Math.max(dragMode.startSlot, dragMode.currentSlot) + 1
-      const day = days[dragMode.dayIdx]
-      setCreateDraft({ title: '' })
-      setPendingCreate({ dayIdx: dragMode.dayIdx, date: formatDateISO(day), startSlot, endSlot })
+      const minDayIdx = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
+
+      if (sleepEnabled && sleepStart !== undefined && sleepEnd !== undefined) {
+        const startHour = Math.floor(startSlot / SLOTS_PER_HOUR)
+        if (startHour < sleepEnd || startHour >= sleepStart) {
+          dragActions.reset()
+          return
+        }
+      }
+
+      setPendingCreate({
+        startDayIdx: Math.min(dragMode.startDayIdx, dragMode.currentDayIdx),
+        currentDayIdx: Math.max(dragMode.startDayIdx, dragMode.currentDayIdx),
+        date: formatDateISO(days[minDayIdx]),
+        startSlot,
+        endSlot,
+      })
     } else if (dragMode.type === 'moving' && onEventMove) {
       const slotStart = dragMode.currentSlot - dragMode.slotOffset
       const durationSlots = timeToSlot(dragMode.event.end) - timeToSlot(dragMode.event.start)
@@ -342,9 +353,12 @@ export function WeekCalendarView({
         start: slotToTime(slotStart, dateStr),
         end: slotToTime(slotStart + durationSlots, dateStr),
       })
-    } else if (dragMode.type === 'resizing' && onEventResize) {
+    } else if (dragMode.type === 'resizing-end' && onEventResize) {
       const dateStr = formatDateISO(days[dragMode.dayIdx])
       onEventResize({ ...dragMode.event, end: slotToTime(dragMode.currentSlot + 1, dateStr) })
+    } else if (dragMode.type === 'resizing-start' && onEventResize) {
+      const dateStr = formatDateISO(days[dragMode.dayIdx])
+      onEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
     } else if (dragMode.type === 'duplicating' && onEventDuplicate) {
       const minDay = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
       const maxDay = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
@@ -410,7 +424,7 @@ export function WeekCalendarView({
       {/* Hour grid */}
       <div
         ref={gridRef}
-        className="relative grid"
+        className={cn('relative grid', dragMode.type !== 'idle' && 'select-none cursor-grabbing')}
         style={{ gridTemplateColumns }}
         onPointerMove={handleGridPointerMove}
         onPointerUp={handleGridPointerUp}
@@ -447,7 +461,10 @@ export function WeekCalendarView({
                 <div
                   key={i}
                   data-drag-cell="true"
-                  className="border-b"
+                  className={cn(
+                    'border-b',
+                    onEventCreate !== undefined && dragMode.type === 'idle' && 'cursor-crosshair',
+                  )}
                   style={{ height: hourHeight }}
                   onPointerDown={
                     onEventCreate
@@ -484,32 +501,44 @@ export function WeekCalendarView({
                     onDelete={onEventDelete}
                     renderPopover={renderEventPopover}
                     onMoveStart={
-                      onEventMove
-                        ? (ev, clientY, clientX) => {
-                            const slot = pointerToSlot(clientY)
-                            const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                            dragActions.startMove(ev, dayIdx, slotOffset, clientX, clientY)
+                      onEventMove !== undefined || onEventDuplicate !== undefined
+                        ? (ev, clientY, _clientX, shiftKey) => {
+                            if (shiftKey && onEventDuplicate !== undefined) {
+                              dragActions.startDuplicate(ev, dayIdx)
+                            } else if (onEventMove !== undefined) {
+                              const slot = pointerToSlot(clientY)
+                              const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
+                              dragActions.startMove(ev, dayIdx, slotOffset)
+                            }
                           }
                         : undefined
                     }
                     onResizeStart={
-                      onEventResize
-                        ? (ev) => {
-                            dragActions.startResize(ev, dayIdx, timeToSlot(ev.end) - 1)
+                      onEventResize !== undefined
+                        ? (ev, edge) => {
+                            if (edge === 'end') {
+                              dragActions.startResizeEnd(ev, dayIdx, timeToSlot(ev.end) - 1)
+                            } else {
+                              dragActions.startResizeStart(ev, dayIdx, timeToSlot(ev.start))
+                            }
                           }
                         : undefined
                     }
                   />
                 )
               })}
-              {dragMode.type === 'creating' && dragMode.dayIdx === dayIdx && (
-                <GhostEvent
-                  startSlot={Math.min(dragMode.startSlot, dragMode.currentSlot)}
-                  endSlot={Math.max(dragMode.startSlot, dragMode.currentSlot) + 1}
-                  hourStart={effectiveHourStart}
-                  hourCount={effectiveHourCount}
-                />
-              )}
+              {/* Ghost: create (spans multiple columns) */}
+              {dragMode.type === 'creating' &&
+                dayIdx >= Math.min(dragMode.startDayIdx, dragMode.currentDayIdx) &&
+                dayIdx <= Math.max(dragMode.startDayIdx, dragMode.currentDayIdx) && (
+                  <GhostEvent
+                    startSlot={Math.min(dragMode.startSlot, dragMode.currentSlot)}
+                    endSlot={Math.max(dragMode.startSlot, dragMode.currentSlot) + 1}
+                    hourStart={effectiveHourStart}
+                    hourCount={effectiveHourCount}
+                  />
+                )}
+              {/* Ghost: move */}
               {dragMode.type === 'moving' && dragMode.dayIdx === dayIdx && (
                 <GhostEvent
                   startSlot={dragMode.currentSlot - dragMode.slotOffset}
@@ -523,7 +552,8 @@ export function WeekCalendarView({
                   color={dragMode.event.color}
                 />
               )}
-              {dragMode.type === 'resizing' && dragMode.dayIdx === dayIdx && (
+              {/* Ghost: resize end */}
+              {dragMode.type === 'resizing-end' && dragMode.dayIdx === dayIdx && (
                 <GhostEvent
                   startSlot={timeToSlot(dragMode.event.start)}
                   endSlot={dragMode.currentSlot + 1}
@@ -532,6 +562,17 @@ export function WeekCalendarView({
                   color={dragMode.event.color}
                 />
               )}
+              {/* Ghost: resize start */}
+              {dragMode.type === 'resizing-start' && dragMode.dayIdx === dayIdx && (
+                <GhostEvent
+                  startSlot={dragMode.currentSlot}
+                  endSlot={timeToSlot(dragMode.event.end)}
+                  hourStart={effectiveHourStart}
+                  hourCount={effectiveHourCount}
+                  color={dragMode.event.color}
+                />
+              )}
+              {/* Ghost: duplicate */}
               {dragMode.type === 'duplicating' &&
                 dayIdx >= Math.min(dragMode.startDayIdx, dragMode.currentDayIdx) &&
                 dayIdx <= Math.max(dragMode.startDayIdx, dragMode.currentDayIdx) && (
@@ -552,7 +593,7 @@ export function WeekCalendarView({
                   hourHeight={hourHeight}
                 />
               )}
-              {pendingCreate?.dayIdx === dayIdx && (
+              {pendingCreate?.startDayIdx === dayIdx && (
                 <Popover
                   open
                   onOpenChange={(open) => {
@@ -571,50 +612,34 @@ export function WeekCalendarView({
                       }}
                     />
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3">
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault()
-                        onEventCreate!({
-                          title: createDraft.title,
-                          start: slotToTime(pendingCreate.startSlot, pendingCreate.date),
-                          end: slotToTime(pendingCreate.endSlot, pendingCreate.date),
-                        })
+                  <PopoverContent className="w-72 p-0">
+                    <EventCreateForm
+                      startSlot={pendingCreate.startSlot}
+                      endSlot={pendingCreate.endSlot}
+                      date={pendingCreate.date}
+                      dayCount={pendingCreate.currentDayIdx - pendingCreate.startDayIdx + 1}
+                      days={days}
+                      startDayIdx={pendingCreate.startDayIdx}
+                      currentDayIdx={pendingCreate.currentDayIdx}
+                      onSubmit={(event) => {
+                        const timePart = event.start.substring(10)
+                        const endTimePart = event.end.substring(10)
+                        for (
+                          let i = pendingCreate.startDayIdx;
+                          i <= pendingCreate.currentDayIdx;
+                          i++
+                        ) {
+                          const dateStr = formatDateISO(days[i])
+                          onEventCreate!({
+                            ...event,
+                            start: `${dateStr}${timePart}`,
+                            end: `${dateStr}${endTimePart}`,
+                          })
+                        }
                         setPendingCreate(null)
                       }}
-                      className="space-y-2"
-                    >
-                      <div>
-                        <label
-                          htmlFor="create-event-title"
-                          className="mb-0.5 block text-[11px] font-medium text-muted-foreground"
-                        >
-                          Title
-                        </label>
-                        <input
-                          id="create-event-title"
-                          aria-label="Event title"
-                          // eslint-disable-next-line jsx-a11y/no-autofocus
-                          autoFocus
-                          className="w-full rounded border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          value={createDraft.title}
-                          onChange={(e) => setCreateDraft((d) => ({ ...d, title: e.target.value }))}
-                        />
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <Button type="submit" size="sm">
-                          Create
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPendingCreate(null)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
+                      onCancel={() => setPendingCreate(null)}
+                    />
                   </PopoverContent>
                 </Popover>
               )}
