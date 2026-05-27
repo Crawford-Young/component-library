@@ -117,7 +117,7 @@ function TimeGutterLabel({
   const top = ((now.getHours() - hourStart + now.getMinutes() / 60) / hourCount) * 100
   if (top < 0 || top > 100) return null
   const h = now.getHours() % 12 || 12
-  const m = String(now.getMinutes()).padStart(2, '00')
+  const m = String(now.getMinutes()).padStart(2, '0')
   const period = now.getHours() < 12 ? 'AM' : 'PM'
   return (
     <div
