@@ -68,8 +68,13 @@ export interface CalendarEventChipProps {
   readonly onClick?: (event: CalendarEvent) => void
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
-  readonly onMoveStart?: (event: CalendarEvent, clientY: number, clientX: number) => void
-  readonly onResizeStart?: (event: CalendarEvent) => void
+  readonly onMoveStart?: (
+    event: CalendarEvent,
+    clientY: number,
+    clientX: number,
+    shiftKey: boolean,
+  ) => void
+  readonly onResizeStart?: (event: CalendarEvent, edge: 'start' | 'end') => void
   readonly renderPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
@@ -266,6 +271,7 @@ export function CalendarEventChip({
           type="button"
           className={cn(
             'relative cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            onMoveStart !== undefined && 'cursor-grab',
             eventColorVariants({ color: event.color }),
             className,
           )}
@@ -277,11 +283,12 @@ export function CalendarEventChip({
           }}
           onPointerDown={(e) => {
             const target = e.target as HTMLElement
-            if (target.dataset.resize === 'true') {
+            const resize = target.dataset.resize
+            if (resize === 'start' || resize === 'end') {
               e.stopPropagation()
-              onResizeStart?.(event)
+              onResizeStart?.(event, resize)
             } else {
-              onMoveStart?.(event, e.clientY, e.clientX)
+              onMoveStart?.(event, e.clientY, e.clientX, e.shiftKey)
             }
           }}
         >
@@ -295,9 +302,14 @@ export function CalendarEventChip({
           {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
           {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
           <div
-            data-resize="true"
+            data-resize="start"
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-1 cursor-ns-resize"
+            className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+          />
+          <div
+            data-resize="end"
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
           />
         </button>
       </PopoverTrigger>

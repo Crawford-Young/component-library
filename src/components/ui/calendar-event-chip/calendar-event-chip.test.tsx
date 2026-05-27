@@ -438,27 +438,62 @@ describe('recurrence fields in edit form', () => {
   })
 })
 
-describe('resize handle', () => {
-  it('renders resize handle in chip', () => {
+describe('resize handles', () => {
+  it('renders bottom resize handle with data-resize="end"', () => {
     const { container } = render(<CalendarEventChip event={event} style={style} />)
-    expect(container.querySelector('[data-resize="true"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-resize="end"]')).toBeInTheDocument()
   })
 
-  it('pointerdown on resize handle calls onResizeStart', () => {
+  it('renders top resize handle with data-resize="start"', () => {
+    const { container } = render(<CalendarEventChip event={event} style={style} />)
+    expect(container.querySelector('[data-resize="start"]')).toBeInTheDocument()
+  })
+
+  it('pointerdown on bottom handle calls onResizeStart with event and "end"', () => {
     const onResizeStart = vi.fn()
     const { container } = render(
       <CalendarEventChip event={event} style={style} onResizeStart={onResizeStart} />,
     )
-    const handle = container.querySelector('[data-resize="true"]') as HTMLElement
+    const handle = container.querySelector('[data-resize="end"]') as HTMLElement
     fireEvent.pointerDown(handle)
-    expect(onResizeStart).toHaveBeenCalledWith(event)
+    expect(onResizeStart).toHaveBeenCalledWith(event, 'end')
   })
 
-  it('pointerdown on chip body calls onMoveStart with clientY', () => {
+  it('pointerdown on top handle calls onResizeStart with event and "start"', () => {
+    const onResizeStart = vi.fn()
+    const { container } = render(
+      <CalendarEventChip event={event} style={style} onResizeStart={onResizeStart} />,
+    )
+    const handle = container.querySelector('[data-resize="start"]') as HTMLElement
+    fireEvent.pointerDown(handle)
+    expect(onResizeStart).toHaveBeenCalledWith(event, 'start')
+  })
+
+  it('pointerdown on chip body passes shiftKey=false to onMoveStart when no shift held', () => {
     const onMoveStart = vi.fn()
     render(<CalendarEventChip event={event} style={style} onMoveStart={onMoveStart} />)
     const chip = screen.getByRole('button', { name: /team standup/i })
-    fireEvent.pointerDown(chip, { clientX: 100, clientY: 250 })
-    expect(onMoveStart).toHaveBeenCalledWith(event, 250, 100)
+    fireEvent.pointerDown(chip, { clientY: 250, clientX: 100, shiftKey: false })
+    expect(onMoveStart).toHaveBeenCalledWith(event, 250, 100, false)
+  })
+
+  it('pointerdown on chip body passes shiftKey=true to onMoveStart when shift held', () => {
+    const onMoveStart = vi.fn()
+    render(<CalendarEventChip event={event} style={style} onMoveStart={onMoveStart} />)
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    fireEvent.pointerDown(chip, { clientY: 250, clientX: 100, shiftKey: true })
+    expect(onMoveStart).toHaveBeenCalledWith(event, 250, 100, true)
+  })
+
+  it('chip has cursor-grab class when onMoveStart is provided', () => {
+    render(<CalendarEventChip event={event} style={style} onMoveStart={vi.fn()} />)
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    expect(chip.className).toContain('cursor-grab')
+  })
+
+  it('chip does not have cursor-grab class when onMoveStart is not provided', () => {
+    render(<CalendarEventChip event={event} style={style} />)
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    expect(chip.className).not.toContain('cursor-grab')
   })
 })
