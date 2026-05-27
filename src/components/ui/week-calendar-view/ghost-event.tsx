@@ -11,6 +11,13 @@ export interface GhostEventProps {
   readonly color?: CalendarEventColor
 }
 
+function formatSlotTime(slot: number): string {
+  const totalMins = slot * 15
+  const h = Math.floor(totalMins / 60) % 12 || 12
+  const m = String(totalMins % 60).padStart(2, '0')
+  return `${h}:${m}`
+}
+
 export function GhostEvent({
   startSlot,
   endSlot,
@@ -20,6 +27,7 @@ export function GhostEvent({
 }: GhostEventProps): React.JSX.Element {
   const top = ((startSlot / 4 - hourStart) / hourCount) * 100
   const height = Math.max(((endSlot - startSlot) / 4 / hourCount) * 100, (0.25 / hourCount) * 100)
+  const showLabel = endSlot - startSlot >= 2
   return (
     <div
       data-testid="ghost-event"
@@ -29,6 +37,15 @@ export function GhostEvent({
         eventColorVariants({ color }),
       )}
       style={{ top: `${top}%`, height: `${height}%` }}
-    />
+    >
+      {showLabel && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none px-1 text-[9px] font-medium leading-tight opacity-80"
+        >
+          {formatSlotTime(startSlot)} – {formatSlotTime(endSlot)}
+        </span>
+      )}
+    </div>
   )
 }
