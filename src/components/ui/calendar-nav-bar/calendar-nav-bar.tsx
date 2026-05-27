@@ -85,21 +85,21 @@ export function CalendarNavBar({
       <div className="flex items-center gap-1">
         <Button
           type="button"
-          variant="outline"
-          size="sm"
-          disabled={isCurrentWeek}
-          onClick={handleToday}
-        >
-          Today
-        </Button>
-        <Button
-          type="button"
           variant="ghost"
           size="sm"
           aria-label="Previous week"
           onClick={handlePrev}
         >
           ←
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isCurrentWeek}
+          onClick={handleToday}
+        >
+          Today
         </Button>
       </div>
       <div className="flex items-center gap-1">

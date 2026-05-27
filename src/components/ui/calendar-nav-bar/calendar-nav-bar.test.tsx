@@ -172,4 +172,12 @@ describe('Today button', () => {
     expect(screen.getByRole('button', { name: 'Today' })).not.toBeDisabled()
     vi.useRealTimers()
   })
+
+  it('prev arrow button appears before Today button in DOM order', () => {
+    const { container } = render(<CalendarNavBar currentDate={date} onDateChange={vi.fn()} />)
+    const buttons = Array.from(container.querySelectorAll('button'))
+    const prevIdx = buttons.findIndex((b) => b.getAttribute('aria-label') === 'Previous week')
+    const todayIdx = buttons.findIndex((b) => b.textContent?.trim() === 'Today')
+    expect(prevIdx).toBeLessThan(todayIdx)
+  })
 })
