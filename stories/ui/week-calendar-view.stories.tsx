@@ -2,6 +2,7 @@ import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { WeekCalendarView } from '@/components/ui/week-calendar-view'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
+import { SleepToggle } from '@/components/ui/sleep-toggle'
 
 const meta: Meta<typeof WeekCalendarView> = {
   title: 'Data/WeekCalendarView',
@@ -320,4 +321,40 @@ export const TodayButton: Story = {
     defaultWeekStart: '2026-04-06',
     events: [],
   },
+}
+
+function WithSleepToggleDemo() {
+  const [sleepEnabled, setSleepEnabled] = React.useState(false)
+  return (
+    <div className="flex flex-col gap-3">
+      <SleepToggle enabled={sleepEnabled} onToggle={setSleepEnabled} />
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        hourStart={0}
+        hourCount={24}
+        hourHeight={28}
+        sleepEnabled={sleepEnabled}
+        sleepStart={23}
+        sleepEnd={7}
+        events={[
+          {
+            id: '1',
+            title: 'Team standup',
+            start: '2026-05-04T09:00:00',
+            end: '2026-05-04T09:30:00',
+          },
+          {
+            id: '2',
+            title: 'Late night call',
+            start: '2026-05-05T23:30:00',
+            end: '2026-05-06T00:30:00',
+          },
+        ]}
+      />
+    </div>
+  )
+}
+
+export const WithSleepToggle: Story = {
+  render: () => <WithSleepToggleDemo />,
 }
