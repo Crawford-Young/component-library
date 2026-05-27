@@ -139,4 +139,86 @@ describe('EventCreateForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(onSubmit.mock.calls[0][0].color).toBe('blue')
   })
+
+  it('submit includes description when filled', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.type(screen.getByLabelText('Description'), 'My description')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].description).toBe('My description')
+  })
+
+  it('submit omits description when empty', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].description).toBeUndefined()
+  })
+
+  it('submit includes recurrenceFrequency when set to non-none', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceFrequency).toBe('weekly')
+  })
+
+  it('submit omits recurrenceFrequency when set to none', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceFrequency).toBeUndefined()
+  })
+
+  it('submit includes recurrenceDays when at least one day toggled', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceDays).toEqual(['Mon'])
+  })
+
+  it('toggling a day off removes it from recurrenceDays', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceDays).toBeUndefined()
+  })
+
+  it('submit includes allDay when checkbox is checked', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('checkbox', { name: /all day/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].allDay).toBe(true)
+  })
+
+  it('changing start time input updates the submitted start value', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.clear(screen.getByLabelText('Start'))
+    await userEvent.type(screen.getByLabelText('Start'), '10:30')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].start).toContain('10:30')
+  })
+
+  it('changing end time input updates the submitted end value', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.clear(screen.getByLabelText('End'))
+    await userEvent.type(screen.getByLabelText('End'), '11:00')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].end).toContain('11:00')
+  })
 })

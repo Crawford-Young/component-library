@@ -887,7 +887,7 @@ describe('escape key', () => {
 })
 
 describe('sleep block', () => {
-  it('does not open create form when drag starts in sleep hours', () => {
+  it('does not open create form when drag starts in sleep hours (early morning)', () => {
     const onCreate = vi.fn()
     render(
       <WeekCalendarView
@@ -906,6 +906,28 @@ describe('sleep block', () => {
     fireEvent.pointerDown(cells[0], { pointerId: 1, clientY: 0 })
     fireEvent.pointerUp(cells[0], { pointerId: 1 })
     // Form should NOT appear
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('does not open create form when drag starts in late-night sleep hours (>= sleepStart)', () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={0}
+        hourCount={24}
+        sleepEnabled={true}
+        sleepStart={23}
+        sleepEnd={7}
+        onEventCreate={onCreate}
+      />,
+    )
+    // cells are ordered day0-hour0 … day0-hour23 day1-hour0 … so index 23 = day0, hour 23
+    // slot = 23*4 = 92, startHour = floor(92/4) = 23 >= sleepStart=23 → blocked
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(cells[23], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(cells[23], { pointerId: 1 })
     expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
   })
 })

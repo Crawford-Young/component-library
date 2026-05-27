@@ -139,6 +139,13 @@ describe('useDragState', () => {
     expect(result.current[0].type).toBe('idle')
   })
 
+  it('updateSlot is a no-op when in idle mode', () => {
+    const { result } = renderHook(() => useDragState())
+    // mode starts idle; calling updateSlot should leave it idle
+    act(() => result.current[1].updateSlot(2, 16))
+    expect(result.current[0].type).toBe('idle')
+  })
+
   it('actions object is stable across renders', () => {
     const { result, rerender } = renderHook(() => useDragState())
     const actions1 = result.current[1]
