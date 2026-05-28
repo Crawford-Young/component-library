@@ -58,11 +58,17 @@ function getEventStyle(
 ): React.CSSProperties {
   const start = new Date(event.start)
   const end = new Date(event.end)
-  const top = ((start.getHours() - hourStart + start.getMinutes() / 60) / hourCount) * 100
-  const height = Math.max(
-    ((end.getTime() - start.getTime()) / (hourCount * MS_PER_HOUR)) * 100,
-    (0.5 / hourCount) * 100,
-  )
+  const dayStart = new Date(start)
+  dayStart.setHours(hourStart, 0, 0, 0)
+  const dayEnd = new Date(start)
+  dayEnd.setHours(hourStart + hourCount, 0, 0, 0)
+  const clampedStart = start < dayStart ? dayStart : start
+  const clampedEnd = end > dayEnd ? dayEnd : end
+  const totalMs = hourCount * MS_PER_HOUR
+  const top = ((clampedStart.getTime() - dayStart.getTime()) / totalMs) * 100
+  const minHeight = (0.5 / hourCount) * 100
+  const rawHeight = ((clampedEnd.getTime() - clampedStart.getTime()) / totalMs) * 100
+  const height = Math.max(rawHeight, minHeight)
   const left = (column / totalColumns) * 100
   const width = (1 / totalColumns) * 100
   return {
@@ -643,13 +649,13 @@ export function WeekCalendarView({
                       style={{
                         position: 'absolute',
                         top: `${((pendingCreate.startSlot / SLOTS_PER_HOUR - effectiveHourStart) / effectiveHourCount) * 100}%`,
-                        height: 1,
+                        height: 0,
                         left: 0,
                         right: 0,
                       }}
                     />
                   </PopoverTrigger>
-                  <PopoverContent className="w-72 p-0">
+                  <PopoverContent className="w-72 p-0" side="bottom">
                     <EventCreateForm
                       startSlot={pendingCreate.startSlot}
                       endSlot={pendingCreate.endSlot}

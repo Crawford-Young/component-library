@@ -565,6 +565,51 @@ describe('GhostEvent', () => {
   })
 })
 
+describe('event position clamping', () => {
+  it('event starting before hourStart is pinned to top=0', () => {
+    const earlyEvent: CalendarEvent = {
+      id: 'early',
+      title: 'Early bird',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T09:00:00',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[earlyEvent]}
+        hourStart={8}
+        hourCount={14}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /early bird/i })
+    expect(chip.style.top).toBe('0%')
+    // Only the visible 1h (8–9am) portion shows — 1/14 ≈ 7.14%
+    expect(parseFloat(chip.style.height)).toBeCloseTo(7.14, 1)
+  })
+
+  it('event ending past the visible range has height clipped to remaining grid', () => {
+    const lateEvent: CalendarEvent = {
+      id: 'late',
+      title: 'Overnight',
+      start: '2026-05-04T21:00:00',
+      end: '2026-05-05T02:00:00',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[lateEvent]}
+        hourStart={8}
+        hourCount={14}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /overnight/i })
+    // top = (21-8)/14*100 ≈ 92.86%
+    expect(parseFloat(chip.style.top)).toBeCloseTo(92.86, 1)
+    // visible portion: 9pm–10pm = 1h → 1/14*100 ≈ 7.14%
+    expect(parseFloat(chip.style.height)).toBeCloseTo(7.14, 1)
+  })
+})
+
 describe('drag to create', () => {
   it('calls onEventCreate after drag-to-create and form save', async () => {
     const onCreate = vi.fn()
@@ -825,6 +870,116 @@ describe('internal CRUD state management', () => {
     fireEvent.pointerUp(chip)
     // Event still in calendar (position updated internally)
     expect(screen.getByRole('button', { name: /moveable/i })).toBeInTheDocument()
+  })
+
+  it('duplicate adds event copies to calendar without external state management', () => {
+    const event: CalendarEvent = {
+      id: 'e1',
+      title: 'Original',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T10:00:00',
+    }
+    const onDuplicate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[event]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventDuplicate={onDuplicate}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /original/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientY: 100, clientX: 100, shiftKey: true })
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerMove(cells[4], { pointerId: 1, clientY: 100, clientX: 100 })
+    fireEvent.pointerUp(cells[4], { pointerId: 1 })
+    expect(onDuplicate).toHaveBeenCalled()
+    expect(screen.getAllByRole('button', { name: /original/i }).length).toBeGreaterThan(1)
+  })
+
+  it('edit with multiple events only updates the target', async () => {
+    const twoEvents: CalendarEvent[] = [
+      { id: 'e1', title: 'First event', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
+      { id: 'e2', title: 'Second event', start: '2026-05-05T09:00:00', end: '2026-05-05T10:00:00' },
+    ]
+    render(<WeekCalendarView defaultWeekStart="2026-05-04" events={twoEvents} />)
+    await userEvent.click(screen.getByRole('button', { name: /first event/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    const titleInput = screen.getByRole('textbox', { name: /title/i })
+    await userEvent.clear(titleInput)
+    await userEvent.type(titleInput, 'Renamed')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(screen.getByRole('button', { name: /renamed/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /second event/i })).toBeInTheDocument()
+  })
+
+  it('move with multiple events only repositions the target', () => {
+    const twoEvents: CalendarEvent[] = [
+      { id: 'e1', title: 'Move this', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
+      { id: 'e2', title: 'Stay here', start: '2026-05-05T09:00:00', end: '2026-05-05T10:00:00' },
+    ]
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={twoEvents}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /move this/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: false })
+    fireEvent.pointerUp(chip)
+    expect(screen.getByRole('button', { name: /move this/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /stay here/i })).toBeInTheDocument()
+  })
+
+  it('resize updates event end and leaves other events unchanged', () => {
+    const twoEvents: CalendarEvent[] = [
+      { id: 'e1', title: 'Resize me', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
+      { id: 'e2', title: 'Untouched', start: '2026-05-05T09:00:00', end: '2026-05-05T10:00:00' },
+    ]
+    const { container } = render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={twoEvents}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventResize={vi.fn()}
+      />,
+    )
+    const resizeHandle = container.querySelector('[data-resize="end"]') as HTMLElement
+    fireEvent.pointerDown(resizeHandle, { pointerId: 1, clientY: 100 })
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerMove(cells[4], { pointerId: 1, clientY: 168 })
+    fireEvent.pointerUp(cells[4], { pointerId: 1 })
+    expect(screen.getByRole('button', { name: /resize me/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /untouched/i })).toBeInTheDocument()
+  })
+
+  it('cancel button closes create form without creating an event', async () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={onCreate}
+      />,
+    )
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(cells[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(cells[0], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+    expect(onCreate).not.toHaveBeenCalled()
   })
 })
 

@@ -285,35 +285,74 @@ export const WithSleepMode: Story = {
   },
 }
 
-function WithDragCallbacksDemo() {
-  const [events, setEvents] = React.useState<CalendarEvent[]>([
-    {
-      id: '1',
-      title: 'Moveable event',
-      start: '2026-05-05T10:00:00',
-      end: '2026-05-05T11:00:00',
-      color: 'blue',
-    },
-  ])
-  return (
-    <WeekCalendarView
-      defaultWeekStart="2026-05-04"
-      events={events}
-      onEventCreate={(e) => setEvents((prev) => [...prev, { ...e, id: String(Date.now()) }])}
-      onEventMove={(e) => setEvents((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))}
-      onEventResize={(e) => setEvents((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))}
-      onEventDuplicate={(copies) =>
-        setEvents((prev) => [
-          ...prev,
-          ...copies.map((e) => ({ ...e, id: String(Date.now() + Math.random()) })),
-        ])
-      }
-    />
-  )
+export const WithDragCallbacks: Story = {
+  args: {
+    defaultWeekStart: '2026-05-04',
+    events: [
+      {
+        id: '1',
+        title: 'Moveable event',
+        start: '2026-05-05T10:00:00',
+        end: '2026-05-05T11:00:00',
+        color: 'blue',
+      },
+    ],
+    onEventCreate: () => {},
+    onEventMove: () => {},
+    onEventResize: () => {},
+    onEventDuplicate: () => {},
+  },
 }
 
-export const WithDragCallbacks: Story = {
-  render: () => <WithDragCallbacksDemo />,
+export const EditDelete: Story = {
+  args: {
+    defaultWeekStart: '2026-05-04',
+    events: [
+      {
+        id: '1',
+        title: 'Click to edit or delete',
+        start: '2026-05-04T10:00:00',
+        end: '2026-05-04T11:00:00',
+        color: 'violet',
+        location: 'Conference Room A',
+        description: 'Click the chip to open the popover, then use Edit or Delete.',
+      },
+      {
+        id: '2',
+        title: 'Another editable event',
+        start: '2026-05-05T14:00:00',
+        end: '2026-05-05T15:00:00',
+        color: 'teal',
+      },
+    ],
+  },
+}
+
+export const FullyInteractive: Story = {
+  args: {
+    defaultWeekStart: '2026-05-04',
+    hourHeight: 48,
+    events: [
+      {
+        id: '1',
+        title: 'Drag to move · Shift+drag to copy',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T10:00:00',
+        color: 'blue',
+      },
+      {
+        id: '2',
+        title: 'Drag edge to resize',
+        start: '2026-05-05T14:00:00',
+        end: '2026-05-05T15:30:00',
+        color: 'teal',
+      },
+    ],
+    onEventCreate: () => {},
+    onEventMove: () => {},
+    onEventResize: () => {},
+    onEventDuplicate: () => {},
+  },
 }
 
 export const TodayButton: Story = {
