@@ -6,6 +6,8 @@ export interface SleepBandProps {
   readonly hourStart: number
   readonly hourCount: number
   readonly hourHeight: number
+  /** When true, blocks pointer events (drag/click) in sleep hours. When false, visual only. Default: true. */
+  readonly interactive?: boolean
 }
 
 interface RegionStyle {
@@ -29,20 +31,22 @@ function computeRegion(
   }
 }
 
-const stripeStyle: React.CSSProperties = {
-  backgroundImage:
-    'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 8px)',
-  pointerEvents: 'auto',
-}
+const stripeBackground =
+  'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 8px)'
 
 export function SleepBand({
   sleepStart,
   sleepEnd,
   hourStart,
   hourCount,
+  interactive = true,
 }: SleepBandProps): React.JSX.Element {
   const topRegion = computeRegion(0, sleepEnd, hourStart, hourCount)
   const bottomRegion = computeRegion(sleepStart, 24, hourStart, hourCount)
+  const regionStyle: React.CSSProperties = {
+    backgroundImage: stripeBackground,
+    pointerEvents: interactive ? 'auto' : 'none',
+  }
 
   return (
     <>
@@ -51,7 +55,7 @@ export function SleepBand({
           data-testid="sleep-region"
           aria-hidden="true"
           className="absolute inset-x-0 z-10 bg-muted/40"
-          style={{ ...topRegion, ...stripeStyle }}
+          style={{ ...topRegion, ...regionStyle }}
         />
       )}
       {bottomRegion && (
@@ -59,7 +63,7 @@ export function SleepBand({
           data-testid="sleep-region"
           aria-hidden="true"
           className="absolute inset-x-0 z-10 bg-muted/40"
-          style={{ ...bottomRegion, ...stripeStyle }}
+          style={{ ...bottomRegion, ...regionStyle }}
         />
       )}
     </>

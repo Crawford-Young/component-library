@@ -330,9 +330,9 @@ function WithSleepToggleDemo() {
       <SleepToggle enabled={sleepEnabled} onToggle={setSleepEnabled} />
       <WeekCalendarView
         defaultWeekStart="2026-05-04"
-        hourStart={0}
-        hourCount={24}
-        hourHeight={28}
+        hourStart={6}
+        hourCount={18}
+        hourHeight={36}
         sleepEnabled={sleepEnabled}
         sleepStart={23}
         sleepEnd={7}
@@ -347,7 +347,7 @@ function WithSleepToggleDemo() {
             id: '2',
             title: 'Late night call',
             start: '2026-05-05T23:30:00',
-            end: '2026-05-06T00:30:00',
+            end: '2026-05-06T00:00:00',
           },
         ]}
       />

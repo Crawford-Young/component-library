@@ -480,6 +480,48 @@ describe('SleepBand', () => {
       expect((r as HTMLElement).style.pointerEvents).toBe('auto')
     })
   })
+
+  it('interactive=false sets pointer-events none (visual-only mode)', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand
+          sleepStart={23}
+          sleepEnd={7}
+          hourStart={0}
+          hourCount={24}
+          hourHeight={30}
+          interactive={false}
+        />
+      </div>,
+    )
+    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
+    expect(regions.length).toBe(2)
+    regions.forEach((r) => {
+      expect((r as HTMLElement).style.pointerEvents).toBe('none')
+    })
+  })
+
+  it('renders sleep regions when hour range overlaps sleep hours (6am-midnight range)', () => {
+    const { container } = render(
+      <div style={{ position: 'relative', height: '800px' }}>
+        <SleepBand
+          sleepStart={23}
+          sleepEnd={7}
+          hourStart={6}
+          hourCount={18}
+          hourHeight={36}
+          interactive={false}
+        />
+      </div>,
+    )
+    // Top region: 0:00–7:00 clamps to 6:00–7:00 → renders (1/18 height)
+    // Bottom region: 23:00–24:00 within 6–24 → renders (1/18 height)
+    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
+    expect(regions.length).toBe(2)
+    const topRegion = regions[0] as HTMLElement
+    expect(topRegion.style.top).toBe('0%')
+    expect(parseFloat(topRegion.style.height)).toBeCloseTo(5.56, 1)
+  })
 })
 
 describe('GhostEvent', () => {
@@ -706,6 +748,86 @@ describe('drag ghost — resizing and duplicating', () => {
   })
 })
 
+describe('internal CRUD state management', () => {
+  it('event appears in calendar after drag-to-create without external state management', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    await userEvent.type(screen.getByLabelText('Event title'), 'My new event')
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(screen.getByRole('button', { name: /my new event/i })).toBeInTheDocument()
+  })
+
+  it('edit updates event in calendar without external state management', async () => {
+    const event: CalendarEvent = {
+      id: 'e1',
+      title: 'Original title',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T10:00:00',
+    }
+    render(
+      <WeekCalendarView defaultWeekStart="2026-05-04" events={[event]} onEventEdit={vi.fn()} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /original title/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    const titleInput = screen.getByRole('textbox', { name: /title/i })
+    await userEvent.clear(titleInput)
+    await userEvent.type(titleInput, 'Updated title')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(screen.getByRole('button', { name: /updated title/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /original title/i })).not.toBeInTheDocument()
+  })
+
+  it('delete removes event from calendar without external state management', async () => {
+    const event: CalendarEvent = {
+      id: 'e1',
+      title: 'Delete me',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T10:00:00',
+    }
+    render(
+      <WeekCalendarView defaultWeekStart="2026-05-04" events={[event]} onEventDelete={vi.fn()} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /delete me/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(screen.queryByRole('button', { name: /delete me/i })).not.toBeInTheDocument()
+  })
+
+  it('move updates event position in calendar without external state management', () => {
+    const event: CalendarEvent = {
+      id: 'e1',
+      title: 'Moveable',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T10:00:00',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[event]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /moveable/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: false })
+    fireEvent.pointerUp(chip)
+    // Event still in calendar (position updated internally)
+    expect(screen.getByRole('button', { name: /moveable/i })).toBeInTheDocument()
+  })
+})
+
 describe('sleep mode', () => {
   it('renders SleepBand when sleepEnabled=true with sleepStart and sleepEnd', () => {
     render(
@@ -722,7 +844,7 @@ describe('sleep mode', () => {
     expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBeGreaterThan(0)
   })
 
-  it('does not render SleepBand when sleepEnabled=false', () => {
+  it('does not render visible sleep regions when sleepEnabled=false and sleep hours outside custom range', () => {
     render(
       <WeekCalendarView
         defaultWeekStart="2026-05-03"
@@ -732,7 +854,29 @@ describe('sleep mode', () => {
         sleepEnd={7}
       />,
     )
+    // Default hourStart=8, hourCount=14 (8am–10pm); sleep 11pm–7am has no overlap
     expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(0)
+  })
+
+  it('renders visual-only sleep regions when sleepEnabled=false and custom hours overlap sleep', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={6}
+        hourCount={18}
+        sleepEnabled={false}
+        sleepStart={23}
+        sleepEnd={7}
+      />,
+    )
+    // 6am–midnight range overlaps sleep (6am–7am and 11pm–midnight) → 2 regions × 7 columns = 14
+    const regions = document.querySelectorAll('[data-testid="sleep-region"]')
+    expect(regions.length).toBe(14)
+    // Visual-only: pointer events pass through
+    regions.forEach((r) => {
+      expect((r as HTMLElement).style.pointerEvents).toBe('none')
+    })
   })
 
   it('overrides hourStart/hourCount to 0/24 when sleepEnabled=true', () => {

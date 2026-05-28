@@ -189,6 +189,10 @@ const MS_PER_HOUR = 3_600_000
 const SLOTS_PER_HOUR = 4
 const SLOT_MINS = 15
 
+function generateId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+}
+
 function timeToSlot(iso: string): number {
   const d = new Date(iso)
   return d.getHours() * SLOTS_PER_HOUR + Math.floor(d.getMinutes() / SLOT_MINS)
@@ -266,8 +270,10 @@ export function WeekCalendarView({
     return () => clearTimeout(id)
   }, [today])
 
-  const allDayEvents = React.useMemo(() => events.filter((e) => e.allDay), [events])
-  const timedEvents = React.useMemo(() => events.filter((e) => !e.allDay), [events])
+  const [localEvents, setLocalEvents] = React.useState<readonly CalendarEvent[]>(() => events)
+
+  const allDayEvents = React.useMemo(() => localEvents.filter((e) => e.allDay), [localEvents])
+  const timedEvents = React.useMemo(() => localEvents.filter((e) => !e.allDay), [localEvents])
   const todayInWeek = React.useMemo(() => days.some((d) => isSameDay(d, today)), [days, today])
   const [expandedDayIndex, setExpandedDayIndex] = React.useState<number | null>(null)
 
@@ -282,6 +288,36 @@ export function WeekCalendarView({
   const gridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
   const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
+
+  function handleEventCreate(event: Omit<CalendarEvent, 'id'>): void {
+    setLocalEvents((prev) => [...prev, { ...event, id: generateId() }])
+    onEventCreate?.(event)
+  }
+
+  function handleEventEdit(event: CalendarEvent): void {
+    setLocalEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))
+    onEventEdit?.(event)
+  }
+
+  function handleEventDelete(event: CalendarEvent): void {
+    setLocalEvents((prev) => prev.filter((e) => e.id !== event.id))
+    onEventDelete?.(event)
+  }
+
+  function handleEventMove(event: CalendarEvent): void {
+    setLocalEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))
+    onEventMove?.(event)
+  }
+
+  function handleEventResize(event: CalendarEvent): void {
+    setLocalEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))
+    onEventResize?.(event)
+  }
+
+  function handleEventDuplicate(copies: Array<Omit<CalendarEvent, 'id'>>): void {
+    setLocalEvents((prev) => [...prev, ...copies.map((e) => ({ ...e, id: generateId() }))])
+    onEventDuplicate?.(copies)
+  }
 
   React.useEffect(() => {
     function onKey(e: KeyboardEvent): void {
@@ -324,7 +360,7 @@ export function WeekCalendarView({
   }
 
   function handleGridPointerUp(_e: React.PointerEvent): void {
-    if (dragMode.type === 'creating' && onEventCreate) {
+    if (dragMode.type === 'creating') {
       const startSlot = Math.min(dragMode.startSlot, dragMode.currentSlot)
       const endSlot = Math.max(dragMode.startSlot, dragMode.currentSlot) + 1
       const minDayIdx = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
@@ -344,22 +380,22 @@ export function WeekCalendarView({
         startSlot,
         endSlot,
       })
-    } else if (dragMode.type === 'moving' && onEventMove) {
+    } else if (dragMode.type === 'moving') {
       const slotStart = dragMode.currentSlot - dragMode.slotOffset
       const durationSlots = timeToSlot(dragMode.event.end) - timeToSlot(dragMode.event.start)
       const dateStr = formatDateISO(days[dragMode.dayIdx])
-      onEventMove({
+      handleEventMove({
         ...dragMode.event,
         start: slotToTime(slotStart, dateStr),
         end: slotToTime(slotStart + durationSlots, dateStr),
       })
-    } else if (dragMode.type === 'resizing-end' && onEventResize) {
+    } else if (dragMode.type === 'resizing-end') {
       const dateStr = formatDateISO(days[dragMode.dayIdx])
-      onEventResize({ ...dragMode.event, end: slotToTime(dragMode.currentSlot + 1, dateStr) })
-    } else if (dragMode.type === 'resizing-start' && onEventResize) {
+      handleEventResize({ ...dragMode.event, end: slotToTime(dragMode.currentSlot + 1, dateStr) })
+    } else if (dragMode.type === 'resizing-start') {
       const dateStr = formatDateISO(days[dragMode.dayIdx])
-      onEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
-    } else if (dragMode.type === 'duplicating' && onEventDuplicate) {
+      handleEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
+    } else if (dragMode.type === 'duplicating') {
       const minDay = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
       const maxDay = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
       const eventStartSlot = timeToSlot(dragMode.event.start)
@@ -372,7 +408,7 @@ export function WeekCalendarView({
           end: slotToTime(eventEndSlot, dateStr),
         }
       }) as Array<Omit<CalendarEvent, 'id'>>
-      onEventDuplicate(copies)
+      handleEventDuplicate(copies)
     }
     dragActions.reset()
   }
@@ -497,8 +533,8 @@ export function WeekCalendarView({
                     style={evtStyle}
                     expanded={dayIdx === expandedDayIndex}
                     onClick={onEventClick}
-                    onEdit={onEventEdit}
-                    onDelete={onEventDelete}
+                    onEdit={handleEventEdit}
+                    onDelete={handleEventDelete}
                     renderPopover={renderEventPopover}
                     onMoveStart={
                       onEventMove !== undefined || onEventDuplicate !== undefined
@@ -508,7 +544,7 @@ export function WeekCalendarView({
                             } else if (onEventMove !== undefined) {
                               const slot = pointerToSlot(clientY)
                               const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                              dragActions.startMove(ev, dayIdx, slotOffset)
+                              dragActions.startMove(ev, dayIdx, slotOffset, slot)
                             }
                           }
                         : undefined
@@ -584,13 +620,14 @@ export function WeekCalendarView({
                     color={dragMode.event.color}
                   />
                 )}
-              {sleepEnabled && sleepStart !== undefined && sleepEnd !== undefined && (
+              {sleepStart !== undefined && sleepEnd !== undefined && (
                 <SleepBand
                   sleepStart={sleepStart}
                   sleepEnd={sleepEnd}
                   hourStart={effectiveHourStart}
                   hourCount={effectiveHourCount}
                   hourHeight={hourHeight}
+                  interactive={!!sleepEnabled}
                 />
               )}
               {pendingCreate?.startDayIdx === dayIdx && (
@@ -630,7 +667,7 @@ export function WeekCalendarView({
                           i++
                         ) {
                           const dateStr = formatDateISO(days[i])
-                          onEventCreate!({
+                          handleEventCreate({
                             ...event,
                             start: `${dateStr}${timePart}`,
                             end: `${dateStr}${endTimePart}`,

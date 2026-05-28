@@ -23,7 +23,12 @@ export type DragMode =
 
 export interface DragActions {
   startCreate: (dayIdx: number, startSlot: number) => void
-  startMove: (event: CalendarEvent, dayIdx: number, slotOffset: number) => void
+  startMove: (
+    event: CalendarEvent,
+    dayIdx: number,
+    slotOffset: number,
+    initialSlot?: number,
+  ) => void
   startDuplicate: (event: CalendarEvent, dayIdx: number) => void
   startResizeEnd: (event: CalendarEvent, dayIdx: number, currentSlot: number) => void
   startResizeStart: (event: CalendarEvent, dayIdx: number, currentSlot: number) => void
@@ -45,8 +50,8 @@ export function useDragState(): [DragMode, DragActions] {
           currentSlot: startSlot,
         })
       },
-      startMove(event, dayIdx, slotOffset) {
-        setMode({ type: 'moving', event, dayIdx, currentSlot: 0, slotOffset })
+      startMove(event, dayIdx, slotOffset, initialSlot = 0) {
+        setMode({ type: 'moving', event, dayIdx, currentSlot: initialSlot, slotOffset })
       },
       startDuplicate(event, dayIdx) {
         setMode({ type: 'duplicating', event, startDayIdx: dayIdx, currentDayIdx: dayIdx })

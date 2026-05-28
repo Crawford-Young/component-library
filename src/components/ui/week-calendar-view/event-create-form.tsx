@@ -76,6 +76,10 @@ export function EventCreateForm({
   onSubmit,
   onCancel,
 }: EventCreateFormProps): React.JSX.Element {
+  const minDayIdx = Math.min(startDayIdx, currentDayIdx)
+  const maxDayIdx = Math.max(startDayIdx, currentDayIdx)
+  const coveredDays = days.slice(minDayIdx, maxDayIdx + 1)
+
   const [draft, setDraft] = React.useState<CreateDraft>({
     title: '',
     color: 'default',
@@ -84,13 +88,10 @@ export function EventCreateForm({
     startTime: slotToTimeString(startSlot),
     endTime: slotToTimeString(endSlot),
     allDay: false,
-    recurrenceDays: [],
+    recurrenceDays:
+      dayCount > 1 ? (coveredDays.map((d) => DAY_ABBR[d.getDay()]) as readonly DayOfWeek[]) : [],
     recurrenceFrequency: 'none',
   })
-
-  const minDayIdx = Math.min(startDayIdx, currentDayIdx)
-  const maxDayIdx = Math.max(startDayIdx, currentDayIdx)
-  const coveredDays = days.slice(minDayIdx, maxDayIdx + 1)
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
