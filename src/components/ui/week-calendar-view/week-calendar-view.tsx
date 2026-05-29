@@ -609,19 +609,16 @@ export function WeekCalendarView({
                       handleEventDelete(localEvents.find((e) => e.id === originalId)!)
                     }}
                     renderPopover={isRecur ? undefined : renderEventPopover}
-                    onMoveStart={
-                      isRecur
-                        ? undefined
-                        : (ev, clientY, _clientX, shiftKey) => {
-                            if (shiftKey) {
-                              dragActions.startRecurrenceSelect(ev, dayIdx)
-                            } else if (onEventMove !== undefined) {
-                              const slot = pointerToSlot(clientY)
-                              const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                              dragActions.startMove(ev, dayIdx, slotOffset, slot)
-                            }
-                          }
-                    }
+                    onMoveStart={(ev, clientY, _clientX, shiftKey) => {
+                      if (shiftKey) {
+                        const source = isRecur ? localEvents.find((e) => e.id === originalId)! : ev
+                        dragActions.startRecurrenceSelect(source, dayIdx)
+                      } else if (!isRecur && onEventMove !== undefined) {
+                        const slot = pointerToSlot(clientY)
+                        const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
+                        dragActions.startMove(ev, dayIdx, slotOffset, slot)
+                      }
+                    }}
                     onResizeStart={
                       isRecur || onEventResize === undefined
                         ? undefined

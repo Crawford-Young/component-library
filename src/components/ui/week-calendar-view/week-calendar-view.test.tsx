@@ -1488,6 +1488,36 @@ describe('recurrence day expansion', () => {
     expect(screen.queryByRole('button', { name: /delete recur/i })).not.toBeInTheDocument()
   })
 
+  it('shift+drag on a recurrence instance updates the original event recurrenceDays', () => {
+    const onEdit = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Shift recur',
+      start: '2026-05-04T09:00:00', // Monday (dayIdx=1)
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventEdit={onEdit}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /shift recur/i })
+    // Shift+drag on the Tuesday recurrence instance
+    fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: true })
+    fireEvent.pointerUp(chips[1])
+    // onEventEdit must be called with the ORIGINAL id (r1), not the synthetic recur id
+    expect(onEdit).toHaveBeenCalledOnce()
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'r1', recurrenceDays: expect.any(Array) }),
+    )
+  })
+
   it('does not duplicate the original event on its own recurrence day', () => {
     const recurringEvent: CalendarEvent = {
       id: 'r1',
