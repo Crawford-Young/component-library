@@ -406,14 +406,17 @@ export function WeekCalendarView({
       const maxDay = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
       const eventStartSlot = timeToSlot(dragMode.event.start)
       const eventEndSlot = timeToSlot(dragMode.event.end)
+      const { id: _, ...eventWithoutId } = dragMode.event
       const copies = Array.from({ length: maxDay - minDay + 1 }, (_, i) => {
-        const dateStr = formatDateISO(days[minDay + i])
+        const dayIdx = minDay + i
+        if (dayIdx === dragMode.startDayIdx) return null
+        const dateStr = formatDateISO(days[dayIdx])
         return {
-          ...dragMode.event,
+          ...eventWithoutId,
           start: slotToTime(eventStartSlot, dateStr),
           end: slotToTime(eventEndSlot, dateStr),
         }
-      }) as Array<Omit<CalendarEvent, 'id'>>
+      }).filter((c): c is Omit<CalendarEvent, 'id'> => c !== null)
       handleEventDuplicate(copies)
     }
     dragActions.reset()

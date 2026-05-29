@@ -744,7 +744,10 @@ describe('drag ghost — resizing and duplicating', () => {
     )
     const chip = screen.getByRole('button', { name: /team standup/i })
     fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200, shiftKey: true })
-    fireEvent.pointerUp(chip, { pointerId: 1 })
+    // Move to Monday column (dayIdx=1): 14 hours × 4 slots/hour = 56 slots per day
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerMove(cells[56], { pointerId: 1, clientY: 200, clientX: 200 })
+    fireEvent.pointerUp(cells[56], { pointerId: 1 })
     expect(onDuplicate).toHaveBeenCalledOnce()
     expect(onDuplicate).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ title: 'Team standup' })]),
@@ -893,10 +896,12 @@ describe('internal CRUD state management', () => {
     const chip = screen.getByRole('button', { name: /original/i })
     fireEvent.pointerDown(chip, { pointerId: 1, clientY: 100, clientX: 100, shiftKey: true })
     const cells = document.querySelectorAll('[data-drag-cell]')
-    fireEvent.pointerMove(cells[4], { pointerId: 1, clientY: 100, clientX: 100 })
-    fireEvent.pointerUp(cells[4], { pointerId: 1 })
+    // cells[56] is the first slot of Tuesday (14 hours × 4 slots/hour = 56 slots per day)
+    fireEvent.pointerMove(cells[56], { pointerId: 1, clientY: 100, clientX: 100 })
+    fireEvent.pointerUp(cells[56], { pointerId: 1 })
     expect(onDuplicate).toHaveBeenCalled()
-    expect(screen.getAllByRole('button', { name: /original/i }).length).toBeGreaterThan(1)
+    // Original stays on Monday; copy created on Tuesday — source day excluded from copies
+    expect(screen.getAllByRole('button', { name: /original/i }).length).toBe(2)
   })
 
   it('edit with multiple events only updates the target', async () => {
