@@ -1511,11 +1511,42 @@ describe('recurrence day expansion', () => {
     // Shift+drag on the Tuesday recurrence instance
     fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: true })
     fireEvent.pointerUp(chips[1])
-    // onEventEdit must be called with the ORIGINAL id (r1), not the synthetic recur id
+    // onEventEdit must be called with the ORIGINAL id (r1)
+    // drag started from Mon (original's column, dayIdx=1); JSDOM getPointerDayIdx=0 (Sun)
+    // range=[0,1] → Sun+Mon — importantly Mon IS included (original's day)
     expect(onEdit).toHaveBeenCalledOnce()
     expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'r1', recurrenceDays: expect.any(Array) }),
+      expect.objectContaining({ id: 'r1', recurrenceDays: expect.arrayContaining(['Mon']) }),
     )
+  })
+
+  it('shift+drag on recurrence instance falls back to instance dayIdx when original is outside current week', () => {
+    const onEdit = vi.fn()
+    // Original event on 2026-04-27 (previous week Mon) with Mon recurrence
+    const recurringEvent: CalendarEvent = {
+      id: 'r2',
+      title: 'Out of week',
+      start: '2026-04-27T09:00:00', // previous Monday, NOT in 2026-05-03 week
+      end: '2026-04-27T09:30:00',
+      recurrenceDays: ['Mon'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03" // week of 2026-05-03 to 2026-05-09
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventEdit={onEdit}
+      />,
+    )
+    // Mon 2026-05-04 instance should be visible (recurrence expanded into current week)
+    const chips = screen.getAllByRole('button', { name: /out of week/i })
+    expect(chips.length).toBeGreaterThanOrEqual(1)
+    fireEvent.pointerDown(chips[0], { clientY: 100, clientX: 100, shiftKey: true })
+    fireEvent.pointerUp(chips[0])
+    expect(onEdit).toHaveBeenCalledOnce()
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'r2' }))
   })
 
   it('does not duplicate the original event on its own recurrence day', () => {

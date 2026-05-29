@@ -612,7 +612,14 @@ export function WeekCalendarView({
                     onMoveStart={(ev, clientY, _clientX, shiftKey) => {
                       if (shiftKey) {
                         const source = isRecur ? localEvents.find((e) => e.id === originalId)! : ev
-                        dragActions.startRecurrenceSelect(source, dayIdx)
+                        const sourceDateStr = source.start.substring(0, 10)
+                        const sourceDayIdx = days.findIndex(
+                          (d) => formatDateISO(d) === sourceDateStr,
+                        )
+                        dragActions.startRecurrenceSelect(
+                          source,
+                          sourceDayIdx !== -1 ? sourceDayIdx : dayIdx,
+                        )
                       } else if (!isRecur && onEventMove !== undefined) {
                         const slot = pointerToSlot(clientY)
                         const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
