@@ -9,6 +9,7 @@ export interface GhostEventProps {
   readonly hourCount: number
   readonly hourHeight?: number
   readonly color?: CalendarEventColor
+  readonly label?: string
 }
 
 function formatSlotTime(slot: number): string {
@@ -24,10 +25,11 @@ export function GhostEvent({
   hourStart,
   hourCount,
   color,
+  label,
 }: GhostEventProps): React.JSX.Element {
   const top = ((startSlot / 4 - hourStart) / hourCount) * 100
   const height = Math.max(((endSlot - startSlot) / 4 / hourCount) * 100, (0.25 / hourCount) * 100)
-  const showLabel = endSlot - startSlot >= 2
+  const showTimeLabel = endSlot - startSlot >= 2
   return (
     <div
       data-testid="ghost-event"
@@ -38,7 +40,15 @@ export function GhostEvent({
       )}
       style={{ top: `${top}%`, height: `${height}%` }}
     >
-      {showLabel && (
+      {label !== undefined && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none px-1 text-[9px] font-medium leading-tight opacity-80"
+        >
+          {label}
+        </span>
+      )}
+      {label === undefined && showTimeLabel && (
         <span
           aria-hidden="true"
           className="pointer-events-none px-1 text-[9px] font-medium leading-tight opacity-80"

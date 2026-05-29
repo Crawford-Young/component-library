@@ -19,7 +19,7 @@ export type DragMode =
     }
   | { type: 'resizing-end'; event: CalendarEvent; dayIdx: number; currentSlot: number }
   | { type: 'resizing-start'; event: CalendarEvent; dayIdx: number; currentSlot: number }
-  | { type: 'duplicating'; event: CalendarEvent; startDayIdx: number; currentDayIdx: number }
+  | { type: 'recurrence-select'; event: CalendarEvent; startDayIdx: number; currentDayIdx: number }
 
 export interface DragActions {
   startCreate: (dayIdx: number, startSlot: number) => void
@@ -29,7 +29,7 @@ export interface DragActions {
     slotOffset: number,
     initialSlot?: number,
   ) => void
-  startDuplicate: (event: CalendarEvent, dayIdx: number) => void
+  startRecurrenceSelect: (event: CalendarEvent, dayIdx: number) => void
   startResizeEnd: (event: CalendarEvent, dayIdx: number, currentSlot: number) => void
   startResizeStart: (event: CalendarEvent, dayIdx: number, currentSlot: number) => void
   updateSlot: (dayIdx: number, slot: number) => void
@@ -53,8 +53,8 @@ export function useDragState(): [DragMode, DragActions] {
       startMove(event, dayIdx, slotOffset, initialSlot = 0) {
         setMode({ type: 'moving', event, dayIdx, currentSlot: initialSlot, slotOffset })
       },
-      startDuplicate(event, dayIdx) {
-        setMode({ type: 'duplicating', event, startDayIdx: dayIdx, currentDayIdx: dayIdx })
+      startRecurrenceSelect(event, dayIdx) {
+        setMode({ type: 'recurrence-select', event, startDayIdx: dayIdx, currentDayIdx: dayIdx })
       },
       startResizeEnd(event, dayIdx, currentSlot) {
         setMode({ type: 'resizing-end', event, dayIdx, currentSlot })
@@ -68,7 +68,7 @@ export function useDragState(): [DragMode, DragActions] {
           if (prev.type === 'moving') return { ...prev, dayIdx, currentSlot: slot }
           if (prev.type === 'resizing-end') return { ...prev, currentSlot: slot }
           if (prev.type === 'resizing-start') return { ...prev, currentSlot: slot }
-          if (prev.type === 'duplicating') return { ...prev, currentDayIdx: dayIdx }
+          if (prev.type === 'recurrence-select') return { ...prev, currentDayIdx: dayIdx }
           return prev
         })
       },

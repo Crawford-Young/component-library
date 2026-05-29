@@ -32,7 +32,7 @@ export interface WeekCalendarViewProps {
   readonly onEventCreate?: (event: Omit<CalendarEvent, 'id'>) => void
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
-  readonly onEventDuplicate?: (events: Array<Omit<CalendarEvent, 'id'>>) => void
+  readonly onEventRestore?: (event: CalendarEvent) => void
   readonly sleepEnabled?: boolean
   readonly sleepStart?: number
   readonly sleepEnd?: number
@@ -237,7 +237,7 @@ export function WeekCalendarView({
   onEventCreate,
   onEventMove,
   onEventResize,
-  onEventDuplicate,
+  onEventRestore,
   sleepEnabled,
   sleepStart,
   sleepEnd,
@@ -305,7 +305,10 @@ export function WeekCalendarView({
     onEventEdit?.(event)
   }
 
+  const deletedHistoryRef = React.useRef<CalendarEvent[]>([])
+
   function handleEventDelete(event: CalendarEvent): void {
+    deletedHistoryRef.current = [...deletedHistoryRef.current, event]
     setLocalEvents((prev) => prev.filter((e) => e.id !== event.id))
     onEventDelete?.(event)
   }
@@ -320,18 +323,24 @@ export function WeekCalendarView({
     onEventResize?.(event)
   }
 
-  function handleEventDuplicate(copies: Array<Omit<CalendarEvent, 'id'>>): void {
-    setLocalEvents((prev) => [...prev, ...copies.map((e) => ({ ...e, id: generateId() }))])
-    onEventDuplicate?.(copies)
-  }
-
   React.useEffect(() => {
     function onKey(e: KeyboardEvent): void {
-      if (e.key === 'Escape') dragActions.reset()
+      if (e.key === 'Escape') {
+        dragActions.reset()
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        const history = deletedHistoryRef.current
+        if (history.length > 0) {
+          const last = history[history.length - 1]
+          deletedHistoryRef.current = history.slice(0, -1)
+          setLocalEvents((prev) => [...prev, last])
+          onEventRestore?.(last)
+          e.preventDefault()
+        }
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [dragActions])
+  }, [dragActions, onEventRestore])
 
   const effectiveHourStart = sleepEnabled ? 0 : hourStart
   const effectiveHourCount = sleepEnabled ? 24 : hourCount
@@ -401,23 +410,15 @@ export function WeekCalendarView({
     } else if (dragMode.type === 'resizing-start') {
       const dateStr = formatDateISO(days[dragMode.dayIdx])
       handleEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
-    } else if (dragMode.type === 'duplicating') {
+    } else if (dragMode.type === 'recurrence-select') {
+      const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
       const minDay = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
       const maxDay = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
-      const eventStartSlot = timeToSlot(dragMode.event.start)
-      const eventEndSlot = timeToSlot(dragMode.event.end)
-      const { id: _, ...eventWithoutId } = dragMode.event
-      const copies = Array.from({ length: maxDay - minDay + 1 }, (_, i) => {
-        const dayIdx = minDay + i
-        if (dayIdx === dragMode.startDayIdx) return null
-        const dateStr = formatDateISO(days[dayIdx])
-        return {
-          ...eventWithoutId,
-          start: slotToTime(eventStartSlot, dateStr),
-          end: slotToTime(eventEndSlot, dateStr),
-        }
-      }).filter((c): c is Omit<CalendarEvent, 'id'> => c !== null)
-      handleEventDuplicate(copies)
+      const recurrenceDays = Array.from(
+        { length: maxDay - minDay + 1 },
+        (_, i) => DAY_ABBR[days[minDay + i].getDay()],
+      )
+      handleEventEdit({ ...dragMode.event, recurrenceDays })
     }
     dragActions.reset()
   }
@@ -439,6 +440,10 @@ export function WeekCalendarView({
         {days.map((day, i) => {
           const dayIsToday = isSameDay(day, today)
           const isExpanded = expandedDayIndex === i
+          const isRecurrenceTarget =
+            dragMode.type === 'recurrence-select' &&
+            i >= Math.min(dragMode.startDayIdx, dragMode.currentDayIdx) &&
+            i <= Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
           return (
             <button
               key={i}
@@ -448,6 +453,7 @@ export function WeekCalendarView({
                 'border-r py-2 text-center text-xs font-medium last:border-r-0',
                 dayIsToday && 'bg-item-hover',
                 isExpanded && 'bg-primary/10 ring-1 ring-inset ring-primary/20',
+                isRecurrenceTarget && 'bg-primary/10 ring-1 ring-inset ring-primary/30',
               )}
               aria-label={`${DAY_LABELS[i]} ${day.getDate()}`}
               onClick={() => setExpandedDayIndex((prev) => (prev === i ? null : i))}
@@ -545,19 +551,15 @@ export function WeekCalendarView({
                     onEdit={handleEventEdit}
                     onDelete={handleEventDelete}
                     renderPopover={renderEventPopover}
-                    onMoveStart={
-                      onEventMove !== undefined || onEventDuplicate !== undefined
-                        ? (ev, clientY, _clientX, shiftKey) => {
-                            if (shiftKey && onEventDuplicate !== undefined) {
-                              dragActions.startDuplicate(ev, dayIdx)
-                            } else if (onEventMove !== undefined) {
-                              const slot = pointerToSlot(clientY)
-                              const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                              dragActions.startMove(ev, dayIdx, slotOffset, slot)
-                            }
-                          }
-                        : undefined
-                    }
+                    onMoveStart={(ev, clientY, _clientX, shiftKey) => {
+                      if (shiftKey) {
+                        dragActions.startRecurrenceSelect(ev, dayIdx)
+                      } else if (onEventMove !== undefined) {
+                        const slot = pointerToSlot(clientY)
+                        const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
+                        dragActions.startMove(ev, dayIdx, slotOffset, slot)
+                      }
+                    }}
                     onResizeStart={
                       onEventResize !== undefined
                         ? (ev, edge) => {
@@ -617,8 +619,8 @@ export function WeekCalendarView({
                   color={dragMode.event.color}
                 />
               )}
-              {/* Ghost: duplicate */}
-              {dragMode.type === 'duplicating' &&
+              {/* Ghost: recurrence-select */}
+              {dragMode.type === 'recurrence-select' &&
                 dayIdx >= Math.min(dragMode.startDayIdx, dragMode.currentDayIdx) &&
                 dayIdx <= Math.max(dragMode.startDayIdx, dragMode.currentDayIdx) && (
                   <GhostEvent
@@ -627,6 +629,7 @@ export function WeekCalendarView({
                     hourStart={effectiveHourStart}
                     hourCount={effectiveHourCount}
                     color={dragMode.event.color}
+                    label="Recur"
                   />
                 )}
               {sleepStart !== undefined && sleepEnd !== undefined && (

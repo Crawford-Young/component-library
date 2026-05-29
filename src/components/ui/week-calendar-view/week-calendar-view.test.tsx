@@ -674,7 +674,7 @@ describe('drag to create', () => {
   })
 })
 
-describe('drag ghost — resizing and duplicating', () => {
+describe('drag ghost — resizing and recurrence-select', () => {
   it('renders ghost event when drag state transitions to resizing-end', () => {
     render(
       <WeekCalendarView
@@ -712,7 +712,7 @@ describe('drag ghost — resizing and duplicating', () => {
     expect(onResize).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }))
   })
 
-  it('renders ghost event when drag state transitions to duplicating (shiftKey)', () => {
+  it('renders ghost event when drag state transitions to recurrence-select (shiftKey)', () => {
     render(
       <WeekCalendarView
         defaultWeekStart="2026-05-03"
@@ -721,7 +721,6 @@ describe('drag ghost — resizing and duplicating', () => {
         hourCount={14}
         hourHeight={56}
         onEventMove={vi.fn()}
-        onEventDuplicate={vi.fn()}
       />,
     )
     const chip = screen.getByRole('button', { name: /team standup/i })
@@ -729,8 +728,8 @@ describe('drag ghost — resizing and duplicating', () => {
     expect(screen.getByTestId('ghost-event')).toBeInTheDocument()
   })
 
-  it('calls onEventDuplicate with copies when pointerUp after duplicating', () => {
-    const onDuplicate = vi.fn()
+  it('calls onEventEdit with recurrenceDays when pointerUp after recurrence-select', () => {
+    const onEdit = vi.fn()
     render(
       <WeekCalendarView
         defaultWeekStart="2026-05-03"
@@ -738,23 +737,22 @@ describe('drag ghost — resizing and duplicating', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
-        onEventMove={vi.fn()}
-        onEventDuplicate={onDuplicate}
+        onEventEdit={onEdit}
       />,
     )
     const chip = screen.getByRole('button', { name: /team standup/i })
     fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200, shiftKey: true })
-    // Move to Monday column (dayIdx=1): 14 hours × 4 slots/hour = 56 slots per day
+    // In JSDOM getPointerDayIdx returns 0 (Sun); startDayIdx=1 (Mon) → range [0,1] → Sun+Mon
     const cells = document.querySelectorAll('[data-drag-cell]')
-    fireEvent.pointerMove(cells[56], { pointerId: 1, clientY: 200, clientX: 200 })
-    fireEvent.pointerUp(cells[56], { pointerId: 1 })
-    expect(onDuplicate).toHaveBeenCalledOnce()
-    expect(onDuplicate).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ title: 'Team standup' })]),
+    fireEvent.pointerMove(cells[0], { pointerId: 1, clientY: 200, clientX: 0 })
+    fireEvent.pointerUp(cells[0], { pointerId: 1 })
+    expect(onEdit).toHaveBeenCalledOnce()
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: expect.arrayContaining(['Mon']) }),
     )
   })
 
-  it('updateSlot fires again during a second pointerMove in duplicating mode', () => {
+  it('updateSlot fires again during a second pointerMove in recurrence-select mode', () => {
     render(
       <WeekCalendarView
         defaultWeekStart="2026-05-03"
@@ -763,14 +761,13 @@ describe('drag ghost — resizing and duplicating', () => {
         hourCount={14}
         hourHeight={56}
         onEventMove={vi.fn()}
-        onEventDuplicate={vi.fn()}
       />,
     )
     const chip = screen.getByRole('button', { name: /team standup/i })
     fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200, shiftKey: true })
-    // Move exercises the duplicating branch in handleGridPointerMove
+    // Move exercises the recurrence-select branch in handleGridPointerMove
     fireEvent.pointerMove(chip, { pointerId: 1, clientX: 130, clientY: 201 })
-    // Second move continues exercising duplicating branch
+    // Second move continues exercising recurrence-select branch
     fireEvent.pointerMove(chip, { pointerId: 1, clientX: 150, clientY: 202 })
     expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
   })
@@ -875,14 +872,13 @@ describe('internal CRUD state management', () => {
     expect(screen.getByRole('button', { name: /moveable/i })).toBeInTheDocument()
   })
 
-  it('duplicate adds event copies to calendar without external state management', () => {
+  it('recurrence-select updates recurrenceDays on event without external state management', async () => {
     const event: CalendarEvent = {
       id: 'e1',
       title: 'Original',
       start: '2026-05-04T09:00:00',
       end: '2026-05-04T10:00:00',
     }
-    const onDuplicate = vi.fn()
     render(
       <WeekCalendarView
         defaultWeekStart="2026-05-04"
@@ -890,18 +886,15 @@ describe('internal CRUD state management', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
-        onEventDuplicate={onDuplicate}
       />,
     )
     const chip = screen.getByRole('button', { name: /original/i })
     fireEvent.pointerDown(chip, { pointerId: 1, clientY: 100, clientX: 100, shiftKey: true })
     const cells = document.querySelectorAll('[data-drag-cell]')
-    // cells[56] is the first slot of Tuesday (14 hours × 4 slots/hour = 56 slots per day)
-    fireEvent.pointerMove(cells[56], { pointerId: 1, clientY: 100, clientX: 100 })
-    fireEvent.pointerUp(cells[56], { pointerId: 1 })
-    expect(onDuplicate).toHaveBeenCalled()
-    // Original stays on Monday; copy created on Tuesday — source day excluded from copies
-    expect(screen.getAllByRole('button', { name: /original/i }).length).toBe(2)
+    fireEvent.pointerMove(cells[0], { pointerId: 1, clientY: 100, clientX: 0 })
+    fireEvent.pointerUp(cells[0], { pointerId: 1 })
+    // Event chip is still rendered (not duplicated, just recurrenceDays updated)
+    expect(screen.getByRole('button', { name: /original/i })).toBeInTheDocument()
   })
 
   it('edit with multiple events only updates the target', async () => {
@@ -1148,30 +1141,33 @@ describe('resize from start handle', () => {
   })
 })
 
-describe('shift+drag duplicate', () => {
-  it('does not call onEventMove when shift is held — calls onEventDuplicate', () => {
+describe('shift+drag recurrence-select', () => {
+  it('does not call onEventMove when shift is held — updates recurrenceDays via onEventEdit', () => {
     const onMove = vi.fn()
-    const onDuplicate = vi.fn()
+    const onEdit = vi.fn()
     render(
       <WeekCalendarView
         defaultWeekStart="2026-05-03"
         events={[
           {
             id: 'e1',
-            title: 'Dup event',
+            title: 'Recur event',
             start: '2026-05-04T09:00:00',
             end: '2026-05-04T10:00:00',
           },
         ]}
         onEventMove={onMove}
-        onEventDuplicate={onDuplicate}
+        onEventEdit={onEdit}
       />,
     )
-    const chip = screen.getByRole('button', { name: /dup event/i })
+    const chip = screen.getByRole('button', { name: /recur event/i })
     fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
     fireEvent.pointerUp(chip)
     expect(onMove).not.toHaveBeenCalled()
-    expect(onDuplicate).toHaveBeenCalledOnce()
+    expect(onEdit).toHaveBeenCalledOnce()
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: expect.any(Array) }),
+    )
   })
 })
 
@@ -1233,5 +1229,158 @@ describe('sleep block', () => {
     fireEvent.pointerDown(cells[23], { pointerId: 1, clientY: 0 })
     fireEvent.pointerUp(cells[23], { pointerId: 1 })
     expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+})
+
+describe('shift+drag day header highlighting', () => {
+  const recurEvent: CalendarEvent = {
+    id: 'recur1',
+    title: 'Recur target',
+    start: '2026-05-04T09:00:00',
+    end: '2026-05-04T10:00:00',
+  }
+
+  it('source day header gets highlight class during recurrence-select drag', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /recur target/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
+    // Day headers — source is Mon (dayIdx=1)
+    const dayHeaders = screen.getAllByRole('button', {
+      name: /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+\d+$/i,
+    })
+    expect(dayHeaders[1].className).toContain('ring-primary')
+  })
+
+  it('non-covered day headers do not get highlight class', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /recur target/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
+    // getPointerDayIdx returns 0 in JSDOM, so range=[0,1]; dayIdx=6 (Sat) is outside range
+    const dayHeaders = screen.getAllByRole('button', {
+      name: /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+\d+$/i,
+    })
+    expect(dayHeaders[6].className).not.toContain('ring-primary/30')
+  })
+
+  it('ghost during recurrence-select shows "Recur" label', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /recur target/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
+    const ghost = document.querySelector('[data-testid="ghost-event"]')
+    expect(ghost?.textContent).toContain('Recur')
+  })
+})
+
+describe('ctrl+z undo delete', () => {
+  const deleteEvent: CalendarEvent = {
+    id: 'del1',
+    title: 'Delete me',
+    start: '2026-05-04T09:00:00',
+    end: '2026-05-04T10:00:00',
+  }
+
+  it('restores deleted event on Ctrl+Z', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[deleteEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    // Open chip popover and delete
+    await userEvent.click(screen.getByRole('button', { name: /delete me/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(screen.queryByRole('button', { name: /delete me/i })).not.toBeInTheDocument()
+    // Ctrl+Z
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(screen.getByRole('button', { name: /delete me/i })).toBeInTheDocument()
+  })
+
+  it('restores most recently deleted event on Ctrl+Z (LIFO)', async () => {
+    const twoEvents: CalendarEvent[] = [
+      { id: 'a', title: 'First event', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
+      { id: 'b', title: 'Second event', start: '2026-05-04T11:00:00', end: '2026-05-04T12:00:00' },
+    ]
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={twoEvents}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    // Delete first event
+    await userEvent.click(screen.getByRole('button', { name: /first event/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    // Delete second event
+    await userEvent.click(screen.getByRole('button', { name: /second event/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    // Ctrl+Z restores second (LIFO)
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(screen.getByRole('button', { name: /second event/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /first event/i })).not.toBeInTheDocument()
+    // Second Ctrl+Z restores first
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(screen.getByRole('button', { name: /first event/i })).toBeInTheDocument()
+  })
+
+  it('Ctrl+Z with no deleted history does nothing', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[deleteEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(screen.getByRole('button', { name: /delete me/i })).toBeInTheDocument()
+  })
+
+  it('calls onEventRestore callback when Ctrl+Z fires', async () => {
+    const onRestore = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[deleteEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventRestore={onRestore}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /delete me/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(onRestore).toHaveBeenCalledOnce()
+    expect(onRestore).toHaveBeenCalledWith(expect.objectContaining({ id: 'del1' }))
   })
 })

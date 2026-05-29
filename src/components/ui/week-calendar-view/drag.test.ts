@@ -41,12 +41,12 @@ describe('useDragState', () => {
     }
   })
 
-  it('startDuplicate sets startDayIdx = currentDayIdx = dayIdx', () => {
+  it('startRecurrenceSelect sets startDayIdx = currentDayIdx = dayIdx', () => {
     const { result } = renderHook(() => useDragState())
-    act(() => result.current[1].startDuplicate(ev, 3))
+    act(() => result.current[1].startRecurrenceSelect(ev, 3))
     const mode = result.current[0]
-    expect(mode.type).toBe('duplicating')
-    if (mode.type === 'duplicating') {
+    expect(mode.type).toBe('recurrence-select')
+    if (mode.type === 'recurrence-select') {
       expect(mode.event.id).toBe('e1')
       expect(mode.startDayIdx).toBe(3)
       expect(mode.currentDayIdx).toBe(3)
@@ -121,12 +121,12 @@ describe('useDragState', () => {
     }
   })
 
-  it('updateSlot updates only currentDayIdx in duplicating mode', () => {
+  it('updateSlot updates only currentDayIdx in recurrence-select mode', () => {
     const { result } = renderHook(() => useDragState())
-    act(() => result.current[1].startDuplicate(ev, 1))
+    act(() => result.current[1].startRecurrenceSelect(ev, 1))
     act(() => result.current[1].updateSlot(4, 36))
     const mode = result.current[0]
-    if (mode.type === 'duplicating') {
+    if (mode.type === 'recurrence-select') {
       expect(mode.startDayIdx).toBe(1)
       expect(mode.currentDayIdx).toBe(4)
     }

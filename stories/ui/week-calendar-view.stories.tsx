@@ -300,7 +300,6 @@ export const WithDragCallbacks: Story = {
     onEventCreate: () => {},
     onEventMove: () => {},
     onEventResize: () => {},
-    onEventDuplicate: () => {},
   },
 }
 
@@ -335,7 +334,7 @@ export const FullyInteractive: Story = {
     events: [
       {
         id: '1',
-        title: 'Drag to move · Shift+drag to copy',
+        title: 'Drag to move · Shift+drag to set recurrence',
         start: '2026-05-04T09:00:00',
         end: '2026-05-04T10:00:00',
         color: 'blue',
@@ -351,7 +350,6 @@ export const FullyInteractive: Story = {
     onEventCreate: () => {},
     onEventMove: () => {},
     onEventResize: () => {},
-    onEventDuplicate: () => {},
   },
 }
 
