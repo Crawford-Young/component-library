@@ -168,6 +168,35 @@ function AllDayRow({ days, events, gridTemplateColumns }: AllDayRowProps): React
 }
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+function isRecurrenceInstance(id: string): boolean {
+  return id.includes(':recur:')
+}
+
+function expandRecurringEvents(events: readonly CalendarEvent[], days: Date[]): CalendarEvent[] {
+  const result: CalendarEvent[] = []
+  for (const event of events) {
+    result.push(event)
+    if (!event.recurrenceDays || event.recurrenceDays.length === 0 || event.allDay) continue
+    const originalDateStr = event.start.substring(0, 10)
+    const timePart = event.start.substring(10)
+    const endTimePart = event.end.substring(10)
+    for (const day of days) {
+      const dayAbbr = DAY_ABBR[day.getDay()]
+      if (!event.recurrenceDays.includes(dayAbbr)) continue
+      const dateStr = formatDateISO(day)
+      if (dateStr === originalDateStr) continue
+      result.push({
+        ...event,
+        id: `${event.id}:recur:${dateStr}`,
+        start: `${dateStr}${timePart}`,
+        end: `${dateStr}${endTimePart}`,
+      })
+    }
+  }
+  return result
+}
 
 function getWeekDays(weekStart: string): Date[] {
   const start = new Date(`${weekStart}T00:00:00`)
@@ -279,7 +308,14 @@ export function WeekCalendarView({
   const [localEvents, setLocalEvents] = React.useState<readonly CalendarEvent[]>(() => events)
 
   const allDayEvents = React.useMemo(() => localEvents.filter((e) => e.allDay), [localEvents])
-  const timedEvents = React.useMemo(() => localEvents.filter((e) => !e.allDay), [localEvents])
+  const timedEvents = React.useMemo(
+    () =>
+      expandRecurringEvents(
+        localEvents.filter((e) => !e.allDay),
+        days,
+      ),
+    [localEvents, days],
+  )
   const todayInWeek = React.useMemo(() => days.some((d) => isSameDay(d, today)), [days, today])
   const [expandedDayIndex, setExpandedDayIndex] = React.useState<number | null>(null)
 
@@ -541,6 +577,7 @@ export function WeekCalendarView({
                   effectiveHourCount,
                   evt,
                 )
+                const isRecur = isRecurrenceInstance(evt.id)
                 return (
                   <CalendarEventChip
                     key={evt.id}
@@ -548,28 +585,32 @@ export function WeekCalendarView({
                     style={evtStyle}
                     expanded={dayIdx === expandedDayIndex}
                     onClick={onEventClick}
-                    onEdit={handleEventEdit}
-                    onDelete={handleEventDelete}
-                    renderPopover={renderEventPopover}
-                    onMoveStart={(ev, clientY, _clientX, shiftKey) => {
-                      if (shiftKey) {
-                        dragActions.startRecurrenceSelect(ev, dayIdx)
-                      } else if (onEventMove !== undefined) {
-                        const slot = pointerToSlot(clientY)
-                        const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                        dragActions.startMove(ev, dayIdx, slotOffset, slot)
-                      }
-                    }}
+                    onEdit={isRecur ? undefined : handleEventEdit}
+                    onDelete={isRecur ? undefined : handleEventDelete}
+                    renderPopover={isRecur ? undefined : renderEventPopover}
+                    onMoveStart={
+                      isRecur
+                        ? undefined
+                        : (ev, clientY, _clientX, shiftKey) => {
+                            if (shiftKey) {
+                              dragActions.startRecurrenceSelect(ev, dayIdx)
+                            } else if (onEventMove !== undefined) {
+                              const slot = pointerToSlot(clientY)
+                              const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
+                              dragActions.startMove(ev, dayIdx, slotOffset, slot)
+                            }
+                          }
+                    }
                     onResizeStart={
-                      onEventResize !== undefined
-                        ? (ev, edge) => {
+                      isRecur || onEventResize === undefined
+                        ? undefined
+                        : (ev, edge) => {
                             if (edge === 'end') {
                               dragActions.startResizeEnd(ev, dayIdx, timeToSlot(ev.end) - 1)
                             } else {
                               dragActions.startResizeStart(ev, dayIdx, timeToSlot(ev.start))
                             }
                           }
-                        : undefined
                     }
                   />
                 )

@@ -893,8 +893,8 @@ describe('internal CRUD state management', () => {
     const cells = document.querySelectorAll('[data-drag-cell]')
     fireEvent.pointerMove(cells[0], { pointerId: 1, clientY: 100, clientX: 0 })
     fireEvent.pointerUp(cells[0], { pointerId: 1 })
-    // Event chip is still rendered (not duplicated, just recurrenceDays updated)
-    expect(screen.getByRole('button', { name: /original/i })).toBeInTheDocument()
+    // Event rendered on recurrence days (original + expanded instances)
+    expect(screen.getAllByRole('button', { name: /original/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   it('edit with multiple events only updates the target', async () => {
@@ -1382,5 +1382,96 @@ describe('ctrl+z undo delete', () => {
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     expect(onRestore).toHaveBeenCalledOnce()
     expect(onRestore).toHaveBeenCalledWith(expect.objectContaining({ id: 'del1' }))
+  })
+})
+
+describe('recurrence day expansion', () => {
+  it('renders event on each recurrence day in the current week', () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Daily standup',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Wed', 'Fri'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    // Event should appear 3 times: Mon, Wed, Fri
+    expect(screen.getAllByRole('button', { name: /daily standup/i }).length).toBe(3)
+  })
+
+  it('recurrence instances are read-only — no edit or delete in popover', async () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur readonly',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur readonly/i })
+    // Click the Tuesday instance (second chip, which is the recurrence copy)
+    await userEvent.click(chips[1])
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument()
+  })
+
+  it('original event (on its own date) remains editable', async () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur editable',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur editable/i })
+    // Click the Monday instance (first chip = original)
+    await userEvent.click(chips[0])
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument()
+  })
+
+  it('does not duplicate the original event on its own recurrence day', () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'No dup',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon'], // only Mon — should appear once, not twice
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    expect(screen.getAllByRole('button', { name: /no dup/i }).length).toBe(1)
   })
 })
