@@ -578,6 +578,7 @@ export function WeekCalendarView({
                   evt,
                 )
                 const isRecur = isRecurrenceInstance(evt.id)
+                const originalId = isRecur ? evt.id.split(':recur:')[0] : evt.id
                 return (
                   <CalendarEventChip
                     key={evt.id}
@@ -585,8 +586,28 @@ export function WeekCalendarView({
                     style={evtStyle}
                     expanded={dayIdx === expandedDayIndex}
                     onClick={onEventClick}
-                    onEdit={isRecur ? undefined : handleEventEdit}
-                    onDelete={isRecur ? undefined : handleEventDelete}
+                    onEdit={(editedEvent) => {
+                      if (!isRecur) {
+                        handleEventEdit(editedEvent)
+                        return
+                      }
+                      // original always present: recurrence chips are generated from localEvents
+                      const original = localEvents.find((e) => e.id === originalId)!
+                      const origDate = original.start.substring(0, 10)
+                      handleEventEdit({
+                        ...editedEvent,
+                        id: originalId,
+                        start: `${origDate}${editedEvent.start.substring(10)}`,
+                        end: `${origDate}${editedEvent.end.substring(10)}`,
+                      })
+                    }}
+                    onDelete={(deletedEvent) => {
+                      if (!isRecur) {
+                        handleEventDelete(deletedEvent)
+                        return
+                      }
+                      handleEventDelete(localEvents.find((e) => e.id === originalId)!)
+                    }}
                     renderPopover={isRecur ? undefined : renderEventPopover}
                     onMoveStart={
                       isRecur
