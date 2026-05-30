@@ -1508,16 +1508,66 @@ describe('recurrence day expansion', () => {
       />,
     )
     const chips = screen.getAllByRole('button', { name: /shift recur/i })
-    // Shift+drag on the Tuesday recurrence instance
+    // Shift+drag on the Tuesday recurrence instance (dayIdx=2)
+    // JSDOM getPointerDayIdx=0 (Sun); drag range=[0,2]; original Mon=dayIdx=1 → effectiveRange=[0,2]
     fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: true })
     fireEvent.pointerUp(chips[1])
-    // onEventEdit must be called with the ORIGINAL id (r1)
-    // drag started from Mon (original's column, dayIdx=1); JSDOM getPointerDayIdx=0 (Sun)
-    // range=[0,1] → Sun+Mon — importantly Mon IS included (original's day)
     expect(onEdit).toHaveBeenCalledOnce()
+    // Mon (original's day) always included in effectiveRange
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'r1', recurrenceDays: expect.arrayContaining(['Mon']) }),
     )
+  })
+
+  it('shift+drag auto-sets recurrenceFrequency to weekly when not already set', () => {
+    const onEdit = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[
+          {
+            id: 'r1',
+            title: 'Auto weekly',
+            start: '2026-05-04T09:00:00',
+            end: '2026-05-04T09:30:00',
+          },
+        ]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventEdit={onEdit}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /auto weekly/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
+    fireEvent.pointerUp(chip)
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceFrequency: 'weekly' }))
+  })
+
+  it('shift+drag preserves existing recurrenceFrequency when already set', () => {
+    const onEdit = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[
+          {
+            id: 'r1',
+            title: 'Monthly event',
+            start: '2026-05-04T09:00:00',
+            end: '2026-05-04T09:30:00',
+            recurrenceFrequency: 'monthly' as const,
+          },
+        ]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventEdit={onEdit}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /monthly event/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
+    fireEvent.pointerUp(chip)
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceFrequency: 'monthly' }))
   })
 
   it('shift+drag on recurrence instance falls back to instance dayIdx when original is outside current week', () => {

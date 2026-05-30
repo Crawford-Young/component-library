@@ -447,14 +447,21 @@ export function WeekCalendarView({
       const dateStr = formatDateISO(days[dragMode.dayIdx])
       handleEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
     } else if (dragMode.type === 'recurrence-select') {
-      const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
-      const minDay = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
-      const maxDay = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
+      const dragMin = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
+      const dragMax = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
+      const origDateStr = dragMode.event.start.substring(0, 10)
+      const origDayIdx = days.findIndex((d) => formatDateISO(d) === origDateStr)
+      const effectiveMin = origDayIdx !== -1 ? Math.min(dragMin, origDayIdx) : dragMin
+      const effectiveMax = origDayIdx !== -1 ? Math.max(dragMax, origDayIdx) : dragMax
       const recurrenceDays = Array.from(
-        { length: maxDay - minDay + 1 },
-        (_, i) => DAY_ABBR[days[minDay + i].getDay()],
+        { length: effectiveMax - effectiveMin + 1 },
+        (_, i) => DAY_ABBR[days[effectiveMin + i].getDay()],
       )
-      handleEventEdit({ ...dragMode.event, recurrenceDays })
+      handleEventEdit({
+        ...dragMode.event,
+        recurrenceDays,
+        recurrenceFrequency: dragMode.event.recurrenceFrequency ?? 'weekly',
+      })
     }
     dragActions.reset()
   }
@@ -612,14 +619,7 @@ export function WeekCalendarView({
                     onMoveStart={(ev, clientY, _clientX, shiftKey) => {
                       if (shiftKey) {
                         const source = isRecur ? localEvents.find((e) => e.id === originalId)! : ev
-                        const sourceDateStr = source.start.substring(0, 10)
-                        const sourceDayIdx = days.findIndex(
-                          (d) => formatDateISO(d) === sourceDateStr,
-                        )
-                        dragActions.startRecurrenceSelect(
-                          source,
-                          sourceDayIdx !== -1 ? sourceDayIdx : dayIdx,
-                        )
+                        dragActions.startRecurrenceSelect(source, dayIdx)
                       } else if (!isRecur && onEventMove !== undefined) {
                         const slot = pointerToSlot(clientY)
                         const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
