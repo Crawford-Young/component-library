@@ -453,10 +453,12 @@ export function WeekCalendarView({
       const origDayIdx = days.findIndex((d) => formatDateISO(d) === origDateStr)
       const effectiveMin = origDayIdx !== -1 ? Math.min(dragMin, origDayIdx) : dragMin
       const effectiveMax = origDayIdx !== -1 ? Math.max(dragMax, origDayIdx) : dragMax
-      const recurrenceDays = Array.from(
+      const draggedDays = Array.from(
         { length: effectiveMax - effectiveMin + 1 },
         (_, i) => DAY_ABBR[days[effectiveMin + i].getDay()],
       )
+      const existing = dragMode.event.recurrenceDays ?? []
+      const recurrenceDays = [...new Set([...existing, ...draggedDays])]
       handleEventEdit({
         ...dragMode.event,
         recurrenceDays,

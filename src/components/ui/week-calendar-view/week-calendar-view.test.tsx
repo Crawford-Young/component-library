@@ -1488,14 +1488,14 @@ describe('recurrence day expansion', () => {
     expect(screen.queryByRole('button', { name: /delete recur/i })).not.toBeInTheDocument()
   })
 
-  it('shift+drag on a recurrence instance updates the original event recurrenceDays', () => {
+  it('shift+drag unions new range with existing recurrenceDays (accumulate, not replace)', () => {
     const onEdit = vi.fn()
     const recurringEvent: CalendarEvent = {
       id: 'r1',
       title: 'Shift recur',
       start: '2026-05-04T09:00:00', // Monday (dayIdx=1)
       end: '2026-05-04T09:30:00',
-      recurrenceDays: ['Mon', 'Tue'],
+      recurrenceDays: ['Mon', 'Tue', 'Wed'],
     }
     render(
       <WeekCalendarView
@@ -1507,16 +1507,15 @@ describe('recurrence day expansion', () => {
         onEventEdit={onEdit}
       />,
     )
+    // Shift+drag on Mon original chip
     const chips = screen.getAllByRole('button', { name: /shift recur/i })
-    // Shift+drag on the Tuesday recurrence instance (dayIdx=2)
-    // JSDOM getPointerDayIdx=0 (Sun); drag range=[0,2]; original Mon=dayIdx=1 → effectiveRange=[0,2]
-    fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: true })
-    fireEvent.pointerUp(chips[1])
+    fireEvent.pointerDown(chips[0], { clientY: 100, clientX: 100, shiftKey: true })
+    fireEvent.pointerUp(chips[0])
     expect(onEdit).toHaveBeenCalledOnce()
-    // Mon (original's day) always included in effectiveRange
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'r1', recurrenceDays: expect.arrayContaining(['Mon']) }),
-    )
+    const result = onEdit.mock.calls[0][0]
+    // Existing Mon+Tue+Wed must all be present after the drag (union, not replace)
+    expect(result.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Tue', 'Wed']))
+    expect(result.id).toBe('r1')
   })
 
   it('shift+drag auto-sets recurrenceFrequency to weekly when not already set', () => {
