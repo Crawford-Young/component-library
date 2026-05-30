@@ -741,16 +741,27 @@ export function WeekCalendarView({
                       onSubmit={(event) => {
                         const timePart = event.start.substring(10)
                         const endTimePart = event.end.substring(10)
-                        for (
-                          let i = pendingCreate.startDayIdx;
-                          i <= pendingCreate.currentDayIdx;
-                          i++
-                        ) {
-                          const dateStr = formatDateISO(days[i])
+                        const minIdx = pendingCreate.startDayIdx
+                        const maxIdx = pendingCreate.currentDayIdx
+                        const dateStr = formatDateISO(days[minIdx])
+                        if (minIdx === maxIdx) {
                           handleEventCreate({
                             ...event,
                             start: `${dateStr}${timePart}`,
                             end: `${dateStr}${endTimePart}`,
+                          })
+                        } else {
+                          const spanDays = Array.from(
+                            { length: maxIdx - minIdx + 1 },
+                            (_, i) => DAY_ABBR[days[minIdx + i].getDay()],
+                          )
+                          const priorDays = event.recurrenceDays ?? /* c8 ignore next */ []
+                          handleEventCreate({
+                            ...event,
+                            start: `${dateStr}${timePart}`,
+                            end: `${dateStr}${endTimePart}`,
+                            recurrenceDays: [...new Set([...priorDays, ...spanDays])],
+                            recurrenceFrequency: event.recurrenceFrequency ?? 'weekly',
                           })
                         }
                         setPendingCreate(null)

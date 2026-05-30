@@ -1076,16 +1076,63 @@ describe('drag-to-create multi-day', () => {
     fireEvent.pointerUp(cells[0], { pointerId: 1 })
   })
 
-  it('creates multiple events when drag spans multiple days on release', async () => {
+  it('multi-day drag merges form recurrenceDays with drag span', async () => {
     const onCreate = vi.fn()
-    render(<WeekCalendarView defaultWeekStart="2026-05-03" events={[]} onEventCreate={onCreate} />)
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={onCreate}
+      />,
+    )
     const cells = document.querySelectorAll('[data-drag-cell]')
-    fireEvent.pointerDown(cells[0], { pointerId: 1, clientY: 0 })
-    fireEvent.pointerUp(cells[0], { pointerId: 1 })
+    fireEvent.pointerDown(cells[14], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerMove(cells[14], { pointerId: 1, clientY: 0, clientX: 0 })
+    fireEvent.pointerUp(cells[14], { pointerId: 1 })
+    // Click Wed pill in the form to pre-select an additional day
+    await userEvent.click(screen.getByRole('button', { name: /day: wed/i }))
+    await userEvent.type(screen.getByLabelText('Event title'), 'Merged')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onCreate).toHaveBeenCalledOnce()
+    // recurrenceDays should include Wed (from pill) + Sun+Mon (from drag span)
+    expect(onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recurrenceDays: expect.arrayContaining(['Sun', 'Mon', 'Wed']),
+      }),
+    )
+  })
+
+  it('multi-day drag fires onEventCreate once with recurrenceDays (no duplicate callbacks)', async () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={onCreate}
+      />,
+    )
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    // cells[14] = column 1 (Mon dayIdx=1) with 14 hours/col
+    // pointerDown on Mon (startDayIdx=1) + pointerMove (JSDOM getPointerDayIdx=0) = currentDayIdx=0
+    // pendingCreate: startDayIdx=0, currentDayIdx=1 → multi-day branch
+    fireEvent.pointerDown(cells[14], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerMove(cells[14], { pointerId: 1, clientY: 0, clientX: 0 })
+    fireEvent.pointerUp(cells[14], { pointerId: 1 })
     expect(screen.getByLabelText('Event title')).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Event title'), 'Multi-day')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    // Callback fires ONCE regardless of how many days the drag spans
     expect(onCreate).toHaveBeenCalledOnce()
+    // Event has recurrenceDays covering the dragged span
+    expect(onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: expect.arrayContaining(['Sun', 'Mon']) }),
+    )
   })
 })
 
