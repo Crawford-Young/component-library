@@ -24,6 +24,7 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors | Merged to main |
 | 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView              | Merged to main |
 | 5b   | Kbd, HoverCard, NumberInput                                                        | In PR #38      |
+| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag   | In progress    |
 
 Update this table whenever a wave PR is merged.
 
@@ -106,6 +107,8 @@ just publish          # publish to npm (CI handles this)
 3. Open PR → CI must fully pass
 4. On merge to `main`, the release workflow opens a **Version Packages** PR
 5. Merging that PR publishes to npm automatically
+
+> **Changeset is required before reflect.** Run `just changeset` before running `claude-md-management:reflect` at wave end — reflect is the last step, not changeset.
 
 ## MD file update rule
 
