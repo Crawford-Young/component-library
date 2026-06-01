@@ -57,7 +57,7 @@
     "react-day-picker": ">=9",
     "react-dom": "^18 || ^19",
     "sonner": ">=1",
-    "tailwindcss": "^3",
+    "tailwindcss": "^3 || ^4",
     "tailwindcss-animate": "^1.0.0"
   },
   "dependencies": {
