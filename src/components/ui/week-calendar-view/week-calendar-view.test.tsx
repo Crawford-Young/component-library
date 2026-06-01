@@ -602,7 +602,9 @@ describe('event position clamping', () => {
         hourCount={14}
       />,
     )
-    const chip = screen.getByRole('button', { name: /overnight/i })
+    // Two chips now: original (Mon 21:00–22:00 visible) + overflow continuation (Tue 00:00–02:00)
+    const chips = screen.getAllByRole('button', { name: /overnight/i })
+    const chip = chips[0] // original in Mon column
     // top = (21-8)/14*100 ≈ 92.86%
     expect(parseFloat(chip.style.top)).toBeCloseTo(92.86, 1)
     // visible portion: 9pm–10pm = 1h → 1/14*100 ≈ 7.14%
@@ -1645,6 +1647,72 @@ describe('recurrence day expansion', () => {
     expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'r2' }))
   })
 
+  it('overnight event renders continuation block in the next day column', () => {
+    const overnightEvent: CalendarEvent = {
+      id: 'o1',
+      title: 'Night shift',
+      start: '2026-05-04T23:00:00', // Monday
+      end: '2026-05-05T01:00:00', // Tuesday
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[overnightEvent]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={28}
+      />,
+    )
+    // Original on Mon + overflow continuation on Tue = 2 chips
+    expect(screen.getAllByRole('button', { name: /night shift/i }).length).toBe(2)
+  })
+
+  it('overflow continuation chip has no edit or delete buttons', async () => {
+    const overnightEvent: CalendarEvent = {
+      id: 'o1',
+      title: 'Overflow chip',
+      start: '2026-05-04T23:00:00',
+      end: '2026-05-05T01:00:00',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[overnightEvent]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={28}
+        onEventEdit={vi.fn()}
+        onEventDelete={vi.fn()}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /overflow chip/i })
+    // Continuation chip (Tue, index 1) — clicking should NOT show edit/delete
+    await userEvent.click(chips[1])
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument()
+  })
+
+  it('overnight recur instance has correct end date (next day)', () => {
+    const overnightRecur: CalendarEvent = {
+      id: 'r1',
+      title: 'Overnight recur',
+      start: '2026-05-04T23:00:00', // Monday
+      end: '2026-05-05T01:00:00',
+      recurrenceDays: ['Mon', 'Wed'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[overnightRecur]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={28}
+      />,
+    )
+    // Mon original + Mon overflow + Wed recur + Wed overflow = 4 chips
+    expect(screen.getAllByRole('button', { name: /overnight recur/i }).length).toBe(4)
+  })
+
   it('does not duplicate the original event on its own recurrence day', () => {
     const recurringEvent: CalendarEvent = {
       id: 'r1',
@@ -1663,5 +1731,93 @@ describe('recurrence day expansion', () => {
       />,
     )
     expect(screen.getAllByRole('button', { name: /no dup/i }).length).toBe(1)
+  })
+
+  it('move on recurrence instance calls onEventMove with original event id and preserved date', () => {
+    const onMove = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur move',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T10:00:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur move/i })
+    // chips[1] = Tuesday instance (recurrence copy)
+    fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: false })
+    fireEvent.pointerUp(chips[1])
+    expect(onMove).toHaveBeenCalledOnce()
+    // ID must be original, date must be original (Mon), not the recur day (Tue)
+    const moved = onMove.mock.calls[0][0]
+    expect(moved.id).toBe('r1')
+    expect(moved.start.substring(0, 10)).toBe('2026-05-04')
+  })
+
+  it('resize on recurrence instance calls onEventResize with original event id and preserved date', () => {
+    const onResize = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur resize',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T10:00:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    const { container } = render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventResize={onResize}
+      />,
+    )
+    // Both Mon and Tue instances have resize handles now
+    const resizeHandles = container.querySelectorAll('[data-resize="end"]')
+    expect(resizeHandles.length).toBe(2)
+    fireEvent.pointerDown(resizeHandles[1], { pointerId: 1, clientY: 100 })
+    const grid = container.querySelector('.grid.relative') as HTMLElement
+    fireEvent.pointerUp(grid)
+    expect(onResize).toHaveBeenCalledOnce()
+    const resized = onResize.mock.calls[0][0]
+    expect(resized.id).toBe('r1')
+    expect(resized.end.substring(0, 10)).toBe('2026-05-04')
+  })
+
+  it('ghost shows on all recurrence columns during move of any instance', () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Ghost all',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T10:00:00',
+      recurrenceDays: ['Mon', 'Wed'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /ghost all/i })
+    // Drag Mon (original)
+    fireEvent.pointerDown(chips[0], { clientY: 100, clientX: 100, shiftKey: false })
+    // Ghost should appear in both Mon and Wed columns (2 ghosts)
+    const ghosts = document.querySelectorAll('[data-testid="ghost-event"]')
+    expect(ghosts.length).toBe(2)
+    fireEvent.pointerUp(chips[0])
   })
 })

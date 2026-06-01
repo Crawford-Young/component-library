@@ -151,15 +151,18 @@ function AllDayRow({ days, events, gridTemplateColumns }: AllDayRowProps): React
         const dayEvents = events.filter((e) => isSameDay(new Date(e.start), day))
         return (
           <div key={i} className="border-r px-0.5 py-0.5 last:border-r-0">
-            {dayEvents.map((evt) => (
-              <div
-                key={evt.id}
-                className={cn('mb-0.5 truncate', eventColorVariants({ color: evt.color }))}
-                aria-label={evt.title}
-              >
-                {evt.title}
-              </div>
-            ))}
+            {dayEvents.map((evt) => {
+              const label = evt.title || '(No title)'
+              return (
+                <div
+                  key={evt.id}
+                  className={cn('mb-0.5 truncate', eventColorVariants({ color: evt.color }))}
+                  aria-label={label}
+                >
+                  {label}
+                </div>
+              )
+            })}
           </div>
         )
       })}
@@ -174,28 +177,83 @@ function isRecurrenceInstance(id: string): boolean {
   return id.includes(':recur:')
 }
 
+function isOverflowEvent(id: string): boolean {
+  return id.includes(':overflow:')
+}
+
+// Strip all synthetic suffixes to get the original event id
+function getBaseId(id: string): string {
+  const withoutOverflow = id.includes(':overflow:') ? id.split(':overflow:')[0] : id
+  return withoutOverflow.includes(':recur:') ? withoutOverflow.split(':recur:')[0] : withoutOverflow
+}
+
+function getRecurDayIndices(event: CalendarEvent, days: Date[]): number[] {
+  if (!event.recurrenceDays || event.recurrenceDays.length === 0) return []
+  return days.reduce<number[]>((acc, day, idx) => {
+    if (event.recurrenceDays!.includes(DAY_ABBR[day.getDay()])) acc.push(idx)
+    return acc
+  }, [])
+}
+
 function expandRecurringEvents(events: readonly CalendarEvent[], days: Date[]): CalendarEvent[] {
   const result: CalendarEvent[] = []
   for (const event of events) {
     result.push(event)
     if (!event.recurrenceDays || event.recurrenceDays.length === 0 || event.allDay) continue
-    const originalDateStr = event.start.substring(0, 10)
+    const originalStartDate = event.start.substring(0, 10)
+    const isOvernight = event.end.substring(0, 10) > originalStartDate
     const timePart = event.start.substring(10)
     const endTimePart = event.end.substring(10)
     for (const day of days) {
       const dayAbbr = DAY_ABBR[day.getDay()]
       if (!event.recurrenceDays.includes(dayAbbr)) continue
       const dateStr = formatDateISO(day)
-      if (dateStr === originalDateStr) continue
+      if (dateStr === originalStartDate) continue
+      const endDateStr = isOvernight
+        ? formatDateISO(new Date(new Date(day).setDate(day.getDate() + 1)))
+        : dateStr
       result.push({
         ...event,
         id: `${event.id}:recur:${dateStr}`,
         start: `${dateStr}${timePart}`,
-        end: `${dateStr}${endTimePart}`,
+        end: `${endDateStr}${endTimePart}`,
       })
     }
   }
   return result
+}
+
+function splitOvernightEvents(events: CalendarEvent[], days: Date[]): CalendarEvent[] {
+  const daySet = new Set(days.map(formatDateISO))
+  const result: CalendarEvent[] = []
+  for (const event of events) {
+    result.push(event)
+    if (event.allDay) continue
+    const startDate = event.start.substring(0, 10)
+    const endDate = event.end.substring(0, 10)
+    if (endDate > startDate && daySet.has(endDate)) {
+      result.push({
+        ...event,
+        id: `${event.id}:overflow:${endDate}`,
+        start: `${endDate}T00:00:00`,
+      })
+    }
+  }
+  return result
+}
+
+function isoFromDate(d: Date): string {
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${mo}-${dd}T${h}:${mi}:00`
+}
+
+function eventDurationSlots(event: CalendarEvent): number {
+  const ms = new Date(event.end).getTime() - new Date(event.start).getTime()
+  return Math.round(ms / (SLOT_MINS * 60 * 1_000))
 }
 
 function getWeekDays(weekStart: string): Date[] {
@@ -310,8 +368,11 @@ export function WeekCalendarView({
   const allDayEvents = React.useMemo(() => localEvents.filter((e) => e.allDay), [localEvents])
   const timedEvents = React.useMemo(
     () =>
-      expandRecurringEvents(
-        localEvents.filter((e) => !e.allDay),
+      splitOvernightEvents(
+        expandRecurringEvents(
+          localEvents.filter((e) => !e.allDay),
+          days,
+        ),
         days,
       ),
     [localEvents, days],
@@ -433,18 +494,27 @@ export function WeekCalendarView({
       })
     } else if (dragMode.type === 'moving') {
       const slotStart = dragMode.currentSlot - dragMode.slotOffset
-      const durationSlots = timeToSlot(dragMode.event.end) - timeToSlot(dragMode.event.start)
-      const dateStr = formatDateISO(days[dragMode.dayIdx])
+      const durationMs =
+        new Date(dragMode.event.end).getTime() - new Date(dragMode.event.start).getTime()
+      const dateStr = dragMode.isRecurDrag
+        ? dragMode.event.start.substring(0, 10)
+        : formatDateISO(days[dragMode.dayIdx])
+      const newStart = new Date(slotToTime(slotStart, dateStr))
+      const newEnd = new Date(newStart.getTime() + durationMs)
       handleEventMove({
         ...dragMode.event,
-        start: slotToTime(slotStart, dateStr),
-        end: slotToTime(slotStart + durationSlots, dateStr),
+        start: isoFromDate(newStart),
+        end: isoFromDate(newEnd),
       })
     } else if (dragMode.type === 'resizing-end') {
-      const dateStr = formatDateISO(days[dragMode.dayIdx])
+      const dateStr = dragMode.isRecurDrag
+        ? dragMode.event.start.substring(0, 10)
+        : formatDateISO(days[dragMode.dayIdx])
       handleEventResize({ ...dragMode.event, end: slotToTime(dragMode.currentSlot + 1, dateStr) })
     } else if (dragMode.type === 'resizing-start') {
-      const dateStr = formatDateISO(days[dragMode.dayIdx])
+      const dateStr = dragMode.isRecurDrag
+        ? dragMode.event.start.substring(0, 10)
+        : formatDateISO(days[dragMode.dayIdx])
       handleEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
     } else if (dragMode.type === 'recurrence-select') {
       const dragMin = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
@@ -586,56 +656,87 @@ export function WeekCalendarView({
                   effectiveHourCount,
                   evt,
                 )
-                const isRecur = isRecurrenceInstance(evt.id)
-                const originalId = isRecur ? evt.id.split(':recur:')[0] : evt.id
+                const isOverflow = isOverflowEvent(evt.id)
+                const isRecur = !isOverflow && isRecurrenceInstance(evt.id)
+                const originalId = getBaseId(evt.id)
                 return (
                   <CalendarEventChip
                     key={evt.id}
                     event={evt}
                     style={evtStyle}
+                    className={isOverflow ? 'opacity-70' : undefined}
                     expanded={dayIdx === expandedDayIndex}
                     onClick={onEventClick}
-                    onEdit={(editedEvent) => {
-                      if (!isRecur) {
-                        handleEventEdit(editedEvent)
-                        return
-                      }
-                      // original always present: recurrence chips are generated from localEvents
-                      const original = localEvents.find((e) => e.id === originalId)!
-                      const origDate = original.start.substring(0, 10)
-                      handleEventEdit({
-                        ...editedEvent,
-                        id: originalId,
-                        start: `${origDate}${editedEvent.start.substring(10)}`,
-                        end: `${origDate}${editedEvent.end.substring(10)}`,
-                      })
-                    }}
-                    onDelete={(deletedEvent) => {
-                      if (!isRecur) {
-                        handleEventDelete(deletedEvent)
-                        return
-                      }
-                      handleEventDelete(localEvents.find((e) => e.id === originalId)!)
-                    }}
-                    renderPopover={isRecur ? undefined : renderEventPopover}
-                    onMoveStart={(ev, clientY, _clientX, shiftKey) => {
-                      if (shiftKey) {
-                        const source = isRecur ? localEvents.find((e) => e.id === originalId)! : ev
-                        dragActions.startRecurrenceSelect(source, dayIdx)
-                      } else if (!isRecur && onEventMove !== undefined) {
-                        const slot = pointerToSlot(clientY)
-                        const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                        dragActions.startMove(ev, dayIdx, slotOffset, slot)
-                      }
-                    }}
+                    onEdit={
+                      isOverflow
+                        ? undefined
+                        : (editedEvent) => {
+                            if (!isRecur) {
+                              handleEventEdit(editedEvent)
+                              return
+                            }
+                            const original = localEvents.find((e) => e.id === originalId)!
+                            const origDate = original.start.substring(0, 10)
+                            handleEventEdit({
+                              ...editedEvent,
+                              id: originalId,
+                              start: `${origDate}${editedEvent.start.substring(10)}`,
+                              end: `${origDate}${editedEvent.end.substring(10)}`,
+                            })
+                          }
+                    }
+                    onDelete={
+                      isOverflow
+                        ? undefined
+                        : (deletedEvent) => {
+                            if (!isRecur) {
+                              handleEventDelete(deletedEvent)
+                              return
+                            }
+                            handleEventDelete(localEvents.find((e) => e.id === originalId)!)
+                          }
+                    }
+                    renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}
+                    onMoveStart={
+                      isOverflow
+                        ? undefined
+                        : (ev, clientY, _clientX, shiftKey) => {
+                            if (shiftKey) {
+                              const source = isRecur
+                                ? localEvents.find((e) => e.id === originalId)!
+                                : ev
+                              dragActions.startRecurrenceSelect(source, dayIdx)
+                            } else if (onEventMove !== undefined) {
+                              const baseEvent = isRecur
+                                ? localEvents.find((e) => e.id === originalId)!
+                                : ev
+                              const slot = pointerToSlot(clientY)
+                              const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
+                              dragActions.startMove(baseEvent, dayIdx, slotOffset, slot, isRecur)
+                            }
+                          }
+                    }
                     onResizeStart={
-                      isRecur || onEventResize === undefined
+                      isOverflow || onEventResize === undefined
                         ? undefined
                         : (ev, edge) => {
+                            const baseEvent = isRecur
+                              ? localEvents.find((e) => e.id === originalId)!
+                              : ev
                             if (edge === 'end') {
-                              dragActions.startResizeEnd(ev, dayIdx, timeToSlot(ev.end) - 1)
+                              dragActions.startResizeEnd(
+                                baseEvent,
+                                dayIdx,
+                                timeToSlot(ev.end) - 1,
+                                isRecur,
+                              )
                             } else {
-                              dragActions.startResizeStart(ev, dayIdx, timeToSlot(ev.start))
+                              dragActions.startResizeStart(
+                                baseEvent,
+                                dayIdx,
+                                timeToSlot(ev.start),
+                                isRecur,
+                              )
                             }
                           }
                     }
@@ -653,40 +754,46 @@ export function WeekCalendarView({
                     hourCount={effectiveHourCount}
                   />
                 )}
-              {/* Ghost: move */}
-              {dragMode.type === 'moving' && dragMode.dayIdx === dayIdx && (
-                <GhostEvent
-                  startSlot={dragMode.currentSlot - dragMode.slotOffset}
-                  endSlot={
-                    dragMode.currentSlot -
-                    dragMode.slotOffset +
-                    (timeToSlot(dragMode.event.end) - timeToSlot(dragMode.event.start))
-                  }
-                  hourStart={effectiveHourStart}
-                  hourCount={effectiveHourCount}
-                  color={dragMode.event.color}
-                />
-              )}
-              {/* Ghost: resize end */}
-              {dragMode.type === 'resizing-end' && dragMode.dayIdx === dayIdx && (
-                <GhostEvent
-                  startSlot={timeToSlot(dragMode.event.start)}
-                  endSlot={dragMode.currentSlot + 1}
-                  hourStart={effectiveHourStart}
-                  hourCount={effectiveHourCount}
-                  color={dragMode.event.color}
-                />
-              )}
-              {/* Ghost: resize start */}
-              {dragMode.type === 'resizing-start' && dragMode.dayIdx === dayIdx && (
-                <GhostEvent
-                  startSlot={dragMode.currentSlot}
-                  endSlot={timeToSlot(dragMode.event.end)}
-                  hourStart={effectiveHourStart}
-                  hourCount={effectiveHourCount}
-                  color={dragMode.event.color}
-                />
-              )}
+              {/* Ghost: move — all recurrence columns + current drag column */}
+              {dragMode.type === 'moving' &&
+                (dragMode.dayIdx === dayIdx ||
+                  getRecurDayIndices(dragMode.event, days).includes(dayIdx)) && (
+                  <GhostEvent
+                    startSlot={dragMode.currentSlot - dragMode.slotOffset}
+                    endSlot={
+                      dragMode.currentSlot -
+                      dragMode.slotOffset +
+                      eventDurationSlots(dragMode.event)
+                    }
+                    hourStart={effectiveHourStart}
+                    hourCount={effectiveHourCount}
+                    color={dragMode.event.color}
+                  />
+                )}
+              {/* Ghost: resize end — all recurrence columns */}
+              {dragMode.type === 'resizing-end' &&
+                (dragMode.dayIdx === dayIdx ||
+                  getRecurDayIndices(dragMode.event, days).includes(dayIdx)) && (
+                  <GhostEvent
+                    startSlot={timeToSlot(dragMode.event.start)}
+                    endSlot={dragMode.currentSlot + 1}
+                    hourStart={effectiveHourStart}
+                    hourCount={effectiveHourCount}
+                    color={dragMode.event.color}
+                  />
+                )}
+              {/* Ghost: resize start — all recurrence columns */}
+              {dragMode.type === 'resizing-start' &&
+                (dragMode.dayIdx === dayIdx ||
+                  getRecurDayIndices(dragMode.event, days).includes(dayIdx)) && (
+                  <GhostEvent
+                    startSlot={dragMode.currentSlot}
+                    endSlot={timeToSlot(dragMode.event.end)}
+                    hourStart={effectiveHourStart}
+                    hourCount={effectiveHourCount}
+                    color={dragMode.event.color}
+                  />
+                )}
               {/* Ghost: recurrence-select */}
               {dragMode.type === 'recurrence-select' &&
                 dayIdx >= Math.min(dragMode.startDayIdx, dragMode.currentDayIdx) &&
