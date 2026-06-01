@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { TimeInput } from '@/components/ui/time-input'
 
 export type CalendarEventColor =
   | 'default'
@@ -203,6 +204,16 @@ const inputCls =
 
 const labelCls = 'mb-0.5 block text-[11px] font-medium text-muted-foreground'
 
+function nextDayISO(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + 1)
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 export function CalendarEventChip({
   event,
   style,
@@ -233,8 +244,10 @@ export function CalendarEventChip({
   }
 
   function handleSave(): void {
-    const start = `${event.start.substring(0, 10)}T${draft.startTime}:00`
-    const end = `${event.end.substring(0, 10)}T${draft.endTime}:00`
+    const startDate = event.start.substring(0, 10)
+    const endDate = draft.endTime < draft.startTime ? nextDayISO(startDate) : startDate
+    const start = `${startDate}T${draft.startTime}:00`
+    const end = `${endDate}T${draft.endTime}:00`
     onEdit!({
       ...event,
       title: draft.title,
@@ -313,7 +326,13 @@ export function CalendarEventChip({
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0">
+      <PopoverContent
+        className="w-72 p-0"
+        side="right"
+        align="start"
+        sideOffset={0}
+        collisionPadding={8}
+      >
         {isEditing ? (
           <form
             onSubmit={(e) => {
@@ -328,6 +347,7 @@ export function CalendarEventChip({
                 </label>
                 <input
                   id={`${event.id}-title`}
+                  required
                   className={inputCls}
                   value={draft.title}
                   onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
@@ -415,29 +435,32 @@ export function CalendarEventChip({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <div className="flex-1">
+              <div className="flex flex-col gap-2">
+                <div>
                   <label htmlFor={`${event.id}-start`} className={labelCls}>
                     Start
                   </label>
-                  <input
+                  <TimeInput
                     id={`${event.id}-start`}
-                    type="time"
-                    className={inputCls}
+                    label="Start"
                     value={draft.startTime}
-                    onChange={(e) => setDraft((d) => ({ ...d, startTime: e.target.value }))}
+                    onChange={(v) => setDraft((d) => ({ ...d, startTime: v }))}
                   />
                 </div>
-                <div className="flex-1">
-                  <label htmlFor={`${event.id}-end`} className={labelCls}>
-                    End
-                  </label>
-                  <input
+                <div>
+                  <div className="flex items-center gap-1">
+                    <label htmlFor={`${event.id}-end`} className={labelCls}>
+                      End
+                    </label>
+                    {draft.endTime < draft.startTime && (
+                      <span className="text-[10px] text-muted-foreground">+1 day</span>
+                    )}
+                  </div>
+                  <TimeInput
                     id={`${event.id}-end`}
-                    type="time"
-                    className={inputCls}
+                    label="End"
                     value={draft.endTime}
-                    onChange={(e) => setDraft((d) => ({ ...d, endTime: e.target.value }))}
+                    onChange={(v) => setDraft((d) => ({ ...d, endTime: v }))}
                   />
                 </div>
               </div>

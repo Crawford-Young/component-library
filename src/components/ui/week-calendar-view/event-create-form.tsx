@@ -8,6 +8,7 @@ import {
   type DayOfWeek,
   type RecurrenceFrequency,
 } from '@/components/ui/calendar-event-chip'
+import { TimeInput } from '@/components/ui/time-input'
 
 const ALL_COLORS: readonly CalendarEventColor[] = [
   'default',
@@ -39,6 +40,16 @@ function slotToTimeString(slot: number): string {
   const h = String(Math.floor(totalMins / 60)).padStart(2, '0')
   const m = String(totalMins % 60).padStart(2, '0')
   return `${h}:${m}`
+}
+
+function nextDayISO(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + 1)
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
 }
 
 interface CreateDraft {
@@ -95,10 +106,12 @@ export function EventCreateForm({
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
+    const isOvernight = !draft.allDay && draft.endTime < draft.startTime
+    const endDate = isOvernight ? nextDayISO(date) : date
     onSubmit({
       title: draft.title,
       start: `${date}T${draft.startTime}:00`,
-      end: `${date}T${draft.endTime}:00`,
+      end: `${endDate}T${draft.endTime}:00`,
       allDay: draft.allDay || undefined,
       color: draft.color !== 'default' ? draft.color : undefined,
       location: draft.location !== '' ? draft.location : undefined,
@@ -119,6 +132,7 @@ export function EventCreateForm({
           id="create-event-title"
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
+          required
           className={inputCls}
           value={draft.title}
           onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
@@ -162,29 +176,32 @@ export function EventCreateForm({
       </div>
 
       {!draft.allDay && (
-        <div className="flex gap-2">
-          <div className="flex-1">
+        <div className="flex flex-col gap-2">
+          <div>
             <label htmlFor="create-event-start" className={labelCls}>
               Start
             </label>
-            <input
+            <TimeInput
               id="create-event-start"
-              type="time"
-              className={inputCls}
+              label="Start"
               value={draft.startTime}
-              onChange={(e) => setDraft((d) => ({ ...d, startTime: e.target.value }))}
+              onChange={(v) => setDraft((d) => ({ ...d, startTime: v }))}
             />
           </div>
-          <div className="flex-1">
-            <label htmlFor="create-event-end" className={labelCls}>
-              End
-            </label>
-            <input
+          <div>
+            <div className="flex items-center gap-1">
+              <label htmlFor="create-event-end" className={labelCls}>
+                End
+              </label>
+              {draft.endTime < draft.startTime && (
+                <span className="text-[10px] text-muted-foreground">+1 day</span>
+              )}
+            </div>
+            <TimeInput
               id="create-event-end"
-              type="time"
-              className={inputCls}
+              label="End"
               value={draft.endTime}
-              onChange={(e) => setDraft((d) => ({ ...d, endTime: e.target.value }))}
+              onChange={(v) => setDraft((d) => ({ ...d, endTime: v }))}
             />
           </div>
         </div>

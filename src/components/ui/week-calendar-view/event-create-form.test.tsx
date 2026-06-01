@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { EventCreateForm } from './event-create-form'
@@ -53,8 +53,18 @@ describe('EventCreateForm', () => {
 
   it('renders start and end time inputs pre-filled from slots', () => {
     render(<EventCreateForm {...baseProps} />)
-    expect((screen.getByLabelText('Start') as HTMLInputElement).value).toBe('09:00')
-    expect((screen.getByLabelText('End') as HTMLInputElement).value).toBe('10:00')
+    expect((screen.getByRole('spinbutton', { name: 'Start hour' }) as HTMLInputElement).value).toBe(
+      '9',
+    )
+    expect(
+      (screen.getByRole('spinbutton', { name: 'Start minute' }) as HTMLInputElement).value,
+    ).toBe('00')
+    expect((screen.getByRole('spinbutton', { name: 'End hour' }) as HTMLInputElement).value).toBe(
+      '10',
+    )
+    expect((screen.getByRole('spinbutton', { name: 'End minute' }) as HTMLInputElement).value).toBe(
+      '00',
+    )
   })
 
   it('renders all day checkbox', () => {
@@ -206,8 +216,12 @@ describe('EventCreateForm', () => {
     const onSubmit = vi.fn()
     render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
-    await userEvent.clear(screen.getByLabelText('Start'))
-    await userEvent.type(screen.getByLabelText('Start'), '10:30')
+    const startHour = screen.getByRole('spinbutton', { name: 'Start hour' })
+    const startMin = screen.getByRole('spinbutton', { name: 'Start minute' })
+    fireEvent.change(startHour, { target: { value: '10' } })
+    fireEvent.blur(startHour)
+    fireEvent.change(startMin, { target: { value: '30' } })
+    fireEvent.blur(startMin)
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(onSubmit.mock.calls[0][0].start).toContain('10:30')
   })
@@ -216,9 +230,37 @@ describe('EventCreateForm', () => {
     const onSubmit = vi.fn()
     render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
-    await userEvent.clear(screen.getByLabelText('End'))
-    await userEvent.type(screen.getByLabelText('End'), '11:00')
+    const endHour = screen.getByRole('spinbutton', { name: 'End hour' })
+    const endMin = screen.getByRole('spinbutton', { name: 'End minute' })
+    fireEvent.change(endHour, { target: { value: '11' } })
+    fireEvent.blur(endHour)
+    fireEvent.change(endMin, { target: { value: '0' } })
+    fireEvent.blur(endMin)
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(onSubmit.mock.calls[0][0].end).toContain('11:00')
+  })
+
+  it('overnight: end < start sets end date to next day', async () => {
+    const onSubmit = vi.fn()
+    // baseProps: date='2026-05-04', startSlot=36 (09:00), endSlot=40 (10:00)
+    // Manually set end to 01:00 which is < start 09:00 → next day
+    render(<EventCreateForm {...baseProps} startSlot={92} endSlot={4} onSubmit={onSubmit} />)
+    // startSlot=92 → 23:00, endSlot=4 → 01:00
+    await userEvent.type(screen.getByLabelText('Event title'), 'Night shift')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    const arg = onSubmit.mock.calls[0][0]
+    expect(arg.start).toBe('2026-05-04T23:00:00')
+    expect(arg.end).toBe('2026-05-05T01:00:00')
+  })
+
+  it('overnight: shows +1 day label when end < start', () => {
+    // startSlot=92 (23:00), endSlot=4 (01:00) — end < start
+    render(<EventCreateForm {...baseProps} startSlot={92} endSlot={4} />)
+    expect(screen.getByText('+1 day')).toBeInTheDocument()
+  })
+
+  it('no +1 day label when end > start', () => {
+    render(<EventCreateForm {...baseProps} />)
+    expect(screen.queryByText('+1 day')).not.toBeInTheDocument()
   })
 })

@@ -171,16 +171,55 @@ describe('CalendarEventChip', () => {
     render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: /edit/i }))
-    const startInput = screen.getByLabelText(/^start$/i)
-    const endInput = screen.getByLabelText(/^end$/i)
-    await userEvent.clear(startInput)
-    await userEvent.type(startInput, '10:00')
-    await userEvent.clear(endInput)
-    await userEvent.type(endInput, '11:00')
+    const startH = screen.getByRole('spinbutton', { name: 'Start hour' })
+    const startM = screen.getByRole('spinbutton', { name: 'Start minute' })
+    const endH = screen.getByRole('spinbutton', { name: 'End hour' })
+    const endM = screen.getByRole('spinbutton', { name: 'End minute' })
+    fireEvent.change(startH, { target: { value: '10' } })
+    fireEvent.blur(startH)
+    fireEvent.change(startM, { target: { value: '0' } })
+    fireEvent.blur(startM)
+    fireEvent.change(endH, { target: { value: '11' } })
+    fireEvent.blur(endH)
+    fireEvent.change(endM, { target: { value: '0' } })
+    fireEvent.blur(endM)
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({ start: '2026-05-04T10:00:00', end: '2026-05-04T11:00:00' }),
     )
+  })
+
+  it('overnight edit: end < start advances end to next day', async () => {
+    const onEdit = vi.fn()
+    const overnightEvent = {
+      ...event,
+      start: '2026-05-04T23:00:00',
+      end: '2026-05-04T23:30:00',
+    }
+    render(<CalendarEventChip event={overnightEvent} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    // Set end to 01:00 (< start 23:00) → should go to next day
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'End hour' }), {
+      target: { value: '1' },
+    })
+    fireEvent.blur(screen.getByRole('spinbutton', { name: 'End hour' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    const saved = onEdit.mock.calls[0][0]
+    expect(saved.start.substring(0, 10)).toBe('2026-05-04')
+    expect(saved.end.substring(0, 10)).toBe('2026-05-05')
+  })
+
+  it('overnight edit: shows +1 day label when end < start', async () => {
+    const overnightEvent = {
+      ...event,
+      start: '2026-05-04T23:00:00',
+      end: '2026-05-05T01:00:00',
+    }
+    render(<CalendarEventChip event={overnightEvent} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByText('+1 day')).toBeInTheDocument()
   })
 
   it('delete button rendered when onDelete provided', async () => {
