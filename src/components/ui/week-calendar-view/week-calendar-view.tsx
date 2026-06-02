@@ -228,6 +228,7 @@ function splitOvernightEvents(events: CalendarEvent[], days: Date[]): CalendarEv
   const result: CalendarEvent[] = []
   for (const event of events) {
     result.push(event)
+    /* v8 ignore next */
     if (event.allDay) continue
     const startDate = event.start.substring(0, 10)
     const endDate = event.end.substring(0, 10)

@@ -95,4 +95,23 @@ describe('ActionConfirmCard', () => {
     expect(screen.getByText('December 31st')).toBeInTheDocument()
     expect(screen.queryByText(/7:00 AM/)).not.toBeInTheDocument()
   })
+
+  it('renders event entity type badge with green styling', () => {
+    render(
+      <ActionConfirmCard
+        action="Team standup"
+        entityType="event"
+        date="June 3rd"
+        time="9:00 AM"
+        onConfirm={vi.fn()}
+        onDeny={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('event')).toBeInTheDocument()
+  })
+
+  it('renders detail text when detail prop is provided', () => {
+    render(<ActionConfirmCard {...baseProps} detail="Streak: 7 days" />)
+    expect(screen.getByText('Streak: 7 days')).toBeInTheDocument()
+  })
 })

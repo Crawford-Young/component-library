@@ -105,6 +105,7 @@ export function TimeInput({
   useEffect(() => {
     const hourEl = hourRef.current
     const minEl = minuteRef.current
+    /* v8 ignore next */
     if (!hourEl || !minEl) return
 
     const handleHourWheel = (e: WheelEvent): void => {

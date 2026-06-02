@@ -164,6 +164,24 @@ describe('all-day row', () => {
     expect(screen.getByLabelText('Conference Day')).toBeInTheDocument()
   })
 
+  it('renders (No title) fallback for all-day event with empty title', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[
+          {
+            id: 'ad2',
+            title: '',
+            start: '2026-05-04T00:00:00',
+            end: '2026-05-04T23:59:59',
+            allDay: true,
+          },
+        ]}
+      />,
+    )
+    expect(screen.getByLabelText('(No title)')).toBeInTheDocument()
+  })
+
   it('does not render all-day row when no allDay events', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
     expect(screen.queryByText('All day')).not.toBeInTheDocument()
@@ -1792,6 +1810,36 @@ describe('recurrence day expansion', () => {
     const resized = onResize.mock.calls[0][0]
     expect(resized.id).toBe('r1')
     expect(resized.end.substring(0, 10)).toBe('2026-05-04')
+  })
+
+  it('resize-start on recurrence instance calls onEventResize with original event id and preserved date', () => {
+    const onResize = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur resize start',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T10:00:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    const { container } = render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventResize={onResize}
+      />,
+    )
+    const startHandles = container.querySelectorAll('[data-resize="start"]')
+    expect(startHandles.length).toBe(2)
+    fireEvent.pointerDown(startHandles[1], { pointerId: 1, clientY: 100 })
+    const grid = container.querySelector('.grid.relative') as HTMLElement
+    fireEvent.pointerUp(grid)
+    expect(onResize).toHaveBeenCalledOnce()
+    const resized = onResize.mock.calls[0][0]
+    expect(resized.id).toBe('r1')
+    expect(resized.start.substring(0, 10)).toBe('2026-05-04')
   })
 
   it('ghost shows on all recurrence columns during move of any instance', () => {

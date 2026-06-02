@@ -443,6 +443,76 @@ describe('TimeInput', () => {
     expect((minInput as HTMLInputElement).value).toBe('00')
   })
 
+  // --- focus handlers ---
+
+  it('focusing hour input does not call onChange', () => {
+    const { onChange } = setup('09:00')
+    fireEvent.focus(screen.getByRole('spinbutton', { name: 'Start hour' }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('focusing minute input does not call onChange', () => {
+    const { onChange } = setup('09:00')
+    fireEvent.focus(screen.getByRole('spinbutton', { name: 'Start minute' }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // --- 24h minute increment ---
+
+  it('24h: increment minute emits padded string', async () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:00" onChange={onChange} label="Start" use24h />)
+    await userEvent.click(screen.getByRole('button', { name: 'Increment minute' }))
+    expect(onChange).toHaveBeenCalledWith('09:01')
+  })
+
+  it('24h: increment minute wraps 59 → 00', async () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:59" onChange={onChange} label="Start" use24h />)
+    await userEvent.click(screen.getByRole('button', { name: 'Increment minute' }))
+    expect(onChange).toHaveBeenCalledWith('09:00')
+  })
+
+  it('24h: decrement minute emits padded string', async () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:30" onChange={onChange} label="Start" use24h />)
+    await userEvent.click(screen.getByRole('button', { name: 'Decrement minute' }))
+    expect(onChange).toHaveBeenCalledWith('09:29')
+  })
+
+  it('24h: decrement minute wraps 0 → 59', async () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:00" onChange={onChange} label="Start" use24h />)
+    await userEvent.click(screen.getByRole('button', { name: 'Decrement minute' }))
+    expect(onChange).toHaveBeenCalledWith('09:59')
+  })
+
+  it('24h: wheel up on minute increments', () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:00" onChange={onChange} label="Start" use24h />)
+    fireEvent.wheel(screen.getByRole('spinbutton', { name: 'Start minute' }), { deltaY: -1 })
+    expect(onChange).toHaveBeenCalledWith('09:01')
+  })
+
+  it('24h: invalid hour reverts to padded value on blur', () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:00" onChange={onChange} label="Start" use24h />)
+    const hourInput = screen.getByRole('spinbutton', { name: 'Start hour' })
+    fireEvent.change(hourInput, { target: { value: 'abc' } })
+    fireEvent.blur(hourInput)
+    expect(onChange).not.toHaveBeenCalled()
+    expect((hourInput as HTMLInputElement).value).toBe('09')
+  })
+
+  it('24h: typing a valid minute emits correct string on blur', () => {
+    const onChange = vi.fn()
+    render(<TimeInput value="09:00" onChange={onChange} label="Start" use24h />)
+    const minInput = screen.getByRole('spinbutton', { name: 'Start minute' })
+    fireEvent.change(minInput, { target: { value: '45' } })
+    fireEvent.blur(minInput)
+    expect(onChange).toHaveBeenCalledWith('09:45')
+  })
+
   // --- AM/PM auto-switch ---
 
   it('increment hour: 11 AM → 12 PM (auto-switch AM→PM)', async () => {
