@@ -1,5 +1,12 @@
 # @cy/ui
 
+## 0.6.0
+
+### Minor Changes
+
+- afb7dde: Add 15 wave 6 shell and gamification components: AppShell, Sidebar, SidebarItem, TopBar, ChatPanel, ChatFab, HeroCard, StatChip, PageHeader, FilterChip, EmptyState, XpBar, PointBadge, LeaderboardTable, ScoreHistory
+- e3c320d: Add CalendarEventChip with Radix Popover (title, time range, description, edit/delete actions, custom renderPopover slot) and CalendarNavBar with week-navigation arrows and day/month/year dropdowns. WeekCalendarView now manages week state internally (defaultWeekStart replaces required weekStart) and renders both new components.
+
 ## 0.5.0
 
 ### Minor Changes
