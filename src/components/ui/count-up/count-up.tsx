@@ -1,13 +1,9 @@
 import * as React from 'react'
 
 function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = React.useState(() => {
-    // The true branch is only reachable in an SSR environment where window is
-    // not defined — unreachable in happy-dom/jsdom test environments.
-    /* c8 ignore next */
-    if (typeof window === 'undefined') return true
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  })
+  const [reduced, setReduced] = React.useState(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
   React.useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReduced(mq.matches)

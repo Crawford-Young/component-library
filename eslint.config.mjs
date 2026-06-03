@@ -20,7 +20,10 @@ export default tseslint.config(
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/no-unknown-property': ['error', { ignore: ['cmdk-input-wrapper', 'cmdk-separator'] }],
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
     settings: {
       react: { version: 'detect' },

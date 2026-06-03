@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { TimeInput } from '@/components/ui/time-input'
 
 export type CalendarEventColor =
   | 'default'
@@ -21,6 +22,9 @@ export type CalendarEventColor =
   | 'fuchsia'
   | 'lime'
 
+export type DayOfWeek = 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat'
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
 export interface CalendarEvent {
   readonly id: string
   readonly title: string
@@ -30,6 +34,8 @@ export interface CalendarEvent {
   readonly color?: CalendarEventColor
   readonly description?: string
   readonly location?: string
+  readonly recurrenceDays?: readonly DayOfWeek[]
+  readonly recurrenceFrequency?: RecurrenceFrequency
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
@@ -63,6 +69,13 @@ export interface CalendarEventChipProps {
   readonly onClick?: (event: CalendarEvent) => void
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
+  readonly onMoveStart?: (
+    event: CalendarEvent,
+    clientY: number,
+    clientX: number,
+    shiftKey: boolean,
+  ) => void
+  readonly onResizeStart?: (event: CalendarEvent, edge: 'start' | 'end') => void
   readonly renderPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
@@ -92,6 +105,8 @@ interface DraftEvent {
   description: string
   startTime: string
   endTime: string
+  recurrenceDays: readonly DayOfWeek[]
+  recurrenceFrequency: RecurrenceFrequency | 'none'
 }
 
 function toDraft(ev: CalendarEvent): DraftEvent {
@@ -102,6 +117,8 @@ function toDraft(ev: CalendarEvent): DraftEvent {
     description: ev.description ?? '',
     startTime: ev.start.substring(11, 16),
     endTime: ev.end.substring(11, 16),
+    recurrenceDays: ev.recurrenceDays ?? [],
+    recurrenceFrequency: ev.recurrenceFrequency ?? 'none',
   }
 }
 
@@ -187,6 +204,16 @@ const inputCls =
 
 const labelCls = 'mb-0.5 block text-[11px] font-medium text-muted-foreground'
 
+function nextDayISO(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + 1)
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 export function CalendarEventChip({
   event,
   style,
@@ -194,6 +221,8 @@ export function CalendarEventChip({
   onClick,
   onEdit,
   onDelete,
+  onMoveStart,
+  onResizeStart,
   renderPopover,
   className,
 }: CalendarEventChipProps): React.JSX.Element {
@@ -215,14 +244,19 @@ export function CalendarEventChip({
   }
 
   function handleSave(): void {
-    const start = `${event.start.substring(0, 10)}T${draft.startTime}:00`
-    const end = `${event.end.substring(0, 10)}T${draft.endTime}:00`
+    const startDate = event.start.substring(0, 10)
+    const endDate = draft.endTime < draft.startTime ? nextDayISO(startDate) : startDate
+    const start = `${startDate}T${draft.startTime}:00`
+    const end = `${endDate}T${draft.endTime}:00`
     onEdit!({
       ...event,
       title: draft.title,
       color: draft.color,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
+      recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays : undefined,
+      recurrenceFrequency:
+        draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
       start,
       end,
     })
@@ -249,7 +283,8 @@ export function CalendarEventChip({
         <button
           type="button"
           className={cn(
-            'cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'relative cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            onMoveStart !== undefined && 'cursor-grab',
             eventColorVariants({ color: event.color }),
             className,
           )}
@@ -258,6 +293,16 @@ export function CalendarEventChip({
           onClick={() => onClick?.(event)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') onClick?.(event)
+          }}
+          onPointerDown={(e) => {
+            const target = e.target as HTMLElement
+            const resize = target.dataset.resize
+            if (resize === 'start' || resize === 'end') {
+              e.stopPropagation()
+              onResizeStart?.(event, resize)
+            } else {
+              onMoveStart?.(event, e.clientY, e.clientX, e.shiftKey)
+            }
           }}
         >
           <div className="truncate font-semibold">{event.title}</div>
@@ -269,9 +314,25 @@ export function CalendarEventChip({
           )}
           {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
           {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
+          <div
+            data-resize="start"
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+          />
+          <div
+            data-resize="end"
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
+          />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0">
+      <PopoverContent
+        className="w-72 p-0"
+        side="right"
+        align="start"
+        sideOffset={0}
+        collisionPadding={8}
+      >
         {isEditing ? (
           <form
             onSubmit={(e) => {
@@ -286,6 +347,7 @@ export function CalendarEventChip({
                 </label>
                 <input
                   id={`${event.id}-title`}
+                  required
                   className={inputCls}
                   value={draft.title}
                   onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
@@ -315,29 +377,90 @@ export function CalendarEventChip({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <div className="flex-1">
+              <div>
+                <p className={labelCls} aria-hidden="true">
+                  Repeat
+                </p>
+                <select
+                  aria-label="Repeat"
+                  className={cn(inputCls, 'mt-1')}
+                  value={draft.recurrenceFrequency}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      recurrenceFrequency: e.target.value as RecurrenceFrequency | 'none',
+                    }))
+                  }
+                >
+                  <option value="none">None</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+
+              <div>
+                <p className={labelCls} aria-hidden="true">
+                  Days
+                </p>
+                <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
+                  {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as DayOfWeek[]).map((d) => {
+                    const active = draft.recurrenceDays.includes(d)
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-label={`Day: ${d}`}
+                        aria-pressed={active}
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            recurrenceDays: active
+                              ? prev.recurrenceDays.filter((x) => x !== d)
+                              : [...prev.recurrenceDays, d],
+                          }))
+                        }
+                        className={cn(
+                          'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          active
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                        )}
+                      >
+                        {d[0]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div>
                   <label htmlFor={`${event.id}-start`} className={labelCls}>
                     Start
                   </label>
-                  <input
+                  <TimeInput
                     id={`${event.id}-start`}
-                    type="time"
-                    className={inputCls}
+                    label="Start"
                     value={draft.startTime}
-                    onChange={(e) => setDraft((d) => ({ ...d, startTime: e.target.value }))}
+                    onChange={(v) => setDraft((d) => ({ ...d, startTime: v }))}
                   />
                 </div>
-                <div className="flex-1">
-                  <label htmlFor={`${event.id}-end`} className={labelCls}>
-                    End
-                  </label>
-                  <input
+                <div>
+                  <div className="flex items-center gap-1">
+                    <label htmlFor={`${event.id}-end`} className={labelCls}>
+                      End
+                    </label>
+                    {draft.endTime < draft.startTime && (
+                      <span className="text-[10px] text-muted-foreground">+1 day</span>
+                    )}
+                  </div>
+                  <TimeInput
                     id={`${event.id}-end`}
-                    type="time"
-                    className={inputCls}
+                    label="End"
                     value={draft.endTime}
-                    onChange={(e) => setDraft((d) => ({ ...d, endTime: e.target.value }))}
+                    onChange={(v) => setDraft((d) => ({ ...d, endTime: v }))}
                   />
                 </div>
               </div>
