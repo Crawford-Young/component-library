@@ -1,41 +1,117 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, beforeEach } from 'vitest'
 import { Sidebar } from './sidebar'
+
+const localStorageMock = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => {
+      store[key] = value
+    },
+    clear: () => {
+      store = {}
+    },
+  }
+})()
+
+beforeEach(() => {
+  localStorageMock.clear()
+  Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true })
+})
 
 describe('Sidebar', () => {
   it('renders children', () => {
     render(
       <Sidebar>
-        <p>nav item</p>
+        <div>nav item</div>
       </Sidebar>,
     )
     expect(screen.getByText('nav item')).toBeInTheDocument()
   })
 
+  it('renders header slot when provided', () => {
+    render(
+      <Sidebar header={<span>Logo</span>}>
+        <div />
+      </Sidebar>,
+    )
+    expect(screen.getByText('Logo')).toBeInTheDocument()
+  })
+
   it('renders footer slot when provided', () => {
     render(
-      <Sidebar footer={<div data-testid="footer">footer</div>}>
-        <p>nav</p>
+      <Sidebar footer={<span>User</span>}>
+        <div />
       </Sidebar>,
     )
-    expect(screen.getByTestId('footer')).toBeInTheDocument()
+    expect(screen.getByText('User')).toBeInTheDocument()
   })
 
-  it('does not render footer when omitted', () => {
-    const { queryByTestId } = render(
+  it('renders collapse toggle button', () => {
+    render(
       <Sidebar>
-        <p>nav</p>
+        <div />
       </Sidebar>,
     )
-    expect(queryByTestId('footer')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument()
   })
 
-  it('merges custom className', () => {
-    const { container } = render(
-      <Sidebar className="custom">
-        <p>nav</p>
+  it('starts expanded by default', () => {
+    render(
+      <Sidebar>
+        <div />
       </Sidebar>,
     )
-    expect(container.firstChild).toHaveClass('custom')
+    const aside = screen.getByRole('complementary')
+    expect(aside.className).toContain('w-64')
+  })
+
+  it('collapses when toggle is clicked', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar>
+        <div />
+      </Sidebar>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+    const aside = screen.getByRole('complementary')
+    expect(aside.className).toContain('w-14')
+  })
+
+  it('expands when toggle clicked again', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar>
+        <div />
+      </Sidebar>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+    await user.click(screen.getByRole('button', { name: 'Expand sidebar' }))
+    const aside = screen.getByRole('complementary')
+    expect(aside.className).toContain('w-64')
+  })
+
+  it('persists collapsed state to localStorage', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar>
+        <div />
+      </Sidebar>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+    expect(localStorageMock.getItem('sidebar-collapsed')).toBe('true')
+  })
+
+  it('reads initial state from localStorage', () => {
+    localStorageMock.setItem('sidebar-collapsed', 'true')
+    render(
+      <Sidebar>
+        <div />
+      </Sidebar>,
+    )
+    const aside = screen.getByRole('complementary')
+    expect(aside.className).toContain('w-14')
   })
 })

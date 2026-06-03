@@ -1,19 +1,59 @@
+'use client'
 import * as React from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SidebarContext } from './sidebar-context'
 
-interface SidebarProps {
+export interface SidebarProps {
+  readonly header?: React.ReactNode
   readonly children: React.ReactNode
   readonly footer?: React.ReactNode
   readonly className?: string
 }
 
-export function Sidebar({ children, footer, className }: SidebarProps): React.JSX.Element {
+export function Sidebar({ header, children, footer, className }: SidebarProps): React.JSX.Element {
+  const [collapsed, setCollapsed] = React.useState(
+    () => localStorage.getItem('sidebar-collapsed') === 'true',
+  )
+
+  function handleToggle(): void {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem('sidebar-collapsed', String(next))
+  }
+
   return (
-    <aside className={cn('flex h-full w-64 flex-col border-r border-border bg-surface', className)}>
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-2" aria-label="Main navigation">
-        {children}
-      </nav>
-      {footer !== undefined && <div className="border-t border-border p-2">{footer}</div>}
-    </aside>
+    <SidebarContext.Provider value={{ collapsed }}>
+      <aside
+        aria-label="Main sidebar"
+        className={cn(
+          'flex h-full flex-col overflow-hidden border-r border-border bg-surface transition-all duration-200',
+          collapsed ? 'w-14' : 'w-64',
+          className,
+        )}
+      >
+        {header !== undefined && <div className="shrink-0">{header}</div>}
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-2" aria-label="Main navigation">
+          {children}
+        </nav>
+        <div className="shrink-0 border-t border-border p-2">
+          <button
+            type="button"
+            onClick={handleToggle}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="flex w-full items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+        {footer !== undefined && (
+          <div className="shrink-0 overflow-hidden border-t border-border p-2">{footer}</div>
+        )}
+      </aside>
+    </SidebarContext.Provider>
   )
 }
