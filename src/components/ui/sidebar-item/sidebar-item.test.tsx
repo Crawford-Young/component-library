@@ -1,25 +1,49 @@
-import { render, screen } from '@testing-library/react'
+﻿import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { SidebarContext } from '@/components/ui/sidebar/sidebar-context'
 import { SidebarItem } from './sidebar-item'
 
+function renderWithContext(collapsed: boolean) {
+  return render(
+    <SidebarContext.Provider value={{ collapsed }}>
+      <SidebarItem icon={<span>icon</span>} label="Goals" href="/goals" />
+    </SidebarContext.Provider>,
+  )
+}
+
 describe('SidebarItem', () => {
-  it('renders label and link', () => {
-    render(<SidebarItem icon={<span>icon</span>} label="Goals" href="/goals" />)
-    expect(screen.getByRole('link', { name: /goals/i })).toHaveAttribute('href', '/goals')
+  it('renders label when expanded', () => {
+    renderWithContext(false)
+    expect(screen.getByText('Goals')).toBeInTheDocument()
   })
 
-  it('applies active styles when isActive=true', () => {
-    render(<SidebarItem icon={<span />} label="Goals" href="/goals" isActive />)
-    expect(screen.getByRole('link').className).toContain('bg-accent')
+  it('hides label visually when collapsed', () => {
+    renderWithContext(true)
+    const label = screen.getByText('Goals')
+    expect(label.className).toContain('w-0')
   })
 
-  it('does not apply active styles when isActive=false', () => {
-    render(<SidebarItem icon={<span />} label="Goals" href="/goals" isActive={false} />)
-    expect(screen.getByRole('link').className).not.toContain('bg-accent text-accent-foreground')
+  it('renders icon always', () => {
+    renderWithContext(true)
+    expect(screen.getByText('icon')).toBeInTheDocument()
   })
 
-  it('merges custom className', () => {
-    render(<SidebarItem icon={<span />} label="Goals" href="/goals" className="custom" />)
-    expect(screen.getByRole('link').className).toContain('custom')
+  it('renders link with correct href', () => {
+    renderWithContext(false)
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/goals')
+  })
+
+  it('marks active link with aria-current=page', () => {
+    render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarItem icon={<span />} label="Goals" href="/goals" isActive />
+      </SidebarContext.Provider>,
+    )
+    expect(screen.getByRole('link')).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('does not set aria-current when not active', () => {
+    renderWithContext(false)
+    expect(screen.getByRole('link')).not.toHaveAttribute('aria-current')
   })
 })

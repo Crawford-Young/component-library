@@ -1,1 +1,2 @@
-export * from './sidebar-item'
+export { SidebarItem } from './sidebar-item'
+export type { SidebarItemProps } from './sidebar-item'
