@@ -33,7 +33,7 @@ beforeEach(() => {
   disconnectSpy.mockClear()
   vi.stubGlobal(
     'IntersectionObserver',
-    vi.fn().mockImplementation((cb: IntersectionObserverCallback) => {
+    vi.fn().mockImplementation(function (cb: IntersectionObserverCallback) {
       intersectionCallback = cb
       return { observe: observeSpy, disconnect: disconnectSpy, unobserve: vi.fn() }
     }),

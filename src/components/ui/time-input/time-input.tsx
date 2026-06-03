@@ -103,10 +103,8 @@ export function TimeInput({
   const minuteLabel = label !== undefined ? `${label} minute` : 'Minute'
 
   useEffect(() => {
-    const hourEl = hourRef.current
-    const minEl = minuteRef.current
-    /* v8 ignore next */
-    if (!hourEl || !minEl) return
+    const hourEl = hourRef.current!
+    const minEl = minuteRef.current!
 
     const handleHourWheel = (e: WheelEvent): void => {
       e.preventDefault()

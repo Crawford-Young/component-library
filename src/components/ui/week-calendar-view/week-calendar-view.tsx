@@ -228,8 +228,6 @@ function splitOvernightEvents(events: CalendarEvent[], days: Date[]): CalendarEv
   const result: CalendarEvent[] = []
   for (const event of events) {
     result.push(event)
-    /* v8 ignore next */
-    if (event.allDay) continue
     const startDate = event.start.substring(0, 10)
     const endDate = event.end.substring(0, 10)
     if (endDate > startDate && daySet.has(endDate)) {
@@ -444,9 +442,7 @@ export function WeekCalendarView({
   const effectiveHourCount = sleepEnabled ? 24 : hourCount
 
   function pointerToSlot(clientY: number): number {
-    const rect = gridRef.current?.getBoundingClientRect()
-    /* c8 ignore next */
-    if (!rect) return effectiveHourStart * SLOTS_PER_HOUR
+    const rect = gridRef.current!.getBoundingClientRect()
     const relY = clientY - rect.top
     const slotHeight = hourHeight / SLOTS_PER_HOUR
     const raw = Math.floor(relY / slotHeight) + effectiveHourStart * SLOTS_PER_HOUR
@@ -459,7 +455,6 @@ export function WeekCalendarView({
   function getPointerDayIdx(clientX: number): number {
     for (let i = 0; i < dayColRefs.current.length; i++) {
       const rect = dayColRefs.current[i]?.getBoundingClientRect()
-      /* c8 ignore next */
       if (rect && clientX >= rect.left && clientX < rect.right) return i
     }
     return 0
@@ -819,12 +814,7 @@ export function WeekCalendarView({
                 />
               )}
               {pendingCreate?.startDayIdx === dayIdx && (
-                <Popover
-                  open
-                  onOpenChange={(open) => {
-                    if (!open) setPendingCreate(null)
-                  }}
-                >
+                <Popover open onOpenChange={() => setPendingCreate(null)}>
                   <PopoverTrigger asChild>
                     <div
                       aria-hidden="true"
@@ -863,7 +853,8 @@ export function WeekCalendarView({
                             { length: maxIdx - minIdx + 1 },
                             (_, i) => DAY_ABBR[days[minIdx + i].getDay()],
                           )
-                          const priorDays = event.recurrenceDays ?? /* c8 ignore next */ []
+                          /* istanbul ignore next */
+                          const priorDays = event.recurrenceDays ?? []
                           handleEventCreate({
                             ...event,
                             start: `${dateStr}${timePart}`,

@@ -457,6 +457,44 @@ describe('TimeInput', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('does not sync hour display while hour input is focused on prop update', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <TimeInput value="09:00" onChange={onChange} label="Start" id="test-time" />,
+    )
+    const hourInput = screen.getByRole('spinbutton', { name: 'Start hour' })
+    fireEvent.focus(hourInput)
+    rerender(<TimeInput value="10:00" onChange={onChange} label="Start" id="test-time" />)
+    expect((hourInput as HTMLInputElement).value).toBe('9')
+  })
+
+  it('does not sync minute display while minute input is focused on prop update', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <TimeInput value="09:00" onChange={onChange} label="Start" id="test-time" />,
+    )
+    const minInput = screen.getByRole('spinbutton', { name: 'Start minute' })
+    fireEvent.focus(minInput)
+    rerender(<TimeInput value="09:30" onChange={onChange} label="Start" id="test-time" />)
+    expect((minInput as HTMLInputElement).value).toBe('00')
+  })
+
+  it('non-Enter keydown on hour input does not commit', () => {
+    const { onChange } = setup('09:00')
+    const hourInput = screen.getByRole('spinbutton', { name: 'Start hour' })
+    fireEvent.change(hourInput, { target: { value: '11' } })
+    fireEvent.keyDown(hourInput, { key: 'Tab' })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('non-Enter keydown on minute input does not commit', () => {
+    const { onChange } = setup('09:00')
+    const minInput = screen.getByRole('spinbutton', { name: 'Start minute' })
+    fireEvent.change(minInput, { target: { value: '30' } })
+    fireEvent.keyDown(minInput, { key: 'Tab' })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   // --- 24h minute increment ---
 
   it('24h: increment minute emits padded string', async () => {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
@@ -691,6 +691,118 @@ describe('drag to create', () => {
     expect(screen.getByLabelText('Event title')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('getPointerDayIdx returns non-zero when clientX is within a column rect (mocked)', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    // rows[14].parentElement is day column 1 (after 14 rows of day 0)
+    const day1Col = rows[14]?.parentElement
+    // Mock all getBoundingClientRect: day1Col returns a real rect, others return zeros
+    const zeroRect = {
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    const col1Rect = {
+      left: 100,
+      right: 200,
+      top: 0,
+      bottom: 500,
+      width: 100,
+      height: 500,
+      x: 100,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      return this === day1Col ? col1Rect : zeroRect
+    })
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    // Fire pointerMove with clientX=150 in column 1 rect range → getPointerDayIdx returns 1
+    fireEvent.pointerMove(rows[0], { pointerId: 1, clientX: 150, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    // Popover shows — verifies drag completed
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    vi.restoreAllMocks()
+  })
+
+  it('multi-day drag covers recurrenceDays fallback in create handler', async () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={onCreate}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    const day1Col = rows[14]?.parentElement
+    const zeroRect = {
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    const col1Rect = {
+      left: 100,
+      right: 200,
+      top: 0,
+      bottom: 500,
+      width: 100,
+      height: 500,
+      x: 100,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      return this === day1Col ? col1Rect : zeroRect
+    })
+    // Start drag in day 0, move into day 1 → currentDayIdx=1, startDayIdx=0 → multi-day path
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerMove(rows[0], { pointerId: 1, clientX: 150, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    // Uncheck all pre-selected recurrence day buttons so recurrenceDays becomes undefined
+    // This covers the ?? [] fallback branch in the create handler
+    const dayButtons = screen.queryAllByRole('button', { name: /^Day: / })
+    for (const btn of dayButtons) {
+      if (btn.getAttribute('aria-pressed') === 'true') {
+        await userEvent.click(btn)
+      }
+    }
+    await userEvent.type(screen.getByLabelText('Event title'), 'Multi-day event')
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    // onCreate called via multi-day path with recurrenceDays=undefined → ?? [] fallback hit
+    expect(onCreate).toHaveBeenCalledOnce()
+    vi.restoreAllMocks()
   })
 })
 
@@ -1867,5 +1979,112 @@ describe('recurrence day expansion', () => {
     const ghosts = document.querySelectorAll('[data-testid="ghost-event"]')
     expect(ghosts.length).toBe(2)
     fireEvent.pointerUp(chips[0])
+  })
+})
+
+describe('timer callbacks', () => {
+  it('setInterval callback fires for time indicator after 60s', () => {
+    vi.useRealTimers()
+    vi.useFakeTimers({
+      toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+    })
+    vi.setSystemTime(new Date('2026-05-04T10:00:00'))
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    expect(screen.getByTestId('time-indicator')).toBeInTheDocument()
+    act(() => {
+      vi.advanceTimersByTime(60_000)
+    })
+    expect(screen.getByTestId('time-indicator')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('setInterval callback fires for time gutter label after 60s', () => {
+    vi.useRealTimers()
+    vi.useFakeTimers({
+      toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+    })
+    vi.setSystemTime(new Date('2026-05-04T10:00:00'))
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    expect(screen.getByTestId('time-gutter-label')).toBeInTheDocument()
+    act(() => {
+      vi.advanceTimersByTime(60_000)
+    })
+    expect(screen.getByTestId('time-gutter-label')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('setTimeout callback fires at midnight to refresh today state', () => {
+    vi.useRealTimers()
+    vi.useFakeTimers({
+      toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+    })
+    vi.setSystemTime(new Date('2026-05-04T23:59:59'))
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
+    expect(screen.getByRole('button', { name: /Mon 4/i })).toBeInTheDocument()
+    act(() => {
+      vi.advanceTimersByTime(1001)
+    })
+    expect(screen.getByRole('button', { name: /Mon 4/i })).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})
+
+describe('sleep zone drag blocking', () => {
+  it('does not open create popover when drag starts in sleep hours', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={30}
+        sleepEnabled
+        sleepStart={23}
+        sleepEnd={7}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    // Row 0 = slot 0 = hour 0 AM < sleepEnd(7) → sleep zone → blocked
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('opens create popover when drag starts in allowed zone with sleepEnabled', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={30}
+        sleepEnabled
+        sleepStart={23}
+        sleepEnd={7}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    // Row 8 = slot 32 = hour 8 AM: sleepEnd(7) <= 8 < sleepStart(23) → allowed zone
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[8], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[8], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
   })
 })

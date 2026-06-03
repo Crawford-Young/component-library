@@ -57,6 +57,22 @@ describe('PaginationControl', () => {
     expect(screen.getAllByRole('img', { hidden: true })).toBeDefined()
   })
 
+  it('shows page 2 directly after page 1 with no left ellipsis when near start', () => {
+    // page=2, totalPages=20: left=max(2,1)=2, 2>2 is false → no left ellipsis
+    render(<PaginationControl page={2} totalPages={20} onPageChange={() => {}} />)
+    expect(screen.getByLabelText('Go to page 1')).toBeInTheDocument()
+    expect(screen.getByLabelText('Go to page 2')).toBeInTheDocument()
+    expect(screen.getByLabelText('Go to page 3')).toBeInTheDocument()
+  })
+
+  it('shows page 19 directly before page 20 with no right ellipsis when near end', () => {
+    // page=19, totalPages=20: right=min(19,20)=19, 19<19 is false → no right ellipsis
+    render(<PaginationControl page={19} totalPages={20} onPageChange={() => {}} />)
+    expect(screen.getByLabelText('Go to page 20')).toBeInTheDocument()
+    expect(screen.getByLabelText('Go to page 19')).toBeInTheDocument()
+    expect(screen.getByLabelText('Go to page 18')).toBeInTheDocument()
+  })
+
   it('shows info label when pageSize and totalItems are provided', () => {
     render(
       <PaginationControl

@@ -294,6 +294,16 @@ describe('CalendarEventChip', () => {
     expect(onClick).toHaveBeenCalledWith(event)
   })
 
+  it('does not fire onClick for non-Enter/Space keydown', () => {
+    const onClick = vi.fn()
+    const { getByRole } = render(
+      <CalendarEventChip event={event} style={style} onClick={onClick} />,
+    )
+    const btn = getByRole('button', { name: /team standup/i })
+    btn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
   it('formats cross-period time range correctly', async () => {
     const crossEvent: CalendarEvent = {
       id: '2',
