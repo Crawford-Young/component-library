@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Calendar, Settings, Target, RefreshCw, CheckSquare } from 'lucide-react'
 import { Sidebar } from '@/components/ui/sidebar'
+import { SidebarBrand } from '@/components/ui/sidebar-brand'
 import { SidebarItem } from '@/components/ui/sidebar-item'
 
 const meta: Meta<typeof Sidebar> = {
@@ -28,18 +29,15 @@ const navItems = [
   { label: 'Settings', href: '/settings', icon: <Settings className="h-4 w-4" /> },
 ]
 
+const logo = (
+  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
+    <span className="text-[10px] font-bold text-accent-foreground">CR</span>
+  </div>
+)
+
 export const Default: Story = {
   render: () => (
-    <Sidebar
-      header={
-        <div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
-            <span className="text-[10px] font-bold text-accent-foreground">CR</span>
-          </div>
-          <span className="text-sm font-bold text-foreground">Cybond</span>
-        </div>
-      }
-    >
+    <Sidebar header={<SidebarBrand logo={logo} title="Cybond" />}>
       {navItems.map((item) => (
         <SidebarItem key={item.href} icon={item.icon} label={item.label} href={item.href} />
       ))}
