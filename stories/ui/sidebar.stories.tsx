@@ -11,9 +11,9 @@ const meta: Meta<typeof Sidebar> = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="h-[600px] flex">
+      <div className="flex h-screen overflow-hidden">
         <Story />
-        <div className="flex-1 bg-background p-6 text-foreground text-sm">Main content area</div>
+        <div className="flex-1 bg-background p-6 text-sm text-foreground">Main content area</div>
       </div>
     ),
   ],
@@ -47,7 +47,7 @@ export const Default: Story = {
 
 export const WithActiveItem: Story = {
   render: () => (
-    <Sidebar>
+    <Sidebar header={<SidebarBrand logo={logo} title="Cybond" />}>
       {navItems.map((item, i) => (
         <SidebarItem
           key={item.href}
@@ -64,6 +64,7 @@ export const WithActiveItem: Story = {
 export const WithLogout: Story = {
   render: () => (
     <Sidebar
+      header={<SidebarBrand logo={logo} title="Cybond" />}
       footer={
         <div className="flex w-full items-center gap-2.5">
           <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
