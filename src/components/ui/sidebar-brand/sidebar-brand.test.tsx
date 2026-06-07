@@ -46,22 +46,25 @@ describe('SidebarBrand', () => {
     expect(title.className).not.toContain('opacity-0')
   })
 
-  it('applies collapsed layout class when collapsed', () => {
+  it('logo slot is always fixed-width centered', () => {
     const { container } = render(
       <SidebarContext.Provider value={{ collapsed: true }}>
         <SidebarBrand logo={logo} title="Cybond" />
       </SidebarContext.Provider>,
     )
-    expect(container.firstChild).toHaveClass('justify-center')
+    const logoSlot = container.firstChild?.firstChild as HTMLElement
+    expect(logoSlot).toHaveClass('w-14')
+    expect(logoSlot).toHaveClass('justify-center')
   })
 
-  it('applies expanded layout class when expanded', () => {
-    const { container } = render(
+  it('title has flex-1 when expanded', () => {
+    render(
       <SidebarContext.Provider value={{ collapsed: false }}>
         <SidebarBrand logo={logo} title="Cybond" />
       </SidebarContext.Provider>,
     )
-    expect(container.firstChild).toHaveClass('gap-2.5')
+    const title = screen.getByText('Cybond')
+    expect(title.className).toContain('flex-1')
   })
 
   it('applies custom className', () => {

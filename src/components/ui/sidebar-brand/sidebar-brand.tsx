@@ -13,18 +13,13 @@ export function SidebarBrand({ logo, title, className }: SidebarBrandProps): Rea
   const { collapsed } = React.useContext(SidebarContext)
 
   return (
-    <div
-      className={cn(
-        'border-border flex h-14 shrink-0 items-center border-b transition-all duration-200',
-        collapsed ? 'justify-center px-0' : 'gap-2.5 px-4',
-        className,
-      )}
-    >
-      <span className="shrink-0">{logo}</span>
+    <div className={cn('border-border flex h-14 shrink-0 items-center border-b', className)}>
+      {/* Fixed-width slot matches collapsed sidebar width — logo never moves */}
+      <span className="flex w-14 shrink-0 items-center justify-center">{logo}</span>
       <span
         className={cn(
-          'text-foreground text-sm font-bold transition-all duration-200',
-          collapsed ? 'w-0 overflow-hidden opacity-0' : 'flex-1 truncate',
+          'text-foreground truncate text-sm font-bold transition-all duration-200',
+          collapsed ? 'w-0 overflow-hidden opacity-0' : 'flex-1 pr-4',
         )}
       >
         {title}
