@@ -75,4 +75,31 @@ describe('SidebarBrand', () => {
     )
     expect(container.firstChild).toHaveClass('custom-class')
   })
+
+  it('renders as div when no href', () => {
+    const { container } = render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarBrand logo={logo} title="Cybond" />
+      </SidebarContext.Provider>,
+    )
+    expect(container.firstChild?.nodeName).toBe('DIV')
+  })
+
+  it('renders as anchor when href provided', () => {
+    render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarBrand logo={logo} title="Cybond" href="/" />
+      </SidebarContext.Provider>,
+    )
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/')
+  })
+
+  it('applies hover styles when href provided', () => {
+    render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarBrand logo={logo} title="Cybond" href="/" />
+      </SidebarContext.Provider>,
+    )
+    expect(screen.getByRole('link').className).toContain('hover:bg-muted')
+  })
 })
