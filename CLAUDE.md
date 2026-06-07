@@ -24,7 +24,7 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors | Merged to main |
 | 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView              | Merged to main |
 | 5b   | Kbd, HoverCard, NumberInput                                                        | In PR #38      |
-| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag   | In progress    |
+| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag   | Merged to main |
 
 Update this table whenever a wave PR is merged.
 
@@ -109,6 +109,20 @@ just publish          # publish to npm (CI handles this)
 5. Merging that PR publishes to npm automatically
 
 > **Changeset is required before reflect.** Run `just changeset` before running `claude-md-management:reflect` at wave end — reflect is the last step, not changeset.
+
+## Vitest coverage gotchas
+
+These issues bite repeatedly — know them before writing tests:
+
+- **`/* v8 ignore next */` fails inside nested arrow functions.** Pragmas don't suppress coverage when the ignored line is inside a callback, `useEffect`, or JSX handler. Fix: remove the dead guard (`!` assertion or delete unreachable branch) rather than relying on the pragma.
+- **`fakeTimers.toFake` global config leaks into `vi.useFakeTimers()`.** If `vitest.config.ts` sets `fakeTimers: { toFake: ['Date'] }`, then calling `vi.useFakeTimers()` without arguments only fakes `Date` — `setInterval` and `setTimeout` remain real and won't advance. Always pass explicit config: `vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] })`. Also call `vi.useRealTimers()` first to reset before re-entering fake mode.
+- **`getBoundingClientRect()` always returns zeros in happy-dom.** Elements that rely on DOM geometry (column rects, grid positions) will never hit geometry-dependent branches naturally. Use a prototype-level mock: `vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function(this: Element) { return this === targetEl ? mockRect : zeroRect })`.
+
+## Changeset rules
+
+- Run `just changeset` before opening a PR for any wave with new components or behavior changes — choose `minor` for new components, `patch` for fixes.
+- **devDependency upgrades belong in a separate housekeeping PR** — not bundled into feature or coverage PRs. Mixing them can break the release workflow (the changesets action may create a malformed "Version Packages" PR).
+- Test-only changes and internal refactors do not need a changeset.
 
 ## MD file update rule
 
