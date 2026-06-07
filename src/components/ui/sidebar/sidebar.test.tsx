@@ -114,4 +114,41 @@ describe('Sidebar', () => {
     const aside = screen.getByRole('complementary')
     expect(aside.className).toContain('w-14')
   })
+
+  it('shows collapsedHeader when collapsed', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar header={<span>Full Header</span>} collapsedHeader={<span>Logo Only</span>}>
+        <div />
+      </Sidebar>,
+    )
+    expect(screen.getByText('Full Header')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+    expect(screen.queryByText('Full Header')).not.toBeInTheDocument()
+    expect(screen.getByText('Logo Only')).toBeInTheDocument()
+  })
+
+  it('restores header when expanded', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar header={<span>Full Header</span>} collapsedHeader={<span>Logo Only</span>}>
+        <div />
+      </Sidebar>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+    await user.click(screen.getByRole('button', { name: 'Expand sidebar' }))
+    expect(screen.getByText('Full Header')).toBeInTheDocument()
+    expect(screen.queryByText('Logo Only')).not.toBeInTheDocument()
+  })
+
+  it('shows header when collapsed with no collapsedHeader provided', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar header={<span>Always Header</span>}>
+        <div />
+      </Sidebar>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+    expect(screen.getByText('Always Header')).toBeInTheDocument()
+  })
 })

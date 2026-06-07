@@ -6,12 +6,19 @@ import { SidebarContext } from './sidebar-context'
 
 export interface SidebarProps {
   readonly header?: React.ReactNode
+  readonly collapsedHeader?: React.ReactNode
   readonly children: React.ReactNode
   readonly footer?: React.ReactNode
   readonly className?: string
 }
 
-export function Sidebar({ header, children, footer, className }: SidebarProps): React.JSX.Element {
+export function Sidebar({
+  header,
+  collapsedHeader,
+  children,
+  footer,
+  className,
+}: SidebarProps): React.JSX.Element {
   const [collapsed, setCollapsed] = React.useState(
     () => localStorage.getItem('sidebar-collapsed') === 'true',
   )
@@ -32,7 +39,11 @@ export function Sidebar({ header, children, footer, className }: SidebarProps): 
           className,
         )}
       >
-        {header !== undefined && <div className="shrink-0">{header}</div>}
+        {(header !== undefined || collapsedHeader !== undefined) && (
+          <div className="shrink-0">
+            {collapsed && collapsedHeader !== undefined ? collapsedHeader : header}
+          </div>
+        )}
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2" aria-label="Main navigation">
           {children}
         </nav>
