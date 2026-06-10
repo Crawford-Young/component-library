@@ -75,6 +75,18 @@ export const cyUIPreset: Partial<Config> = {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
+      transitionDuration: {
+        instant: 'var(--motion-instant)',
+        fast: 'var(--motion-fast)',
+        base: 'var(--motion-base)',
+        slow: 'var(--motion-slow)',
+        hero: 'var(--motion-hero)',
+      },
+      transitionTimingFunction: {
+        out: 'var(--ease-out)',
+        'in-out': 'var(--ease-in-out)',
+        exit: 'var(--ease-exit)',
+      },
       keyframes: {
         'draw-check': {
           to: { strokeDashoffset: '0' },
