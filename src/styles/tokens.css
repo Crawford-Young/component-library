@@ -47,6 +47,16 @@
   --radius-xl: 1rem;
   --radius-full: 9999px;
 
+  /* Motion — durations + easing (see docs/brand/motion.md) */
+  --motion-instant: 100ms;
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-slow: 400ms;
+  --motion-hero: 600ms;
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-exit: cubic-bezier(0.5, 0, 0.75, 0);
+
   /* Typography — filled by consuming project via next/font */
   --font-sans: system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
