@@ -1,7 +1,8 @@
 /* src/lib/motion.ts
    Motion design tokens — TS mirror of the motion CSS vars in styles/tokens.css.
    Durations in ms. EASE arrays are Framer Motion cubic-bezier points;
-   EASE_CSS are the equivalent CSS strings. See docs/brand/motion.md. */
+   EASE_CSS are the equivalent CSS strings. See docs/brand/motion.md.
+   Framer Motion's ease prop rejects readonly tuples — spread: ease: [...EASE.out]. */
 
 export const MOTION = {
   instant: 100,
