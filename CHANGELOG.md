@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.8.0
+
+### Minor Changes
+
+- cd3f499: Add collapsible Sidebar and SidebarItem components with localStorage-persisted collapse state. Export AppShell, ChatPanel, EmptyState, HeroCard, PageHeader, and ChatFab from the library index.
+
 ## 0.7.0
 
 ### Minor Changes
