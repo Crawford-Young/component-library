@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.9.0
+
+### Minor Changes
+
+- 42747f7: Add motion design tokens: CSS vars (`--motion-*`, `--ease-*`), MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC constants, and Tailwind preset duration/easing mappings.
+
 ## 0.8.0
 
 ### Minor Changes
