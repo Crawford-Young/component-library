@@ -82,6 +82,7 @@ export const cyUIPreset: Partial<Config> = {
         slow: 'var(--motion-slow)',
         hero: 'var(--motion-hero)',
       },
+      // 'out' and 'in-out' intentionally shadow Tailwind's built-in ease-out / ease-in-out with brand curves
       transitionTimingFunction: {
         out: 'var(--ease-out)',
         'in-out': 'var(--ease-in-out)',

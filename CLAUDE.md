@@ -66,6 +66,8 @@ src/
   lib/
     utils.ts           # cn() utility
     utils.test.ts
+    motion.ts          # motion design token constants (MOTION, EASE, EASE_CSS, STAGGER, SPRING_MAGNETIC)
+    motion.test.ts
   styles/
     tokens.css         # CSS custom property design tokens
     base.css           # base resets

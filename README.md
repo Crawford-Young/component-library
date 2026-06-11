@@ -186,6 +186,47 @@ All colors are CSS custom properties mapped to Tailwind utilities via the preset
 
 See [`src/styles/tokens.css`](src/styles/tokens.css) for the full token list.
 
+## Motion tokens
+
+Motion design tokens are exported as typed constants from `@crawfordyoung/ui` and mirrored as CSS vars in `styles.css`.
+
+### JS / Framer Motion constants
+
+```ts
+import {
+  MOTION,           // durations in ms: instant(100) fast(150) base(250) slow(400) hero(600)
+  EASE,             // Framer Motion cubic-bezier arrays — spread required: ease: [...EASE.out]
+  EASE_CSS,         // CSS cubic-bezier strings for raw style props
+  STAGGER,          // stagger timing: wordMs(30) cardMs(40) capItems(5)
+  SPRING_MAGNETIC,  // spring config: stiffness(300) damping(25)
+} from '@crawfordyoung/ui'
+
+// Framer Motion example — spread EASE arrays because Framer rejects readonly tuples
+<motion.div
+  animate={{ opacity: 1 }}
+  transition={{ duration: MOTION.base / 1000, ease: [...EASE.out] }}
+/>
+```
+
+### Tailwind utilities (via `cyUIPreset`)
+
+The Tailwind preset maps the CSS vars to utility classes:
+
+| Utility class      | Token              | Value                                   |
+| ------------------ | ------------------ | --------------------------------------- |
+| `duration-instant` | `--motion-instant` | 100 ms                                  |
+| `duration-fast`    | `--motion-fast`    | 150 ms                                  |
+| `duration-base`    | `--motion-base`    | 250 ms                                  |
+| `duration-slow`    | `--motion-slow`    | 400 ms                                  |
+| `duration-hero`    | `--motion-hero`    | 600 ms                                  |
+| `ease-out`         | `--ease-out`       | brand curve (shadows Tailwind built-in) |
+| `ease-in-out`      | `--ease-in-out`    | brand curve (shadows Tailwind built-in) |
+| `ease-exit`        | `--ease-exit`      | brand exit curve                        |
+
+```tsx
+<div className="transition-all duration-base ease-out">Animated element</div>
+```
+
 ## Dark mode
 
 All components are designed dark-mode-first. Wrap your app with a `ThemeProvider` (e.g. `next-themes`) and add `class="dark"` to `<html>`. The Tailwind preset uses `darkMode: 'class'`.
