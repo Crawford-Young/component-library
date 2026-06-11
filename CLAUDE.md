@@ -25,6 +25,7 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView              | Merged to main |
 | 5b   | Kbd, HoverCard, NumberInput                                                        | In PR #38      |
 | 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag   | Merged to main |
+| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps | In PR #51      |
 
 Update this table whenever a wave PR is merged.
 
@@ -123,6 +124,8 @@ These issues bite repeatedly — know them before writing tests:
 ## Changeset rules
 
 - Run `just changeset` before opening a PR for any wave with new components or behavior changes — choose `minor` for new components, `patch` for fixes.
+- **The changeset CLI is interactive** — in non-interactive sessions, write `.changeset/<kebab-name>.md` directly (frontmatter: `'@crawfordyoung/ui': minor`).
+- **Backtick-wrap `*` globs in changeset summaries** (e.g. `` `--motion-*` ``) — pre-commit Prettier rewrites bare `*...*` as `_..._` emphasis, silently corrupting the CHANGELOG text.
 - **devDependency upgrades belong in a separate housekeeping PR** — not bundled into feature or coverage PRs. Mixing them can break the release workflow (the changesets action may create a malformed "Version Packages" PR).
 - Test-only changes and internal refactors do not need a changeset.
 
