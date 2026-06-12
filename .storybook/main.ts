@@ -1,9 +1,25 @@
 import path from 'node:path'
+import remarkGfm from 'remark-gfm'
 import type { StorybookConfig } from '@storybook/react-vite'
 
 const config: StorybookConfig = {
   stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(ts|tsx)'],
-  addons: ['@storybook/addon-essentials', '@storybook/addon-a11y', '@storybook/addon-interactions'],
+  addons: [
+    {
+      name: '@storybook/addon-essentials',
+      options: {
+        docs: {
+          mdxPluginOptions: {
+            mdxCompileOptions: {
+              remarkPlugins: [remarkGfm],
+            },
+          },
+        },
+      },
+    },
+    '@storybook/addon-a11y',
+    '@storybook/addon-interactions',
+  ],
   framework: {
     name: '@storybook/react-vite',
     options: {},
