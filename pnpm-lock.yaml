@@ -120,6 +120,9 @@ importers:
       '@storybook/addon-a11y':
         specifier: ^8.0.0
         version: 8.6.18(storybook@8.6.18(prettier@3.8.1))
+      '@storybook/addon-docs':
+        specifier: 8.6.18
+        version: 8.6.18(@types/react@19.2.14)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/addon-essentials':
         specifier: ^8.6.18
         version: 8.6.18(@types/react@19.2.14)(storybook@8.6.18(prettier@3.8.1))

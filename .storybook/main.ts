@@ -5,14 +5,13 @@ import type { StorybookConfig } from '@storybook/react-vite'
 const config: StorybookConfig = {
   stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(ts|tsx)'],
   addons: [
+    '@storybook/addon-essentials',
     {
-      name: '@storybook/addon-essentials',
+      name: '@storybook/addon-docs',
       options: {
-        docs: {
-          mdxPluginOptions: {
-            mdxCompileOptions: {
-              remarkPlugins: [remarkGfm],
-            },
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
           },
         },
       },

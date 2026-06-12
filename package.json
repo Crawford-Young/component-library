@@ -101,6 +101,7 @@
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.44.0",
     "@storybook/addon-a11y": "^8.0.0",
+    "@storybook/addon-docs": "8.6.18",
     "@storybook/addon-essentials": "^8.6.18",
     "@storybook/addon-interactions": "^8.6.18",
     "@storybook/react": "8.6.18",
