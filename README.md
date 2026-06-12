@@ -97,6 +97,13 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | `Alert`    | `Alert`, `AlertTitle`, `AlertDescription` — default / destructive |
 | `Progress` | Animated progress bar                                             |
 
+### AI / Tokens
+
+| Component   | Notes                                          |
+| ----------- | ---------------------------------------------- |
+| `TokenChip` | Token balance chip with normal/low/zero states |
+| `TokenCost` | Inline AI cost estimate chip                   |
+
 ## Installation
 
 ```bash
