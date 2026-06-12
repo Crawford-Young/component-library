@@ -67,6 +67,12 @@ const stories = [
   { name: 'PointBadge', id: 'gamification-xpbar--points' },
   { name: 'LeaderboardTable', id: 'gamification-leaderboard--table' },
   { name: 'ScoreHistory', id: 'gamification-leaderboard--history' },
+  { name: 'ScrollReveal', id: 'motion-scrollreveal--default' },
+  { name: 'StaggerReveal', id: 'motion-staggerreveal--default' },
+  { name: 'ProgressLine', id: 'feedback-progressline--active' },
+  { name: 'TokenChip Normal', id: 'ui-tokenchip--normal' },
+  { name: 'TokenChip Low', id: 'ui-tokenchip--low' },
+  { name: 'TokenChip Zero', id: 'ui-tokenchip--zero' },
 ]
 
 for (const { name, id } of stories) {
