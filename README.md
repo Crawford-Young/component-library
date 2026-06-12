@@ -94,7 +94,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 | Component       | Notes                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------- |
-| `ProgressLine`  | Cinematic progress bar (Loading Pattern 2) — framer-motion driven, brand easing             |
+| `ProgressLine`  | Cinematic progress bar (Loading Pattern 2) — CSS-transition driven, brand easing            |
 | `ScrollReveal`  | Scroll choreography Layer 1 — IntersectionObserver + framer-motion, respects reduced-motion |
 | `StaggerReveal` | Staggered arrival Pattern 5 — wraps children in sequenced entrance animations               |
 
@@ -126,12 +126,12 @@ pnpm add react react-dom tailwindcss
 
 Some components require additional peer deps:
 
-| Component                                       | Extra peer dep              |
-| ----------------------------------------------- | --------------------------- |
-| `DatePicker`                                    | `react-day-picker date-fns` |
-| `Toast`                                         | `sonner`                    |
-| `Command`, `Combobox`                           | `cmdk`                      |
-| `ScrollReveal`, `StaggerReveal`, `ProgressLine` | `framer-motion`             |
+| Component                       | Extra peer dep              |
+| ------------------------------- | --------------------------- |
+| `DatePicker`                    | `react-day-picker date-fns` |
+| `Toast`                         | `sonner`                    |
+| `Command`, `Combobox`           | `cmdk`                      |
+| `ScrollReveal`, `StaggerReveal` | `framer-motion`             |
 
 ## Setup
 

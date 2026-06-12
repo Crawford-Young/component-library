@@ -39,7 +39,7 @@ Update this table whenever a wave PR is merged.
 - **Storybook is the dev environment** — `just dev` starts Storybook, not a Next.js dev server
 - **Releases via Changesets** — always run `just changeset` before opening a PR for a new component wave
 - **Additional dependency**: `@tanstack/react-table` — used by DataTable; install with `pnpm add @tanstack/react-table`
-- **Additional dependency**: `framer-motion` (>=12) — peer dep for motion primitives (ScrollReveal, StaggerReveal, ProgressLine); install with `pnpm add framer-motion`
+- **Additional dependency**: `framer-motion` (>=12) — peer dep for motion primitives (ScrollReveal, StaggerReveal); install with `pnpm add framer-motion`
 
 ## E2E / axe notes
 
