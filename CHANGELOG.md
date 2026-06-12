@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.10.0
+
+### Minor Changes
+
+- 79b5c3e: Add TokenChip (balance display with normal/low/zero states) and TokenCost (inline AI cost estimate chip) for token-gated AI UIs.
+
 ## 0.9.0
 
 ### Minor Changes
