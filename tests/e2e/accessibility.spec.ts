@@ -73,6 +73,7 @@ const stories = [
   { name: 'TokenChip Normal', id: 'ui-tokenchip--normal' },
   { name: 'TokenChip Low', id: 'ui-tokenchip--low' },
   { name: 'TokenChip Zero', id: 'ui-tokenchip--zero' },
+  { name: 'TokenCost', id: 'ui-tokencost--default' },
 ]
 
 for (const { name, id } of stories) {
