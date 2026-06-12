@@ -26,6 +26,7 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 | 5b   | Kbd, HoverCard, NumberInput                                                        | In PR #38      |
 | 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag   | Merged to main |
 | 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps | In PR #51      |
+| 9    | TokenChip, TokenCost                                                               | In PR          |
 
 Update this table whenever a wave PR is merged.
 
