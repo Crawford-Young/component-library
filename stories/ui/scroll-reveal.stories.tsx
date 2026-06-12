@@ -16,7 +16,7 @@ const DemoCard = ({ label }: { label: string }) => (
 
 export const Default: Story = {
   render: () => (
-    <div className="flex flex-col gap-[60vh]">
+    <div className="flex flex-col gap-[100vh]">
       <p className="text-muted-foreground">
         Scroll down — the section below reveals at 20% visibility.
       </p>
@@ -29,7 +29,7 @@ export const Default: Story = {
 
 export const StaggeredChildren: Story = {
   render: () => (
-    <div className="flex flex-col gap-[60vh]">
+    <div className="flex flex-col gap-[100vh]">
       <p className="text-muted-foreground">
         Scroll down — children arrive in reading order, 40ms apart.
       </p>
