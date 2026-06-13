@@ -14,6 +14,10 @@ export const Default: Story = {
   render: () => <Skeleton className="h-4 w-48" />,
 }
 
+export const Pulse: Story = {
+  render: () => <Skeleton variant="pulse" className="h-4 w-48" />,
+}
+
 export const Card: Story = {
   render: () => (
     <div className="flex flex-col gap-3 w-64">

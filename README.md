@@ -15,7 +15,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | `Badge`     | default, secondary, destructive, outline                                          |
 | `Card`      | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` |
 | `Separator` | Horizontal and vertical orientations                                              |
-| `Skeleton`  | `animate-pulse` loading placeholder                                               |
+| `Skeleton`  | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch |
 | `Spinner`   | sm / md / lg, `role="status"` + `aria-label`                                      |
 
 ### Inputs
@@ -90,6 +90,14 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | `AspectRatio` | Wraps `@radix-ui/react-aspect-ratio` |
 | `ScrollArea`  | `ScrollArea`, `ScrollBar`            |
 
+### Motion
+
+| Component       | Notes                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `ProgressLine`  | Cinematic progress bar (Loading Pattern 2) — CSS-transition driven, brand easing            |
+| `ScrollReveal`  | Scroll choreography Layer 1 — IntersectionObserver + framer-motion, respects reduced-motion |
+| `StaggerReveal` | Staggered arrival Pattern 5 — wraps children in sequenced entrance animations               |
+
 ### Feedback
 
 | Component  | Notes                                                             |
@@ -118,11 +126,12 @@ pnpm add react react-dom tailwindcss
 
 Some components require additional peer deps:
 
-| Component             | Extra peer dep              |
-| --------------------- | --------------------------- |
-| `DatePicker`          | `react-day-picker date-fns` |
-| `Toast`               | `sonner`                    |
-| `Command`, `Combobox` | `cmdk`                      |
+| Component                       | Extra peer dep              |
+| ------------------------------- | --------------------------- |
+| `DatePicker`                    | `react-day-picker date-fns` |
+| `Toast`                         | `sonner`                    |
+| `Command`, `Combobox`           | `cmdk`                      |
+| `ScrollReveal`, `StaggerReveal` | `framer-motion`             |
 
 ## Setup
 
@@ -233,6 +242,16 @@ The Tailwind preset maps the CSS vars to utility classes:
 ```tsx
 <div className="transition-all duration-base ease-out">Animated element</div>
 ```
+
+### Motion primitives
+
+The motion primitives (`ScrollReveal`, `StaggerReveal`, `ProgressLine`) consume these tokens internally and require `framer-motion` as a peer dependency:
+
+```bash
+pnpm add framer-motion
+```
+
+The `useReducedMotionSafe` hook and pure motion variant builders are also exported from `@crawfordyoung/ui` for composing custom animations against the same token system.
 
 ## Dark mode
 

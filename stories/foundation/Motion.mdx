@@ -1,0 +1,96 @@
+{/* stories/foundation/Motion.mdx */}
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Foundation/Motion" />
+
+# Motion
+
+Motion tokens ship as CSS vars (`tokens.css`), TS constants (`MOTION`, `EASE`, `EASE_CSS`, `STAGGER`, `SPRING_MAGNETIC`), and Tailwind utilities via the preset. Canonical reference: `docs/brand/motion.md`.
+
+## Durations
+
+| Token              | Value | Tailwind           | Use                                    |
+| ------------------ | ----- | ------------------ | -------------------------------------- |
+| `--motion-instant` | 100ms | `duration-instant` | micro feedback (press, toggle)         |
+| `--motion-fast`    | 150ms | `duration-fast`    | hover, exits                           |
+| `--motion-base`    | 250ms | `duration-base`    | standard transitions, crossfades       |
+| `--motion-slow`    | 400ms | `duration-slow`    | entrances, scene cuts                  |
+| `--motion-hero`    | 600ms | `duration-hero`    | hero reveals — ceiling, nothing slower |
+
+## Easing
+
+| Token           | Curve                            | Tailwind      | Use                        |
+| --------------- | -------------------------------- | ------------- | -------------------------- |
+| `--ease-out`    | `cubic-bezier(0.25, 1, 0.5, 1)`  | `ease-out`    | arrivals                   |
+| `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | `ease-in-out` | environment shifts, morphs |
+| `--ease-exit`   | `cubic-bezier(0.5, 0, 0.75, 0)`  | `ease-exit`   | departures                 |
+
+`ease-out` / `ease-in-out` intentionally shadow Tailwind's defaults with brand curves.
+
+export const EasingDemo = ({ token, label }) => (
+  <div style={{ padding: '6px 0' }}>
+    <code style={{ fontWeight: 600 }}>{label}</code>
+    <div
+      style={{
+        marginTop: 6,
+        height: 8,
+        borderRadius: 4,
+        background: 'rgb(var(--surface-raised))',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          height: '100%',
+          borderRadius: 4,
+          background: 'rgb(var(--accent))',
+          animation: `mdx-fill 2s ${token} infinite alternate`,
+        }}
+      />
+    </div>
+  </div>
+)
+
+<style>{`@keyframes mdx-fill { from { width: 0; } to { width: 100%; } }`}</style>
+
+<EasingDemo token="var(--ease-out)" label="--ease-out — arrivals" />
+<EasingDemo token="var(--ease-in-out)" label="--ease-in-out — morphs" />
+<EasingDemo token="var(--ease-exit)" label="--ease-exit — departures" />
+
+## Stagger & spring
+
+- Words: 30ms (`STAGGER.wordMs`) · Cards: 40ms (`STAGGER.cardMs`) · Delay capped at 5 items (`STAGGER.capItems`)
+- Magnetic spring (Framer, cinematic CTAs only): stiffness 300 / damping 25 (`SPRING_MAGNETIC`)
+
+## Usage
+
+```tsx
+import {
+  MOTION,
+  EASE,
+  EASE_CSS,
+  ScrollReveal,
+  StaggerReveal,
+  ProgressLine,
+} from '@crawfordyoung/ui'
+
+// Framer Motion — spread EASE (its ease prop rejects readonly tuples)
+;<motion.div transition={{ duration: MOTION.slow / 1000, ease: [...EASE.out] }} />
+
+// CSS-in-JS / inline styles
+element.style.transition = `opacity ${MOTION.fast}ms ${EASE_CSS.out}`
+```
+
+```html
+<!-- Tailwind utilities from the preset -->
+<div class="transition-transform duration-slow ease-out hover:-translate-y-0.5" />
+```
+
+## Primitives
+
+| Component            | Pattern                     | Docs                  |
+| -------------------- | --------------------------- | --------------------- |
+| `ScrollReveal`       | Scroll choreography Layer 1 | Motion/ScrollReveal   |
+| `StaggerReveal`      | Arrival Pattern 5           | Motion/StaggerReveal  |
+| `ProgressLine`       | Loading Pattern 2           | Feedback/ProgressLine |
+| `Skeleton` (shimmer) | Loading Pattern 1           | Display/Skeleton      |
