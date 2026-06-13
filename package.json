@@ -148,6 +148,11 @@
     "vite-tsconfig-paths": "^5.0.0",
     "vitest": "^4.1.8"
   },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.28.1"
+    }
+  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",

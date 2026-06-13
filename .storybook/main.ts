@@ -29,6 +29,10 @@ const config: StorybookConfig = {
       ...viteConfig.resolve.alias,
       '@': path.resolve(__dirname, '../src'),
     }
+    viteConfig.build = {
+      ...viteConfig.build,
+      target: 'esnext',
+    }
     return viteConfig
   },
 }
