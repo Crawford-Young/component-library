@@ -2,6 +2,7 @@ import * as React from 'react'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/ui/number-input'
+import { TimeInput } from '@/components/ui/time-input'
 import {
   Select,
   SelectContent,
@@ -11,18 +12,6 @@ import {
 } from '@/components/ui/select'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const SLOT_INTERVAL_MINUTES = 30
-const MINUTES_PER_DAY = 24 * 60
-const TOTAL_SLOTS = MINUTES_PER_DAY / SLOT_INTERVAL_MINUTES // 48
-
-/** 48-slot array of 'HH:MM' strings covering 00:00–23:30 in 30-minute increments. */
-const TIME_SLOTS: readonly string[] = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
-  const totalMinutes = i * SLOT_INTERVAL_MINUTES
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-})
 
 const RECURRENCE_OPTIONS = [
   { value: 'none', label: 'None' },
@@ -46,6 +35,8 @@ export interface TaskTimeFieldsProps {
   readonly onRecurrenceCountChange: (n: number) => void
   readonly showDate?: boolean
   readonly showRecurrence?: boolean
+  /** Display times as 24-hour (HH:MM) instead of 12-hour with an AM/PM toggle. */
+  readonly use24h?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -63,6 +54,7 @@ export function TaskTimeFields({
   onRecurrenceCountChange,
   showDate = true,
   showRecurrence = true,
+  use24h = false,
 }: TaskTimeFieldsProps): React.JSX.Element {
   const startTimeId = React.useId()
   const endTimeId = React.useId()
@@ -81,37 +73,29 @@ export function TaskTimeFields({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={startTimeId}>Start time</Label>
-          <Select value={startTime} onValueChange={onStartTimeChange}>
-            <SelectTrigger id={startTimeId} aria-label="Start time">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TIME_SLOTS.map((slot) => (
-                <SelectItem key={slot} value={slot}>
-                  {slot}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <TimeInput
+            id={startTimeId}
+            label="Start time"
+            value={startTime}
+            onChange={onStartTimeChange}
+            use24h={use24h}
+            size="md"
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={endTimeId}>End time</Label>
-          <Select value={endTime} onValueChange={onEndTimeChange}>
-            <SelectTrigger id={endTimeId} aria-label="End time">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TIME_SLOTS.map((slot) => (
-                <SelectItem key={slot} value={slot}>
-                  {slot}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <TimeInput
+            id={endTimeId}
+            label="End time"
+            value={endTime}
+            onChange={onEndTimeChange}
+            use24h={use24h}
+            size="md"
+          />
         </div>
       </div>
 

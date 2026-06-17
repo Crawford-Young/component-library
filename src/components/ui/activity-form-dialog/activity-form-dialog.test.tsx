@@ -78,12 +78,9 @@ describe('ActivityFormDialog', () => {
   describe('task type fields', () => {
     it('shows time fields when type is task', () => {
       render(<ActivityFormDialog {...makeProps({ initialType: 'task' })} />)
-      // TaskTimeFields renders start/end time comboboxes
-      const combos = screen.getAllByRole('combobox')
-      const startTime = combos.find((c) => c.getAttribute('aria-label') === 'Start time')
-      const endTime = combos.find((c) => c.getAttribute('aria-label') === 'End time')
-      expect(startTime).toBeDefined()
-      expect(endTime).toBeDefined()
+      // TaskTimeFields renders start/end TimeInput hour/minute spinbuttons
+      expect(screen.getByRole('spinbutton', { name: 'Start time hour' })).toBeInTheDocument()
+      expect(screen.getByRole('spinbutton', { name: 'End time hour' })).toBeInTheDocument()
     })
 
     it('shows date picker when type is task', () => {
@@ -91,14 +88,18 @@ describe('ActivityFormDialog', () => {
       expect(screen.getByRole('button', { name: /pick a date/i })).toBeInTheDocument()
     })
 
+    it('renders task times in 24-hour mode when use24h is set', () => {
+      render(<ActivityFormDialog {...makeProps({ initialType: 'task', use24h: true })} />)
+      expect(screen.getByRole('spinbutton', { name: 'Start time hour' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'AM' })).not.toBeInTheDocument()
+    })
+
     it('switches to task fields when task radio clicked', async () => {
       const user = userEvent.setup()
       render(<ActivityFormDialog {...makeProps({ initialType: 'goal' })} />)
       await user.click(screen.getByRole('radio', { name: /task/i }))
       await waitFor(() => {
-        const combos = screen.getAllByRole('combobox')
-        const startTime = combos.find((c) => c.getAttribute('aria-label') === 'Start time')
-        expect(startTime).toBeDefined()
+        expect(screen.getByRole('spinbutton', { name: 'Start time hour' })).toBeInTheDocument()
       })
     })
   })
@@ -523,10 +524,8 @@ describe('ActivityFormDialog', () => {
 
     it('defaults to task when lockType=true and no initialType', () => {
       render(<ActivityFormDialog {...makeProps({ lockType: true })} />)
-      // task fields should be visible
-      const combos = screen.getAllByRole('combobox')
-      const startTime = combos.find((c) => c.getAttribute('aria-label') === 'Start time')
-      expect(startTime).toBeDefined()
+      // task fields should be visible — TimeInput start hour spinbutton present
+      expect(screen.getByRole('spinbutton', { name: 'Start time hour' })).toBeInTheDocument()
     })
   })
 

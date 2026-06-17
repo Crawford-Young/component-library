@@ -56,3 +56,8 @@ export const NoRecurrence: Story = {
 export const WithWeeklyRecurrence: Story = {
   render: () => <ControlledTaskTimeFields showDate={true} showRecurrence={true} />,
 }
+
+export const TwentyFourHour: Story = {
+  name: '24-hour time',
+  render: () => <ControlledTaskTimeFields use24h />,
+}
