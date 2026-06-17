@@ -52,6 +52,8 @@ export interface ActivityFormDialogProps {
   readonly initialValues?: Partial<ActivityFormValues>
   readonly lockType?: boolean
   readonly isPending?: boolean
+  /** Display task times as 24-hour instead of 12-hour with AM/PM. */
+  readonly use24h?: boolean
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -120,6 +122,7 @@ export function ActivityFormDialog({
   initialValues,
   lockType = false,
   isPending = false,
+  use24h = false,
 }: ActivityFormDialogProps): React.JSX.Element {
   const resolvedInitialType = initialType ?? DEFAULT_TYPE
 
@@ -285,6 +288,7 @@ export function ActivityFormDialog({
               onRecurrenceCountChange={setRecurrenceCount}
               showDate
               showRecurrence
+              use24h={use24h}
             />
           )}
 

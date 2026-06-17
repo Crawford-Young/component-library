@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { TaskTimeFields } from './task-time-fields'
@@ -21,55 +21,51 @@ function makeProps(overrides: Partial<TaskTimeFieldsProps> = {}): TaskTimeFields
 }
 
 describe('TaskTimeFields', () => {
-  describe('time selects', () => {
-    it('renders 48 options in the start time select', async () => {
-      const user = userEvent.setup()
+  describe('time inputs', () => {
+    it('renders start time as hour and minute spinbuttons', () => {
       render(<TaskTimeFields {...makeProps()} />)
-      const triggers = screen.getAllByRole('combobox')
-      const startTrigger = triggers.find((t) => t.getAttribute('aria-label') === 'Start time')
-      expect(startTrigger).toBeDefined()
-      await user.click(startTrigger!)
-      await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument())
-      const options = screen.getAllByRole('option')
-      expect(options).toHaveLength(48)
+      expect(screen.getByRole('spinbutton', { name: 'Start time hour' })).toBeInTheDocument()
+      expect(screen.getByRole('spinbutton', { name: 'Start time minute' })).toBeInTheDocument()
     })
 
-    it('renders 48 options in the end time select', async () => {
-      const user = userEvent.setup()
+    it('renders end time as hour and minute spinbuttons', () => {
       render(<TaskTimeFields {...makeProps()} />)
-      const triggers = screen.getAllByRole('combobox')
-      const endTrigger = triggers.find((t) => t.getAttribute('aria-label') === 'End time')
-      expect(endTrigger).toBeDefined()
-      await user.click(endTrigger!)
-      await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument())
-      const options = screen.getAllByRole('option')
-      expect(options).toHaveLength(48)
+      expect(screen.getByRole('spinbutton', { name: 'End time hour' })).toBeInTheDocument()
+      expect(screen.getByRole('spinbutton', { name: 'End time minute' })).toBeInTheDocument()
     })
 
-    it('calls onStartTimeChange when a time slot is selected', async () => {
+    it('calls onStartTimeChange when the start hour is incremented', async () => {
       const user = userEvent.setup()
       const onStartTimeChange = vi.fn()
       render(<TaskTimeFields {...makeProps({ startTime: '08:00', onStartTimeChange })} />)
-      const startTrigger = screen
-        .getAllByRole('combobox')
-        .find((t) => t.getAttribute('aria-label') === 'Start time')!
-      await user.click(startTrigger)
-      await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument())
-      await user.click(screen.getByRole('option', { name: '09:00' }))
-      await waitFor(() => expect(onStartTimeChange).toHaveBeenCalledWith('09:00'))
+      const startHour = screen.getByRole('spinbutton', { name: 'Start time hour' })
+      const incrementHour = within(startHour.closest('div')!).getByRole('button', {
+        name: 'Increment hour',
+      })
+      await user.click(incrementHour)
+      expect(onStartTimeChange).toHaveBeenCalledWith('09:00')
     })
 
-    it('calls onEndTimeChange when a time slot is selected', async () => {
+    it('calls onEndTimeChange when the end minute is incremented', async () => {
       const user = userEvent.setup()
       const onEndTimeChange = vi.fn()
       render(<TaskTimeFields {...makeProps({ endTime: '09:00', onEndTimeChange })} />)
-      const endTrigger = screen
-        .getAllByRole('combobox')
-        .find((t) => t.getAttribute('aria-label') === 'End time')!
-      await user.click(endTrigger)
-      await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument())
-      await user.click(screen.getByRole('option', { name: '10:00' }))
-      await waitFor(() => expect(onEndTimeChange).toHaveBeenCalledWith('10:00'))
+      const endMinute = screen.getByRole('spinbutton', { name: 'End time minute' })
+      const incrementMinute = within(endMinute.closest('div')!).getByRole('button', {
+        name: 'Increment minute',
+      })
+      await user.click(incrementMinute)
+      expect(onEndTimeChange).toHaveBeenCalledWith('09:01')
+    })
+
+    it('shows an AM/PM toggle by default (12-hour)', () => {
+      render(<TaskTimeFields {...makeProps()} />)
+      expect(screen.getAllByRole('button', { name: 'AM' }).length).toBeGreaterThan(0)
+    })
+
+    it('hides the AM/PM toggle when use24h is set', () => {
+      render(<TaskTimeFields {...makeProps({ use24h: true })} />)
+      expect(screen.queryByRole('button', { name: 'AM' })).not.toBeInTheDocument()
     })
   })
 
@@ -115,7 +111,7 @@ describe('TaskTimeFields', () => {
           {...makeProps({ recurrence: 'daily', recurrenceCount: 1, onRecurrenceCountChange })}
         />,
       )
-      const incrementBtn = screen.getByRole('button', { name: /increment/i })
+      const incrementBtn = screen.getByRole('button', { name: 'Increment' })
       await user.click(incrementBtn)
       expect(onRecurrenceCountChange).toHaveBeenCalledWith(2)
     })

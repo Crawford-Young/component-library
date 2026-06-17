@@ -20,11 +20,26 @@ function format12h(time: string): string {
   return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
-function TimeInputDemo({ initial, use24h }: { initial: string; use24h?: boolean }) {
+function TimeInputDemo({
+  initial,
+  use24h,
+  size,
+}: {
+  initial: string
+  use24h?: boolean
+  size?: 'sm' | 'md'
+}) {
   const [value, setValue] = React.useState(initial)
   return (
     <div className="flex flex-col gap-2">
-      <TimeInput value={value} onChange={setValue} label="Time" id="demo-time" use24h={use24h} />
+      <TimeInput
+        value={value}
+        onChange={setValue}
+        label="Time"
+        id="demo-time"
+        use24h={use24h}
+        size={size}
+      />
       <p className="text-xs text-muted-foreground">
         {use24h ? `12h: ${format12h(value)}` : `24h: ${value}`}
       </p>
@@ -61,6 +76,11 @@ export const TwentyFourHourMidnight: Story = {
 export const TwentyFourHourLateNight: Story = {
   name: '24h Late Night',
   render: () => <TimeInputDemo initial="23:45" use24h />,
+}
+
+export const FormSize: Story = {
+  name: 'Form size (md)',
+  render: () => <TimeInputDemo initial="09:00" size="md" />,
 }
 
 export const Disabled: Story = {

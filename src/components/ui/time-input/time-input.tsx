@@ -2,6 +2,8 @@ import * as React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
+export type TimeInputSize = 'sm' | 'md'
+
 export interface TimeInputProps {
   readonly value: string
   readonly onChange: (value: string) => void
@@ -10,6 +12,8 @@ export interface TimeInputProps {
   readonly disabled?: boolean
   readonly className?: string
   readonly use24h?: boolean
+  /** `sm` (h-7, default) for dense calendar contexts; `md` (h-10) to match form controls. */
+  readonly size?: TimeInputSize
 }
 
 function parse12h(time: string): { hour: number; minute: number; ampm: 'AM' | 'PM' } {
@@ -50,12 +54,17 @@ function decrementHour12(hour: number, ampm: 'AM' | 'PM'): { hour: number; ampm:
   return { hour: hour - 1, ampm }
 }
 
-const spinnerCls =
-  'flex h-7 rounded border border-input bg-background text-xs ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'
+const spinnerBaseCls =
+  'flex rounded border border-input bg-background ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'
 const btnCls =
   'px-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50'
-const numCls =
-  'w-8 bg-transparent text-center text-foreground focus:outline-none disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+const numBaseCls =
+  'bg-transparent text-center text-foreground focus:outline-none disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+
+const SIZE_STYLES: Record<TimeInputSize, { box: string; num: string; ampm: string }> = {
+  sm: { box: 'h-7 text-xs', num: 'w-8', ampm: 'h-7 text-xs' },
+  md: { box: 'h-10 text-sm', num: 'w-9', ampm: 'h-10 text-sm' },
+}
 
 export function TimeInput({
   value,
@@ -65,7 +74,11 @@ export function TimeInput({
   disabled,
   className,
   use24h = false,
+  size = 'sm',
 }: TimeInputProps): React.JSX.Element {
+  const sz = SIZE_STYLES[size]
+  const spinnerCls = cn(spinnerBaseCls, sz.box)
+  const numCls = cn(numBaseCls, sz.num)
   const hourRef = useRef<HTMLInputElement>(null)
   const minuteRef = useRef<HTMLInputElement>(null)
   const onChangeRef = useRef(onChange)
@@ -298,7 +311,7 @@ export function TimeInput({
 
       {/* AM/PM — 12h mode only */}
       {!use24h && (
-        <div className="flex h-7 overflow-hidden rounded border border-input text-xs">
+        <div className={cn('flex overflow-hidden rounded border border-input', sz.ampm)}>
           <button
             type="button"
             aria-label="AM"
