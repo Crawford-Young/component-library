@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { CheckSquare, Target, RefreshCw, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Card, CardHeader, CardContent, CardFooter } from '../card'
 import { Badge } from '../badge'
 import { StreakBadge } from '../streak-badge'
@@ -54,10 +55,18 @@ export function ActivityCard({
   const visibilityAriaLabel = VISIBILITY_ARIA_LABEL_MAP[visibility]
   const showParticipants =
     participantCount !== undefined && participantCount >= MIN_PARTICIPANT_COUNT
+  const hasContent = detail !== undefined || showParticipants || nextOccurrence != null
+  const hasActions = actions !== undefined
+  const headerFollowed = hasContent || hasActions
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
+      <CardHeader
+        className={cn(
+          'flex flex-row items-start justify-between gap-2 space-y-0 p-4',
+          headerFollowed && 'pb-3',
+        )}
+      >
         <div className="flex items-center gap-2">
           <TypeIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span className="font-semibold leading-tight text-card-foreground">{title}</span>
@@ -73,8 +82,8 @@ export function ActivityCard({
         </div>
       </CardHeader>
 
-      {(detail !== undefined || showParticipants || nextOccurrence != null) && (
-        <CardContent className="space-y-1 pb-2">
+      {hasContent && (
+        <CardContent className={cn('space-y-1 px-4 pt-0', hasActions ? 'pb-3' : 'pb-4')}>
           {nextOccurrence != null && (
             <p data-testid="next-occurrence" className="text-xs text-muted-foreground">
               {nextOccurrence}
@@ -87,7 +96,7 @@ export function ActivityCard({
         </CardContent>
       )}
 
-      {actions !== undefined && <CardFooter className="pt-0">{actions}</CardFooter>}
+      {hasActions && <CardFooter className="px-4 pb-4 pt-0">{actions}</CardFooter>}
     </Card>
   )
 }

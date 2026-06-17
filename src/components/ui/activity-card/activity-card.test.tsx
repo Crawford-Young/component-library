@@ -93,6 +93,18 @@ describe('ActivityCard', () => {
       render(<ActivityCard {...baseProps} />)
       expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
     })
+
+    it('renders both content and actions together', () => {
+      render(
+        <ActivityCard
+          {...baseProps}
+          detail={<span>Recurs weekly</span>}
+          actions={<button type="button">Start</button>}
+        />,
+      )
+      expect(screen.getByText('Recurs weekly')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+    })
   })
 
   describe('participant count', () => {
