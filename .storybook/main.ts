@@ -33,6 +33,13 @@ const config: StorybookConfig = {
       ...viteConfig.build,
       target: 'esnext',
     }
+    viteConfig.optimizeDeps = {
+      ...viteConfig.optimizeDeps,
+      esbuildOptions: {
+        ...viteConfig.optimizeDeps?.esbuildOptions,
+        target: 'esnext',
+      },
+    }
     return viteConfig
   },
 }
