@@ -9,30 +9,34 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Display
 
-| Component   | Notes                                                                             |
-| ----------- | --------------------------------------------------------------------------------- |
-| `Avatar`    | `AvatarImage`, `AvatarFallback` — sm / md / lg                                    |
-| `Badge`     | default, secondary, destructive, outline                                          |
-| `Card`      | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` |
-| `Separator` | Horizontal and vertical orientations                                              |
-| `Skeleton`  | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch |
-| `Spinner`   | sm / md / lg, `role="status"` + `aria-label`                                      |
+| Component      | Notes                                                                              |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions |
+| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                     |
+| `Badge`        | default, secondary, destructive, outline                                           |
+| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`  |
+| `Separator`    | Horizontal and vertical orientations                                               |
+| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch  |
+| `Spinner`      | sm / md / lg, `role="status"` + `aria-label`                                       |
+| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                          |
 
 ### Inputs
 
-| Component     | Notes                                                                   |
-| ------------- | ----------------------------------------------------------------------- |
-| `Button`      | 6 variants × 4 sizes, `asChild` via Radix Slot                          |
-| `Checkbox`    | Controlled and uncontrolled                                             |
-| `DatePicker`  | Popover + react-day-picker v9                                           |
-| `Input`       | Forwarded ref, fully accessible                                         |
-| `RadioGroup`  | `RadioGroup`, `RadioGroupItem`                                          |
-| `Select`      | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue` |
-| `Slider`      | Single value, forwarded ref                                             |
-| `Switch`      | Controlled and uncontrolled                                             |
-| `Textarea`    | Forwarded ref, resizable                                                |
-| `Toggle`      | default / outline × sm / md / lg                                        |
-| `ToggleGroup` | single / multiple                                                       |
+| Component        | Notes                                                                      |
+| ---------------- | -------------------------------------------------------------------------- |
+| `Button`         | 6 variants × 4 sizes, `asChild` via Radix Slot                             |
+| `Checkbox`       | Controlled and uncontrolled                                                |
+| `DatePicker`     | Popover + react-day-picker v9                                              |
+| `Input`          | Forwarded ref, fully accessible                                            |
+| `RadioGroup`     | `RadioGroup`, `RadioGroupItem`                                             |
+| `Select`         | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`    |
+| `Slider`         | Single value, forwarded ref                                                |
+| `Switch`         | Controlled and uncontrolled                                                |
+| `TaskTimeFields` | Date + start/end time + recurrence group; `use24h` toggles 12h/24h display |
+| `TimeInput`      | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle    |
+| `Textarea`       | Forwarded ref, resizable                                                   |
+| `Toggle`         | default / outline × sm / md / lg                                           |
+| `ToggleGroup`    | single / multiple                                                          |
 
 ### Form
 
@@ -43,14 +47,15 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Overlays
 
-| Component     | Notes                                                                                         |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| `AlertDialog` | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                 |
-| `Dialog`      | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` |
-| `Popover`     | `Popover`, `PopoverContent`, `PopoverTrigger`                                                 |
-| `Sheet`       | `Sheet`, `SheetContent` — side: top / right / bottom / left                                   |
-| `Toast`       | Sonner wrapper themed to design tokens                                                        |
-| `Tooltip`     | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                              |
+| Component            | Notes                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| `ActivityFormDialog` | Type-morphing create/edit dialog for tasks / goals / habits; forwards `use24h` to time fields |
+| `AlertDialog`        | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                 |
+| `Dialog`             | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` |
+| `Popover`            | `Popover`, `PopoverContent`, `PopoverTrigger`                                                 |
+| `Sheet`              | `Sheet`, `SheetContent` — side: top / right / bottom / left                                   |
+| `Toast`              | Sonner wrapper themed to design tokens                                                        |
+| `Tooltip`            | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                              |
 
 ### Navigation
 

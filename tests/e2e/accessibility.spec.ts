@@ -74,6 +74,10 @@ const stories = [
   { name: 'ScrollReveal', id: 'motion-scrollreveal--default' },
   { name: 'StaggerReveal', id: 'motion-staggerreveal--default' },
   { name: 'ProgressLine', id: 'feedback-progressline--active' },
+  { name: 'StreakBadge', id: 'display-streakbadge--short' },
+  { name: 'TaskTimeFields', id: 'inputs-tasktimefields--default' },
+  { name: 'ActivityCard', id: 'display-activitycard--task-pending' },
+  { name: 'ActivityFormDialog', id: 'dialogs-activityformdialog--create-task' },
 ]
 
 for (const { name, id } of stories) {
