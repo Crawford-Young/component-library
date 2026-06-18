@@ -44,7 +44,10 @@ Update this table whenever a wave PR is merged.
 
 ## E2E / axe notes
 
-- Playwright tests run against a **built** Storybook (`just storybook-build` then `just e2e`), not the dev server. The E2E job navigates to `http://localhost:4173/` — `just e2e` starts a static server automatically via the Justfile.
+- Playwright's `webServer` starts `pnpm storybook` (the **dev** server) on `http://localhost:6006` with `reuseExistingServer: !CI`. CI sets `CI=true` so it always boots fresh; locally it reuses whatever is already on 6006.
+- **Stale-server trap (2026-06-17):** `reuseExistingServer` silently reuses a leftover storybook on 6006 — e.g. one left running by a Playwright-MCP visual session, or a `serve storybook-static` from a prior `just serve-storybook`. If that server can't serve `/index.json` (SPA static serve), **every** e2e fails with `Error fetching \`/index.json\``. Kill stray :6006 listeners (`netstat -ano | grep :6006`→`taskkill //PID <n> //F`) before `just e2e`.
+- **Parallel axe flake (2026-06-17):** `Axe is already running. Use \`await axe.run()\`...`comes from the Storybook a11y addon's auto-run colliding with`AxeBuilder` under parallel workers — nondeterministic, lands on whichever stories race (seen on ScrollReveal/Timeline). It is **not** a real violation. Confirm real violations by re-running serially (`pnpm playwright test --workers=1`); CI `retries: 2` masks it on green runs.
+- **axe story-id selection (2026-06-17):** the entry's story id must render **visible** content — a default story that renders `null` (e.g. StreakBadge `Hidden` at streak 0) times out `waitForSelector('#storybook-root:not([hidden]) > *')`. Pick a non-empty variant (used `display-streakbadge--short`).
 - `aria-hidden="true"` does **not** suppress axe `color-contrast` checks. axe 4.11+ evaluates visual elements regardless of aria semantics. Fix decorative text by raising its actual contrast, not by hiding it from the accessibility tree.
 
 ## Component requirements (Definition of Done)
