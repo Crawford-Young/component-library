@@ -14,20 +14,21 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 
 ## Wave status
 
-| Wave | Components                                                                                                         | Status         |
-| ---- | ------------------------------------------------------------------------------------------------------------------ | -------------- |
-| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                  | Merged to main |
-| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                    | Merged to main |
-| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                        | Merged to main |
-| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                     | Merged to main |
-| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                               | Merged to main |
-| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                 | Merged to main |
-| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                              | Merged to main |
-| 5b   | Kbd, HoverCard, NumberInput                                                                                        | In PR #38      |
-| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag                                   | Merged to main |
-| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps                                 | In PR #51      |
-| 9    | TokenChip, TokenCost                                                                                               | Merged to main |
-| 10   | Motion primitives: ScrollReveal, StaggerReveal, ProgressLine, Skeleton shimmer, Motion.mdx, framer-motion peer dep | In PR          |
+| Wave | Components                                                                                                                 | Status         |
+| ---- | -------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                          | Merged to main |
+| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                            | Merged to main |
+| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                                | Merged to main |
+| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                             | Merged to main |
+| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                                       | Merged to main |
+| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                         | Merged to main |
+| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                                      | Merged to main |
+| 5b   | Kbd, HoverCard, NumberInput                                                                                                | In PR #38      |
+| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag                                           | Merged to main |
+| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps                                         | In PR #51      |
+| 9    | TokenChip, TokenCost                                                                                                       | Merged to main |
+| 10   | Motion primitives: ScrollReveal, StaggerReveal, ProgressLine, Skeleton shimmer, Motion.mdx, framer-motion peer dep         | Merged to main |
+| 11   | Activities Unification: StreakBadge, TaskTimeFields, ActivityCard, ActivityFormDialog, TimeInput size + `lib/time` helpers | In PR          |
 
 Update this table whenever a wave PR is merged.
 
