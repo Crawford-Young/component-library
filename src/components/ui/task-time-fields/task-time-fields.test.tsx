@@ -115,6 +115,33 @@ describe('TaskTimeFields', () => {
       await user.click(incrementBtn)
       expect(onRecurrenceCountChange).toHaveBeenCalledWith(2)
     })
+
+    it('defaults the repeat count minimum to 1 with no maximum', () => {
+      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceCount: 1 })} />)
+      const repeat = screen.getByLabelText(/repeat count/i)
+      expect(repeat).toHaveAttribute('min', '1')
+      expect(repeat).not.toHaveAttribute('max')
+    })
+
+    it('applies repeatMin to the repeat count input', () => {
+      render(
+        <TaskTimeFields
+          {...makeProps({ recurrence: 'weekly', recurrenceCount: 2, repeatMin: 2 })}
+        />,
+      )
+      expect(screen.getByLabelText(/repeat count/i)).toHaveAttribute('min', '2')
+      expect(screen.getByRole('button', { name: 'Decrement' })).toBeDisabled()
+    })
+
+    it('applies repeatMax to the repeat count input', () => {
+      render(
+        <TaskTimeFields
+          {...makeProps({ recurrence: 'weekly', recurrenceCount: 52, repeatMax: 52 })}
+        />,
+      )
+      expect(screen.getByLabelText(/repeat count/i)).toHaveAttribute('max', '52')
+      expect(screen.getByRole('button', { name: 'Increment' })).toBeDisabled()
+    })
   })
 
   describe('showDate prop', () => {
