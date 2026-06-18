@@ -37,6 +37,10 @@ export interface TaskTimeFieldsProps {
   readonly showRecurrence?: boolean
   /** Display times as 24-hour (HH:MM) instead of 12-hour with an AM/PM toggle. */
   readonly use24h?: boolean
+  /** Minimum value for the repeat-count input. Defaults to `1`. */
+  readonly repeatMin?: number
+  /** Maximum value for the repeat-count input. Unbounded when omitted. */
+  readonly repeatMax?: number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -55,6 +59,8 @@ export function TaskTimeFields({
   showDate = true,
   showRecurrence = true,
   use24h = false,
+  repeatMin = 1,
+  repeatMax,
 }: TaskTimeFieldsProps): React.JSX.Element {
   const startTimeId = React.useId()
   const endTimeId = React.useId()
@@ -125,7 +131,8 @@ export function TaskTimeFields({
             aria-label="Repeat count"
             value={recurrenceCount}
             onChange={onRecurrenceCountChange}
-            min={1}
+            min={repeatMin}
+            max={repeatMax}
           />
         </div>
       )}
