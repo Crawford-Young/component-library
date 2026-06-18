@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.12.1
+
+### Patch Changes
+
+- 0134c68: `TaskTimeFields` now accepts optional `repeatMin` (default `1`) and `repeatMax` (default unbounded) props, forwarded to the repeat-count input so consumers can constrain the recurrence count to their own range.
+
 ## 0.12.0
 
 ### Minor Changes
