@@ -124,6 +124,13 @@ export const cyUIPreset: Partial<Config> = {
           from: { transform: 'translateX(-100%)' },
           to: { transform: 'translateX(100%)' },
         },
+        trace: {
+          to: { strokeDashoffset: '-100' },
+        },
+        'trace-dot': {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '1' },
+        },
       },
       animation: {
         'draw-check': 'draw-check 150ms var(--ease-out) forwards',
@@ -135,6 +142,8 @@ export const cyUIPreset: Partial<Config> = {
         'accordion-up': 'accordion-up 200ms var(--ease-out)',
         'collapsible-down': 'collapsible-down 200ms var(--ease-out)',
         'collapsible-up': 'collapsible-up 200ms var(--ease-out)',
+        trace: 'trace 1.2s linear infinite',
+        'trace-dot': 'trace-dot 1s ease-in-out infinite',
       },
     },
   },
