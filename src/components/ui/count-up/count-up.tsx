@@ -1,18 +1,5 @@
 import * as React from 'react'
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = React.useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
-  React.useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduced(mq.matches)
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  return reduced
-}
+import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 
 export interface CountUpProps {
   /** Target number to count up to. Animation plays once on first viewport entry; subsequent changes update the displayed value without re-animating. */
