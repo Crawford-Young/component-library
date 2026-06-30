@@ -50,6 +50,11 @@ Update this table whenever a wave PR is merged.
 - **axe story-id selection (2026-06-17):** the entry's story id must render **visible** content — a default story that renders `null` (e.g. StreakBadge `Hidden` at streak 0) times out `waitForSelector('#storybook-root:not([hidden]) > *')`. Pick a non-empty variant (used `display-streakbadge--short`).
 - `aria-hidden="true"` does **not** suppress axe `color-contrast` checks. axe 4.11+ evaluates visual elements regardless of aria semantics. Fix decorative text by raising its actual contrast, not by hiding it from the accessibility tree.
 
+## Storybook authoring notes
+
+- **MDX GFM tables (2026-06-12):** Storybook 8's essentials passthrough does **not** apply `mdxPluginOptions` — pipe tables render as raw `| ... |` text. Register `@storybook/addon-docs` directly in `.storybook/main.ts` with `mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } }`. The essentials boolean-filter passthrough was verified broken.
+- **Scroll-triggered story demos need ≥100vh of scroll range (2026-06-12):** framer `whileInView` fires immediately if the target is already in the viewport. A `gap-[60vh]` spacer is shorter than the viewport → no visible reveal. Use `gap-[100vh]` so the element starts off-screen.
+
 ## Component requirements (Definition of Done)
 
 Every component must have, before merging:
@@ -101,7 +106,7 @@ tests/
 ```
 just dev              # Storybook at localhost:6006
 just test             # Vitest with 100% coverage
-just e2e              # Playwright axe E2E (requires built Storybook)
+just e2e              # Playwright axe E2E (runs against the dev server on :6006, not a built bundle)
 just check            # lint + typecheck + test + e2e
 just build            # tsup + css build script
 just storybook-build  # build Storybook static output
