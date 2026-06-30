@@ -2,13 +2,11 @@ import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BrandSplash } from './brand-splash'
 
-const FAKE_TIMER_CONFIG = {
-  toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
-} as const
-
 beforeEach(() => {
   vi.useRealTimers()
-  vi.useFakeTimers(FAKE_TIMER_CONFIG)
+  vi.useFakeTimers({
+    toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+  })
 })
 
 afterEach(() => {
