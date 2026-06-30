@@ -18,9 +18,11 @@ const spinnerVariants = cva(
   },
 )
 
+/** @deprecated Use `BorderTrace` (standalone) or `TraceBorder` (wrapping a control) instead. Will be removed in the next major. */
 export interface SpinnerProps
   extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof spinnerVariants> {}
 
+/** @deprecated Use `BorderTrace` (standalone) or `TraceBorder` (wrapping a control) instead. Will be removed in the next major. */
 export function Spinner({ className, size, ...props }: SpinnerProps) {
   return (
     <span
