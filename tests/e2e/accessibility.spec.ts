@@ -78,6 +78,9 @@ const stories = [
   { name: 'TaskTimeFields', id: 'inputs-tasktimefields--default' },
   { name: 'ActivityCard', id: 'display-activitycard--task-pending' },
   { name: 'ActivityFormDialog', id: 'dialogs-activityformdialog--create-task' },
+  { name: 'BorderTrace', id: 'feedback-bordertrace--default' },
+  { name: 'BorderTraceOnButton', id: 'feedback-bordertrace--on-button' },
+  { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
 ]
 
 for (const { name, id } of stories) {
