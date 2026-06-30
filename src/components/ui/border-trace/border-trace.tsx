@@ -95,3 +95,65 @@ export function BorderTrace({
     </span>
   )
 }
+
+export interface TraceBorderProps {
+  readonly active: boolean
+  readonly shape?: 'square' | 'circle'
+  readonly label?: string
+  readonly children: React.ReactNode
+}
+
+const WRAPPER_STROKE = 2
+
+export function TraceBorder({
+  active,
+  shape = 'square',
+  label = 'Loading',
+  children,
+}: TraceBorderProps): React.JSX.Element {
+  const inset = WRAPPER_STROKE / 2
+  return (
+    <span className="relative inline-block [&>*]:align-top">
+      {children}
+      {active ? (
+        <>
+          <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+          >
+            {shape === 'square' ? (
+              <rect
+                x={inset}
+                y={inset}
+                width={`calc(100% - ${WRAPPER_STROKE}px)`}
+                height={`calc(100% - ${WRAPPER_STROKE}px)`}
+                rx={8}
+                pathLength={100}
+                strokeDasharray="25 75"
+                fill="none"
+                strokeLinecap="round"
+                className="stroke-accent motion-safe:animate-trace"
+                strokeWidth={WRAPPER_STROKE}
+              />
+            ) : (
+              <circle
+                cx="50%"
+                cy="50%"
+                r={`calc(50% - ${inset}px)`}
+                pathLength={100}
+                strokeDasharray="25 75"
+                fill="none"
+                strokeLinecap="round"
+                className="stroke-accent motion-safe:animate-trace"
+                strokeWidth={WRAPPER_STROKE}
+              />
+            )}
+          </svg>
+          <span role="status" aria-live="polite" className="sr-only">
+            {label}
+          </span>
+        </>
+      ) : null}
+    </span>
+  )
+}

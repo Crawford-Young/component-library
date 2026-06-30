@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { BorderTrace } from './border-trace'
+import { BorderTrace, TraceBorder } from './border-trace'
 
 describe('BorderTrace', () => {
   it('has role="status" with default label', () => {
@@ -52,5 +52,49 @@ describe('BorderTrace', () => {
   it('merges custom className', () => {
     render(<BorderTrace className="text-accent" />)
     expect(screen.getByRole('status').className).toContain('text-accent')
+  })
+})
+
+describe('TraceBorder', () => {
+  it('renders only the child when inactive', () => {
+    const { container } = render(
+      <TraceBorder active={false}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    expect(container.querySelector('svg')).not.toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('overlays a tracing rect and announces when active', () => {
+    const { container } = render(
+      <TraceBorder active>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    const overlay = container.querySelector('svg')
+    expect(overlay).toBeInTheDocument()
+    expect(container.querySelector('rect[stroke-dasharray]')).toBeInTheDocument()
+    const status = screen.getByRole('status')
+    expect(status).toHaveTextContent('Loading')
+  })
+
+  it('announces a custom label', () => {
+    render(
+      <TraceBorder active label="Saving goal">
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Saving goal')
+  })
+
+  it('uses a circle overlay when shape="circle"', () => {
+    const { container } = render(
+      <TraceBorder active shape="circle">
+        <button>+</button>
+      </TraceBorder>,
+    )
+    expect(container.querySelector('circle[stroke-dasharray]')).toBeInTheDocument()
   })
 })

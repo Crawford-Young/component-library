@@ -1,2 +1,2 @@
-export { BorderTrace } from './border-trace'
-export type { BorderTraceProps } from './border-trace'
+export { BorderTrace, TraceBorder } from './border-trace'
+export type { BorderTraceProps, TraceBorderProps } from './border-trace'
