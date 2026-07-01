@@ -384,6 +384,21 @@ describe('TimeGutterLabel SSR safety', () => {
     expect(screen.getByTestId('time-gutter-label')).toBeInTheDocument()
     vi.useRealTimers()
   })
+
+  // jsdom cannot assert visual occlusion (stacking/paint order) — this only
+  // confirms the opaque-chip classes are present. Actual occlusion of the
+  // static hour label is verified visually in Storybook (see wave checklist).
+  it('renders an opaque chip that stacks above the static hour labels', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T12:00:00'))
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} hourStart={8} hourCount={14} />,
+    )
+    const label = screen.getByTestId('time-gutter-label')
+    expect(label.className).toContain('bg-background')
+    expect(label.className).toContain('z-20')
+    vi.useRealTimers()
+  })
 })
 
 describe('day expand', () => {
