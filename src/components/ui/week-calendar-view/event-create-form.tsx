@@ -72,6 +72,7 @@ export interface EventCreateFormProps {
   readonly days: Date[]
   readonly startDayIdx: number
   readonly currentDayIdx: number
+  readonly use24h?: boolean
   readonly onSubmit: (draft: Omit<CalendarEvent, 'id'>) => void
   readonly onCancel: () => void
 }
@@ -84,6 +85,7 @@ export function EventCreateForm({
   days,
   startDayIdx,
   currentDayIdx,
+  use24h = false,
   onSubmit,
   onCancel,
 }: EventCreateFormProps): React.JSX.Element {
@@ -186,6 +188,7 @@ export function EventCreateForm({
               label="Start"
               value={draft.startTime}
               onChange={(v) => setDraft((d) => ({ ...d, startTime: v }))}
+              use24h={use24h}
             />
           </div>
           <div>
@@ -202,6 +205,7 @@ export function EventCreateForm({
               label="End"
               value={draft.endTime}
               onChange={(v) => setDraft((d) => ({ ...d, endTime: v }))}
+              use24h={use24h}
             />
           </div>
         </div>
