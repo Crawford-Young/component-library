@@ -9,19 +9,19 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Display
 
-| Component      | Notes                                                                                            |
-| -------------- | ------------------------------------------------------------------------------------------------ |
-| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions               |
-| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                   |
-| `Badge`        | default, secondary, destructive, outline                                                         |
-| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                |
-| `Separator`    | Horizontal and vertical orientations                                                             |
-| `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle  |
-| `BrandSplash`  | App intro / first-paint animation — wordmark split + signal, optional quote, `onComplete`        |
-| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch                |
-| `Spinner`      | **Deprecated** — use `BorderTrace` / `TraceBorder`. sm / md / lg, `role="status"` + `aria-label` |
-| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                                        |
-| `TraceBorder`  | Wraps a control (e.g. `Button`) to trace its border while `active` — pending state for actions   |
+| Component      | Notes                                                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions                                                           |
+| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                                                               |
+| `Badge`        | default, secondary, destructive, outline                                                                                                     |
+| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                                                            |
+| `Separator`    | Horizontal and vertical orientations                                                                                                         |
+| `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle, `appearDelayMs` (default 150, `0` disables) |
+| `BrandSplash`  | App intro / first-paint animation — wordmark split + signal, optional quote, `onComplete`                                                    |
+| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch                                                            |
+| `Spinner`      | **Deprecated** — use `BorderTrace` / `TraceBorder`. sm / md / lg, `role="status"` + `aria-label`                                             |
+| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                                                                                    |
+| `TraceBorder`  | Wraps a control (e.g. `Button`) to trace its border while `active` — pending state for actions, `appearDelayMs` (default 150, `0` disables)  |
 
 ### Inputs
 
