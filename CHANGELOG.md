@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.14.0
+
+### Minor Changes
+
+- 693e12c: Elevate the loading components onto the brand motion tokens: eased trace loop, appearance threshold (`appearDelayMs`, no sub-150ms flash), static full-ring reduced-motion state, and a deliberate `BrandSplash` entrance.
+
 ## 0.13.1
 
 ### Patch Changes
