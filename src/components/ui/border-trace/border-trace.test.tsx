@@ -53,6 +53,18 @@ describe('BorderTrace', () => {
     render(<BorderTrace className="text-accent" />)
     expect(screen.getByRole('status').className).toContain('text-accent')
   })
+
+  it('renders a full ring under reduced motion (dash removed via motion-reduce)', () => {
+    const { container } = render(<BorderTrace />)
+    const traceRect = container.querySelectorAll('rect')[1]
+    expect(traceRect.getAttribute('class')).toContain('motion-reduce:[stroke-dasharray:none]')
+  })
+
+  it('removes the dash on the circle trace under reduced motion', () => {
+    const { container } = render(<BorderTrace shape="circle" />)
+    const traceCircle = container.querySelectorAll('circle')[1]
+    expect(traceCircle.getAttribute('class')).toContain('motion-reduce:[stroke-dasharray:none]')
+  })
 })
 
 describe('TraceBorder', () => {
