@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { Sidebar } from './sidebar'
 
 const localStorageMock = (() => {
@@ -139,6 +139,20 @@ describe('Sidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Expand sidebar' }))
     expect(screen.getByText('Full Header')).toBeInTheDocument()
     expect(screen.queryByText('Logo Only')).not.toBeInTheDocument()
+  })
+
+  it('defaults to expanded when localStorage access throws (SSR / privacy mode)', () => {
+    const spy = vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+      throw new ReferenceError('localStorage is not defined')
+    })
+    render(
+      <Sidebar>
+        <div />
+      </Sidebar>,
+    )
+    const aside = screen.getByRole('complementary')
+    expect(aside.className).toContain('w-64')
+    spy.mockRestore()
   })
 
   it('shows header when collapsed with no collapsedHeader provided', async () => {
