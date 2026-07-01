@@ -35,7 +35,9 @@ export const OnButton: Story = {
     return (
       <div className="flex items-center gap-4">
         <TraceBorder active={pending}>
-          <Button onClick={() => setPending((p) => !p)}>Save</Button>
+          <Button variant="secondary" onClick={() => setPending((p) => !p)}>
+            Save
+          </Button>
         </TraceBorder>
         <span className="text-sm text-muted-foreground">click to toggle</span>
       </div>

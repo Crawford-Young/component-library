@@ -16,31 +16,65 @@ afterEach(() => {
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 
 describe('BrandSplash', () => {
-  it('renders the whole wordmark in the initial phase', () => {
-    render(<BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />)
+  it('renders the whole wordmark with the possessive hidden in the initial phase', () => {
+    const { container } = render(
+      <BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />,
+    )
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading Cybond')
     expect(screen.getByText('Cy')).toBeInTheDocument()
     expect(screen.getByText('bond')).toBeInTheDocument()
-    expect(screen.queryByText("'s")).not.toBeInTheDocument()
+    // possessive is always in the DOM (no content toggle → no reflow); faded out until signal
+    expect(container.querySelector('[data-possessive]')).toHaveStyle({ opacity: '0' })
   })
 
-  it('shows the possessive after the split phase begins', () => {
-    render(<BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />)
-    advance(400)
-    expect(screen.getByText("'s")).toBeInTheDocument()
+  it('fades the possessive in during the signal phase (not the split phase)', () => {
+    const { container } = render(
+      <BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />,
+    )
+    advance(400) // split — possessive still hidden
+    expect(container.querySelector('[data-possessive]')).toHaveStyle({ opacity: '0' })
+    advance(600) // signal — possessive fades in
+    expect(container.querySelector('[data-possessive]')).toHaveStyle({ opacity: '1' })
+  })
+
+  it('renders the possessive wordmark as "Cy\'sbond" (gap comes from the split translate)', () => {
+    const { container } = render(
+      <BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />,
+    )
+    expect(container.querySelector('[data-wordmark]')?.textContent).toBe("Cy'sbond")
   })
 
   it('omits the possessive when possessive={false}', () => {
-    render(<BrandSplash wordmark="Cybond" splitIndex={2} possessive={false} onComplete={vi.fn()} />)
+    const { container } = render(
+      <BrandSplash wordmark="Cybond" splitIndex={2} possessive={false} onComplete={vi.fn()} />,
+    )
     advance(400)
-    expect(screen.queryByText("'s")).not.toBeInTheDocument()
+    expect(container.querySelector('[data-possessive]')).toBeNull()
+    expect(container.querySelector('[data-wordmark]')?.textContent).toBe('Cybond')
   })
 
-  it('fires onComplete once and unmounts after all phases', () => {
+  it('fades the quote in at the split phase', () => {
+    const { container } = render(
+      <BrandSplash
+        wordmark="Cybond"
+        splitIndex={2}
+        quote={{ text: 'Bond to what matters.', attribution: null }}
+        onComplete={vi.fn()}
+      />,
+    )
+    expect(container.querySelector('[data-quote]')).toHaveStyle({ opacity: '0' })
+    advance(400)
+    expect(container.querySelector('[data-quote]')).toHaveStyle({ opacity: '1' })
+  })
+
+  it('fires onComplete once, fades out, then unmounts', () => {
     const onComplete = vi.fn()
     render(<BrandSplash wordmark="Cybond" splitIndex={2} onComplete={onComplete} />)
-    advance(400 + 600 + 800)
+    advance(400 + 600 + 1000)
     expect(onComplete).toHaveBeenCalledTimes(1)
+    // overlay lingers at opacity-0 during the exit fade
+    expect(screen.getByRole('status').className).toContain('opacity-0')
+    advance(300)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     advance(2000)
     expect(onComplete).toHaveBeenCalledTimes(1)
@@ -115,8 +149,8 @@ describe('BrandSplash', () => {
     const onComplete = vi.fn()
     render(<BrandSplash wordmark="Cybond" splitIndex={2} onComplete={onComplete} />)
     advance(200) // initial 400 * 0.5
-    expect(screen.getByText('Cy').className).not.toContain('-translate-x-2')
-    advance(300 + 400) // split 600*0.5 + signal 800*0.5
+    expect(screen.getByText('Cy').parentElement?.className).not.toContain('-translate-x-8')
+    advance(300 + 500) // split 600*0.5 + signal 1000*0.5
     expect(onComplete).toHaveBeenCalledTimes(1)
     vi.unstubAllGlobals()
   })
