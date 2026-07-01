@@ -115,11 +115,14 @@ function TimeGutterLabel({
   hourStart,
   hourCount,
 }: TimeGutterLabelProps): React.ReactElement | null {
+  const [mounted, setMounted] = React.useState(false)
   const [now, setNow] = React.useState(() => new Date())
   React.useEffect(() => {
+    setMounted(true)
     const id = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(id)
   }, [])
+  if (!mounted) return null
   const top = ((now.getHours() - hourStart + now.getMinutes() / 60) / hourCount) * 100
   if (top < 0 || top > 100) return null
   const h = now.getHours() % 12 || 12

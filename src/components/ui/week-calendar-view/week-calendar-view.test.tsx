@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { renderToString } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import { WeekCalendarView } from './week-calendar-view'
@@ -359,6 +360,28 @@ describe('time indicator', () => {
     vi.setSystemTime(new Date('2026-05-04T03:00:00'))
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
     expect(screen.queryByTestId('time-gutter-label')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})
+
+describe('TimeGutterLabel SSR safety', () => {
+  it('emits no time-dependent markup on server render', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T12:00:00'))
+    const html = renderToString(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} hourStart={8} hourCount={14} />,
+    )
+    expect(html).not.toContain('data-testid="time-gutter-label"')
+    vi.useRealTimers()
+  })
+
+  it('renders the current-time label after mount', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T12:00:00'))
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} hourStart={8} hourCount={14} />,
+    )
+    expect(screen.getByTestId('time-gutter-label')).toBeInTheDocument()
     vi.useRealTimers()
   })
 })
