@@ -81,6 +81,20 @@ describe('WeekCalendarView', () => {
     expect(screen.queryAllByText('8am')).toHaveLength(0)
   })
 
+  it('renders hour labels in 24h format when use24h is set', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[]}
+        hourStart={9}
+        hourCount={8}
+        use24h
+      />,
+    )
+    expect(screen.getByText('09:00')).toBeInTheDocument()
+    expect(screen.queryByText('9am')).not.toBeInTheDocument()
+  })
+
   it('only renders events that fall within the displayed week', () => {
     const outsideEvent: CalendarEvent = {
       id: '3',
@@ -150,6 +164,14 @@ describe('today highlight', () => {
       <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} hourStart={8} hourCount={14} />,
     )
     expect(screen.getByTestId('time-gutter-label')).toHaveTextContent('12:00 PM')
+    vi.useRealTimers()
+  })
+
+  it('renders current time label in 24h format when use24h is set', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-04T14:34:00'))
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} use24h />)
+    expect(screen.getByTestId('time-gutter-label').textContent).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/)
     vi.useRealTimers()
   })
 })

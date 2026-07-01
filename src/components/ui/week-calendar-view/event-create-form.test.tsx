@@ -263,4 +263,15 @@ describe('EventCreateForm', () => {
     render(<EventCreateForm {...baseProps} />)
     expect(screen.queryByText('+1 day')).not.toBeInTheDocument()
   })
+
+  it('shows AM/PM toggle by default', () => {
+    render(<EventCreateForm {...baseProps} />)
+    expect(screen.getAllByRole('button', { name: 'AM' }).length).toBeGreaterThan(0)
+  })
+
+  it('hides AM/PM toggle on both time inputs when use24h is set', () => {
+    render(<EventCreateForm {...baseProps} use24h />)
+    expect(screen.queryAllByRole('button', { name: 'AM' })).toHaveLength(0)
+    expect(screen.queryAllByRole('button', { name: 'PM' })).toHaveLength(0)
+  })
 })

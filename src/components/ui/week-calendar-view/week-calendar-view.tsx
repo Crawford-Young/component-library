@@ -26,6 +26,7 @@ export interface WeekCalendarViewProps {
   readonly hourStart?: number
   readonly hourCount?: number
   readonly hourHeight?: number
+  readonly use24h?: boolean
   readonly onEventClick?: (event: CalendarEvent) => void
   readonly onEventEdit?: (event: CalendarEvent) => void
   readonly onEventDelete?: (event: CalendarEvent) => void
@@ -109,11 +110,13 @@ function TimeIndicator({ hourStart, hourCount }: TimeIndicatorProps): React.Reac
 interface TimeGutterLabelProps {
   readonly hourStart: number
   readonly hourCount: number
+  readonly use24h: boolean
 }
 
 function TimeGutterLabel({
   hourStart,
   hourCount,
+  use24h,
 }: TimeGutterLabelProps): React.ReactElement | null {
   const [mounted, setMounted] = React.useState(false)
   const [now, setNow] = React.useState(() => new Date())
@@ -126,6 +129,7 @@ function TimeGutterLabel({
   const top = ((now.getHours() - hourStart + now.getMinutes() / 60) / hourCount) * 100
   if (top < 0 || top > 100) return null
   const h = now.getHours() % 12 || 12
+  const h24 = String(now.getHours()).padStart(2, '0')
   const m = String(now.getMinutes()).padStart(2, '0')
   const period = now.getHours() < 12 ? 'AM' : 'PM'
   return (
@@ -135,7 +139,13 @@ function TimeGutterLabel({
       className="pointer-events-none absolute right-1 z-20 rounded bg-background px-1 text-[9px] font-medium text-primary"
       style={{ top: `${top}%`, transform: 'translateY(-50%)' }}
     >
-      {h}:{m} {period}
+      {use24h ? (
+        `${h24}:${m}`
+      ) : (
+        <>
+          {h}:{m} {period}
+        </>
+      )}
     </div>
   )
 }
@@ -275,7 +285,8 @@ function isSameDay(a: Date, b: Date): boolean {
   )
 }
 
-function formatHour(hour: number): string {
+function formatHour(hour: number, use24h: boolean): string {
+  if (use24h) return `${String(hour % 24).padStart(2, '0')}:00`
   const h = hour % 12 || 12
   return `${h}${hour < 12 ? 'am' : 'pm'}`
 }
@@ -320,6 +331,7 @@ export function WeekCalendarView({
   hourStart = 8,
   hourCount = 14,
   hourHeight = 56,
+  use24h = false,
   onEventClick,
   onEventEdit,
   onEventDelete,
@@ -596,7 +608,11 @@ export function WeekCalendarView({
       >
         <div className="relative flex flex-col">
           {todayInWeek && (
-            <TimeGutterLabel hourStart={effectiveHourStart} hourCount={effectiveHourCount} />
+            <TimeGutterLabel
+              hourStart={effectiveHourStart}
+              hourCount={effectiveHourCount}
+              use24h={use24h}
+            />
           )}
           {Array.from({ length: effectiveHourCount }, (_, i) => (
             <div
@@ -605,7 +621,7 @@ export function WeekCalendarView({
               style={{ height: hourHeight }}
               aria-hidden
             >
-              {formatHour(effectiveHourStart + i)}
+              {formatHour(effectiveHourStart + i, use24h)}
             </div>
           ))}
         </div>
@@ -839,6 +855,7 @@ export function WeekCalendarView({
                       days={days}
                       startDayIdx={pendingCreate.startDayIdx}
                       currentDayIdx={pendingCreate.currentDayIdx}
+                      use24h={use24h}
                       onSubmit={(event) => {
                         const timePart = event.start.substring(10)
                         const endTimePart = event.end.substring(10)
