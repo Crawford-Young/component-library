@@ -1,24 +1,50 @@
+'use client'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 const SIZE_PX = { xs: 12, sm: 16, md: 24, lg: 32 } as const
 const TRACE_SEGMENT = '25 75' // 25% of normalized path length
 const STROKE_WIDTH: Record<keyof typeof SIZE_PX, number> = { xs: 0, sm: 1.5, md: 2, lg: 2 }
+const DEFAULT_APPEAR_DELAY_MS = 150 // MOTION.fast — suppress the flash on sub-threshold waits
+
+/** True once `delayMs` has elapsed since the gate became active; false while waiting or inactive. */
+function useAppeared(active: boolean, delayMs: number): boolean {
+  const [appeared, setAppeared] = React.useState(delayMs <= 0 && active)
+  React.useEffect(() => {
+    if (!active) {
+      setAppeared(false)
+      return
+    }
+    if (delayMs <= 0) {
+      setAppeared(true)
+      return
+    }
+    setAppeared(false)
+    const t = setTimeout(() => setAppeared(true), delayMs)
+    return () => clearTimeout(t)
+  }, [active, delayMs])
+  return appeared
+}
 
 export interface BorderTraceProps extends React.HTMLAttributes<HTMLSpanElement> {
   readonly size?: keyof typeof SIZE_PX
   readonly shape?: 'square' | 'circle'
   readonly label?: string
+  readonly appearDelayMs?: number
 }
 
 export function BorderTrace({
   size = 'md',
   shape = 'square',
   label = 'Loading',
+  appearDelayMs = DEFAULT_APPEAR_DELAY_MS,
   className,
   ...props
-}: BorderTraceProps): React.JSX.Element {
+}: BorderTraceProps): React.JSX.Element | null {
+  const appeared = useAppeared(true, appearDelayMs)
   const px = SIZE_PX[size]
+
+  if (!appeared) return null
 
   if (size === 'xs') {
     return (
@@ -100,6 +126,7 @@ export interface TraceBorderProps {
   readonly active: boolean
   readonly shape?: 'square' | 'circle'
   readonly label?: string
+  readonly appearDelayMs?: number
   readonly children: React.ReactNode
 }
 
@@ -109,12 +136,14 @@ export function TraceBorder({
   active,
   shape = 'square',
   label = 'Loading',
+  appearDelayMs = DEFAULT_APPEAR_DELAY_MS,
   children,
 }: TraceBorderProps): React.JSX.Element {
+  const appeared = useAppeared(active, appearDelayMs)
   return (
     <span className="relative inline-block [&>*]:align-top">
       {children}
-      {active ? (
+      {active && appeared ? (
         <>
           <svg
             aria-hidden="true"
