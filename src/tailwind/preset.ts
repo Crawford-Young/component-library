@@ -127,6 +127,10 @@ export const cyUIPreset: Partial<Config> = {
         trace: {
           to: { strokeDashoffset: '-100' },
         },
+        'brand-enter': {
+          from: { opacity: '0', transform: 'translateY(8px) scale(0.96)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
         'trace-dot': {
           '0%, 100%': { opacity: '0.4' },
           '50%': { opacity: '1' },
@@ -144,6 +148,7 @@ export const cyUIPreset: Partial<Config> = {
         'collapsible-up': 'collapsible-up 200ms var(--ease-out)',
         trace: 'trace 1.2s var(--ease-in-out) infinite',
         'trace-dot': 'trace-dot 1s ease-in-out infinite',
+        'brand-enter': 'brand-enter 400ms var(--ease-out) both',
       },
     },
   },

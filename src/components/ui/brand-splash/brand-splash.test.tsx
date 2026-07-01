@@ -150,6 +150,13 @@ describe('BrandSplash', () => {
     expect(screen.getByText('bond').className).toContain('text-accent') // signal
   })
 
+  it('applies a deliberate entrance to the wordmark', () => {
+    render(<BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />)
+    expect(screen.getByText('Cy').closest('[data-wordmark]')?.className).toContain(
+      'motion-safe:animate-brand-enter',
+    )
+  })
+
   it('uses brand ease token classes on the wordmark transitions', () => {
     const { container } = render(
       <BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />,
