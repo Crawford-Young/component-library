@@ -14,25 +14,25 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 
 ## Wave status
 
-| Wave | Components                                                                                                                      | Status                         |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                               | Merged to main                 |
-| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                                 | Merged to main                 |
-| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                                     | Merged to main                 |
-| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                                  | Merged to main                 |
-| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                                            | Merged to main                 |
-| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                              | Merged to main                 |
-| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                                           | Merged to main                 |
-| 5b   | Kbd, HoverCard, NumberInput                                                                                                     | In PR #38                      |
-| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag                                                | Merged to main                 |
-| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps                                              | In PR #51                      |
-| 9    | TokenChip, TokenCost                                                                                                            | Merged to main                 |
-| 10   | Motion primitives: ScrollReveal, StaggerReveal, ProgressLine, Skeleton shimmer, Motion.mdx, framer-motion peer dep              | Merged to main                 |
-| 11   | Activities Unification: StreakBadge, TaskTimeFields, ActivityCard, ActivityFormDialog, TimeInput size + `lib/time` helpers      | In PR                          |
-| 12   | Loading indicators: BorderTrace, TraceBorder, BrandSplash; Spinner deprecated                                                   | Merged to main                 |
-| 13   | Precision foundation: motion-token adoption, eased trace, appearance threshold, reduced-motion still-ring, BrandSplash entrance | On `feat/precision-foundation` |
+| Wave | Components                                                                                                                      | Status         |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                               | Merged to main |
+| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                                 | Merged to main |
+| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                                     | Merged to main |
+| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                                  | Merged to main |
+| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                                            | Merged to main |
+| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                              | Merged to main |
+| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                                           | Merged to main |
+| 5b   | Kbd, HoverCard, NumberInput                                                                                                     | In PR #38      |
+| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag                                                | Merged to main |
+| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps                                              | In PR #51      |
+| 9    | TokenChip, TokenCost                                                                                                            | Merged to main |
+| 10   | Motion primitives: ScrollReveal, StaggerReveal, ProgressLine, Skeleton shimmer, Motion.mdx, framer-motion peer dep              | Merged to main |
+| 11   | Activities Unification: StreakBadge, TaskTimeFields, ActivityCard, ActivityFormDialog, TimeInput size + `lib/time` helpers      | In PR          |
+| 12   | Loading indicators: BorderTrace, TraceBorder, BrandSplash; Spinner deprecated                                                   | Merged to main |
+| 13   | Precision foundation: motion-token adoption, eased trace, appearance threshold, reduced-motion still-ring, BrandSplash entrance | Merged to main |
 
-Update this table whenever a wave PR is merged.
+Update this table whenever a wave PR is merged. **Post-merge status flips** (the only repo-doc edit that can't land pre-merge): micro `docs/` branch + PR, bundled with any reflect-surfaced repo edits — everything else in this file still lands in the wave branch BEFORE merge.
 
 ## Key differences from the root CLAUDE.md
 
@@ -136,6 +136,8 @@ These issues bite repeatedly — know them before writing tests:
 - **`/* v8 ignore next */` fails inside nested arrow functions.** Pragmas don't suppress coverage when the ignored line is inside a callback, `useEffect`, or JSX handler. Fix: remove the dead guard (`!` assertion or delete unreachable branch) rather than relying on the pragma.
 - **`fakeTimers.toFake` global config leaks into `vi.useFakeTimers()`.** If `vitest.config.ts` sets `fakeTimers: { toFake: ['Date'] }`, then calling `vi.useFakeTimers()` without arguments only fakes `Date` — `setInterval` and `setTimeout` remain real and won't advance. Always pass explicit config: `vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] })`. Also call `vi.useRealTimers()` first to reset before re-entering fake mode.
 - **`getBoundingClientRect()` always returns zeros in happy-dom.** Elements that rely on DOM geometry (column rects, grid positions) will never hit geometry-dependent branches naturally. Use a prototype-level mock: `vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function(this: Element) { return this === targetEl ? mockRect : zeroRect })`.
+- **vitest v4 `--coverage` per-file table lists ONLY files below 100%.** An absent row means fully covered, not unmeasured — don't chase "missing" rows; read the global summary. (2026-07-01: several wasted greps hunting a border-trace row that was absent because it was at 100%.)
+- **vitest never typechecks.** A test file can be committed with a latent `tsc` error that only surfaces at `just check` or pre-push. Run `pnpm tsc --noEmit` after writing any test that touches library types. Known case: Tailwind preset `theme.extend.animation` is `ResolvableTo<KeyValuePair>` (map-or-function union) — property access needs a `typeof x === 'function'` narrow first. (2026-07-01: preset.test.ts committed green in Task 1, failed the gate in Task 6.)
 
 ## Changeset rules
 
