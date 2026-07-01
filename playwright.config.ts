@@ -9,6 +9,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:6006',
     trace: 'on-first-retry',
+    // Settle motion-safe transitions instantly so axe never samples a mid-fade blended color.
+    contextOptions: { reducedMotion: 'reduce' },
   },
   projects: [
     {

@@ -3,7 +3,7 @@ import * as React from 'react'
 import { BrandSplash } from '@/components/ui/brand-splash'
 import { Button } from '@/components/ui/button'
 
-const HOLD_MS = 600_000 // hold the first phase so the story stays visible
+const HOLD_MS = 600_000 // hold the signal phase so the fully-split, glowing state stays visible
 
 const meta: Meta<typeof BrandSplash> = {
   title: 'Feedback/BrandSplash',
@@ -19,7 +19,7 @@ export const Default: Story = {
   args: {
     wordmark: 'Cybond',
     splitIndex: 2,
-    durations: { initial: HOLD_MS },
+    durations: { signal: HOLD_MS },
     onComplete: () => undefined,
   },
 }

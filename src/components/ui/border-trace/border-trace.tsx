@@ -111,7 +111,6 @@ export function TraceBorder({
   label = 'Loading',
   children,
 }: TraceBorderProps): React.JSX.Element {
-  const inset = WRAPPER_STROKE / 2
   return (
     <span className="relative inline-block [&>*]:align-top">
       {children}
@@ -123,10 +122,10 @@ export function TraceBorder({
           >
             {shape === 'square' ? (
               <rect
-                x={inset}
-                y={inset}
-                width={`calc(100% - ${WRAPPER_STROKE}px)`}
-                height={`calc(100% - ${WRAPPER_STROKE}px)`}
+                x={0}
+                y={0}
+                width="100%"
+                height="100%"
                 rx={8}
                 pathLength={100}
                 strokeDasharray="25 75"
@@ -139,7 +138,7 @@ export function TraceBorder({
               <circle
                 cx="50%"
                 cy="50%"
-                r={`calc(50% - ${inset}px)`}
+                r="50%"
                 pathLength={100}
                 strokeDasharray="25 75"
                 fill="none"

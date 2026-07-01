@@ -13,9 +13,10 @@ type Phase = 'initial' | 'split' | 'signal' | 'done'
 const DEFAULT_DURATIONS: Record<Exclude<Phase, 'done'>, number> = {
   initial: 400,
   split: 600,
-  signal: 800,
+  signal: 1000, // longer hold on the final glowed state before exit
 }
 const REDUCED_MOTION_SCALE = 0.5
+const EXIT_MS = 300 // overlay fade-out before unmount
 
 export interface BrandSplashProps {
   readonly wordmark: string
@@ -37,6 +38,7 @@ export function BrandSplash({
   durations,
 }: BrandSplashProps): React.JSX.Element | null {
   const [phase, setPhase] = React.useState<Phase>('initial')
+  const [hidden, setHidden] = React.useState(false)
   const reduced = usePrefersReducedMotion()
 
   const scale = reduced ? REDUCED_MOTION_SCALE : 1
@@ -63,46 +65,57 @@ export function BrandSplash({
     if (phase === 'done' && !completed.current) {
       completed.current = true
       onComplete()
+      const t = setTimeout(() => setHidden(true), EXIT_MS * scale)
+      return () => clearTimeout(t)
     }
-  }, [phase, onComplete])
+  }, [phase, onComplete, scale])
 
-  if (phase === 'done') return null
+  if (hidden) return null
 
   const left = wordmark.slice(0, splitIndex)
   const right = wordmark.slice(splitIndex)
-  const isSplit = phase === 'split' || phase === 'signal'
-  const isSignal = phase === 'signal'
+  // hold the split + signal visual through the exit fade so it doesn't snap back to joined
+  const isSplit = phase === 'split' || phase === 'signal' || phase === 'done'
+  const isSignal = phase === 'signal' || phase === 'done'
   const slide = reduced ? '' : 'transition-transform duration-500'
 
   return (
     <div
       role="status"
       aria-label={`Loading ${wordmark}`}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-background"
+      className={cn(
+        'fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-background',
+        'motion-safe:transition-opacity motion-safe:duration-300',
+        phase === 'done' ? 'opacity-0' : 'opacity-100',
+      )}
     >
-      <div className="flex items-baseline text-7xl font-bold tracking-[-0.04em] text-foreground">
-        <span className={cn('inline-block', slide, isSplit && !reduced && '-translate-x-2')}>
-          {left}
+      <div
+        data-wordmark="true"
+        className="flex select-none items-center text-7xl font-bold tracking-[-0.04em] text-foreground"
+      >
+        <span
+          className={cn('relative inline-block', slide, isSplit && !reduced && '-translate-x-8')}
+        >
+          <span>{left}</span>
+          {possessive ? (
+            <span
+              data-possessive="true"
+              aria-hidden={!isSignal}
+              className="absolute left-full top-0 motion-safe:transition-opacity motion-safe:duration-300"
+              style={{ opacity: isSignal ? 1 : 0 }}
+            >
+              {"'s"}
+            </span>
+          ) : null}
         </span>
-        {possessive ? (
-          <span
-            className={cn(
-              'inline-block transition-opacity duration-300',
-              isSplit ? 'opacity-100' : 'opacity-0',
-            )}
-            aria-hidden={!isSplit}
-          >
-            {isSplit ? "'s" : null}
-          </span>
-        ) : null}
         <span
           className={cn(
             'inline-block',
             slide,
-            isSplit && !reduced && 'translate-x-3',
+            isSplit && !reduced && 'translate-x-8',
             isSignal &&
               signal === 'glow' &&
-              'text-accent drop-shadow-[0_0_12px_rgb(var(--accent)/0.5)] motion-safe:animate-pulse',
+              'text-accent drop-shadow-[0_0_20px_rgb(var(--accent)/0.8)]',
             isSignal && signal === 'dim' && 'opacity-40 transition-opacity duration-300',
           )}
         >
@@ -110,9 +123,15 @@ export function BrandSplash({
         </span>
       </div>
       {quote ? (
-        <div className="max-w-md text-center text-sm text-muted-foreground">
-          <p>{quote.text}</p>
-          {quote.attribution ? <p className="mt-1">— {quote.attribution}</p> : null}
+        <div
+          data-quote="true"
+          className="flex max-w-sm flex-col items-center gap-1 px-8 text-center motion-safe:transition-opacity motion-safe:duration-500"
+          style={{ opacity: isSplit ? 1 : 0 }}
+        >
+          <p className="text-sm italic leading-relaxed text-muted-foreground">{quote.text}</p>
+          {quote.attribution ? (
+            <p className="text-xs text-muted-foreground">— {quote.attribution}</p>
+          ) : null}
         </div>
       ) : null}
     </div>

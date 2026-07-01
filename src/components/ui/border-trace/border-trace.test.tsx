@@ -89,6 +89,18 @@ describe('TraceBorder', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Saving goal')
   })
 
+  it('overlay rect uses percentage geometry, not CSS calc (invalid in SVG)', () => {
+    const { container } = render(
+      <TraceBorder active>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    const rect = container.querySelector('rect[stroke-dasharray]')
+    expect(rect?.getAttribute('width')).toBe('100%')
+    expect(rect?.getAttribute('height')).toBe('100%')
+    expect(rect?.getAttribute('width')).not.toContain('calc')
+  })
+
   it('uses a circle overlay when shape="circle"', () => {
     const { container } = render(
       <TraceBorder active shape="circle">
