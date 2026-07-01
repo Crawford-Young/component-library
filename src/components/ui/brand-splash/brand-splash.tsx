@@ -1,6 +1,7 @@
 'use client'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { MOTION } from '@/lib/motion'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
 
 export interface SplashQuote {
@@ -10,13 +11,14 @@ export interface SplashQuote {
 
 type Phase = 'initial' | 'split' | 'signal' | 'done'
 
+const SIGNAL_HOLD_MS = 1000 // choreography dwell on the final glowed state (no MOTION token this long)
 const DEFAULT_DURATIONS: Record<Exclude<Phase, 'done'>, number> = {
-  initial: 400,
-  split: 600,
-  signal: 1000, // longer hold on the final glowed state before exit
+  initial: MOTION.slow, // 400
+  split: MOTION.hero, // 600
+  signal: SIGNAL_HOLD_MS,
 }
 const REDUCED_MOTION_SCALE = 0.5
-const EXIT_MS = 300 // overlay fade-out before unmount
+const EXIT_MS = MOTION.base // 250 — overlay fade-out before unmount
 
 export interface BrandSplashProps {
   readonly wordmark: string
@@ -77,7 +79,7 @@ export function BrandSplash({
   // hold the split + signal visual through the exit fade so it doesn't snap back to joined
   const isSplit = phase === 'split' || phase === 'signal' || phase === 'done'
   const isSignal = phase === 'signal' || phase === 'done'
-  const slide = reduced ? '' : 'transition-transform duration-500'
+  const slide = reduced ? '' : 'transition-transform duration-hero ease-in-out'
 
   return (
     <div
@@ -85,7 +87,7 @@ export function BrandSplash({
       aria-label={`Loading ${wordmark}`}
       className={cn(
         'fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-background',
-        'motion-safe:transition-opacity motion-safe:duration-300',
+        'motion-safe:transition-opacity motion-safe:duration-base motion-safe:ease-exit',
         phase === 'done' ? 'opacity-0' : 'opacity-100',
       )}
     >
@@ -101,7 +103,7 @@ export function BrandSplash({
             <span
               data-possessive="true"
               aria-hidden={!isSignal}
-              className="absolute left-full top-0 motion-safe:transition-opacity motion-safe:duration-300"
+              className="absolute left-full top-0 motion-safe:transition-opacity motion-safe:duration-base motion-safe:ease-out"
               style={{ opacity: isSignal ? 1 : 0 }}
             >
               {"'s"}
@@ -116,7 +118,7 @@ export function BrandSplash({
             isSignal &&
               signal === 'glow' &&
               'text-accent drop-shadow-[0_0_20px_rgb(var(--accent)/0.8)]',
-            isSignal && signal === 'dim' && 'opacity-40 transition-opacity duration-300',
+            isSignal && signal === 'dim' && 'opacity-40 transition-opacity duration-base ease-out',
           )}
         >
           {right}
@@ -125,7 +127,7 @@ export function BrandSplash({
       {quote ? (
         <div
           data-quote="true"
-          className="flex max-w-sm flex-col items-center gap-1 px-8 text-center motion-safe:transition-opacity motion-safe:duration-500"
+          className="flex max-w-sm flex-col items-center gap-1 px-8 text-center motion-safe:transition-opacity motion-safe:duration-slow motion-safe:ease-out"
           style={{ opacity: isSplit ? 1 : 0 }}
         >
           <p className="text-sm italic leading-relaxed text-muted-foreground">{quote.text}</p>
