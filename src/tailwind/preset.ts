@@ -142,7 +142,7 @@ export const cyUIPreset: Partial<Config> = {
         'accordion-up': 'accordion-up 200ms var(--ease-out)',
         'collapsible-down': 'collapsible-down 200ms var(--ease-out)',
         'collapsible-up': 'collapsible-up 200ms var(--ease-out)',
-        trace: 'trace 1.2s linear infinite',
+        trace: 'trace 1.2s var(--ease-in-out) infinite',
         'trace-dot': 'trace-dot 1s ease-in-out infinite',
       },
     },
