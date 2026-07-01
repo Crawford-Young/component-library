@@ -19,9 +19,15 @@ export function Sidebar({
   footer,
   className,
 }: SidebarProps): React.JSX.Element {
-  const [collapsed, setCollapsed] = React.useState(
-    () => localStorage.getItem('sidebar-collapsed') === 'true',
-  )
+  const [collapsed, setCollapsed] = React.useState(() => {
+    // localStorage is unavailable during SSR (not defined) and can throw in
+    // privacy modes; guard the render-phase read so the component is SSR-safe.
+    try {
+      return localStorage.getItem('sidebar-collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
 
   function handleToggle(): void {
     const next = !collapsed
