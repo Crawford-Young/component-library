@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MOTION } from '@/lib/motion'
 import { BrandSplash } from './brand-splash'
 
 beforeEach(() => {
@@ -135,6 +136,27 @@ describe('BrandSplash', () => {
     )
     advance(300)
     expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('sources phase-dwell defaults from the MOTION token scale', () => {
+    // initial=slow(400) split=hero(600) → split begins at 400, signal at 1000
+    const onComplete = vi.fn()
+    render(<BrandSplash wordmark="Cybond" splitIndex={2} onComplete={onComplete} />)
+    expect(MOTION.slow).toBe(400)
+    expect(MOTION.hero).toBe(600)
+    advance(400)
+    expect(screen.getByText('bond').className).not.toContain('text-accent') // not glowing yet (split, pre-signal)
+    advance(600)
+    expect(screen.getByText('bond').className).toContain('text-accent') // signal
+  })
+
+  it('uses brand ease token classes on the wordmark transitions', () => {
+    const { container } = render(
+      <BrandSplash wordmark="Cybond" splitIndex={2} onComplete={vi.fn()} />,
+    )
+    // slide span uses the in-out curve; possessive fade uses the out curve
+    expect(screen.getByText('Cy').parentElement?.className).toContain('ease-in-out')
+    expect(container.querySelector('[data-possessive]')?.className).toContain('ease-out')
   })
 
   it('halves durations and skips slide transforms under reduced motion', () => {
