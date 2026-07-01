@@ -93,7 +93,7 @@ export function BrandSplash({
     >
       <div
         data-wordmark="true"
-        className="flex select-none items-center text-7xl font-bold tracking-[-0.04em] text-foreground"
+        className="flex select-none items-center text-7xl font-bold tracking-[-0.04em] text-foreground motion-safe:animate-brand-enter"
       >
         <span
           className={cn('relative inline-block', slide, isSplit && !reduced && '-translate-x-8')}
