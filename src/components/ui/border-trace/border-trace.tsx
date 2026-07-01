@@ -67,7 +67,7 @@ export function BorderTrace({
               height={px - sw}
               rx={4}
               {...traceProps}
-              className="stroke-accent motion-safe:animate-trace"
+              className="stroke-accent motion-safe:animate-trace motion-reduce:[stroke-dasharray:none]"
               strokeWidth={sw}
             />
           </>
@@ -86,7 +86,7 @@ export function BorderTrace({
               cy={px / 2}
               r={px / 2 - inset}
               {...traceProps}
-              className="stroke-accent motion-safe:animate-trace"
+              className="stroke-accent motion-safe:animate-trace motion-reduce:[stroke-dasharray:none]"
               strokeWidth={sw}
             />
           </>
