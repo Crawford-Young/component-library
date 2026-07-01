@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.13.0
+
+### Minor Changes
+
+- 38e017b: Add `BorderTrace` + `TraceBorder` pending indicators and `BrandSplash` intro component. Deprecate `Spinner`.
+
 ## 0.12.1
 
 ### Patch Changes
