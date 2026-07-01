@@ -1,5 +1,15 @@
 # @cy/ui
 
+## 0.13.1
+
+### Patch Changes
+
+- 30170b4: Fix `Sidebar` crashing during SSR. The collapsed-state `useState` initializer
+  read `localStorage` in the render phase, throwing `localStorage is not defined`
+  when rendered on the server (and `SecurityError` in some privacy modes). The
+  read is now wrapped in a `try/catch` that defaults to expanded, making
+  `Sidebar` SSR-safe.
+
 ## 0.13.0
 
 ### Minor Changes
