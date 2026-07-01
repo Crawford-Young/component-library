@@ -132,7 +132,7 @@ function TimeGutterLabel({
     <div
       data-testid="time-gutter-label"
       aria-hidden="true"
-      className="pointer-events-none absolute right-1 z-10 text-[9px] font-medium text-primary"
+      className="pointer-events-none absolute right-1 z-20 rounded bg-background px-1 text-[9px] font-medium text-primary"
       style={{ top: `${top}%`, transform: 'translateY(-50%)' }}
     >
       {h}:{m} {period}
