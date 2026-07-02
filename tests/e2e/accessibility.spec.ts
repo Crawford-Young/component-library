@@ -79,6 +79,8 @@ const stories = [
   { name: 'TaskTimeFields', id: 'inputs-tasktimefields--default' },
   { name: 'ActivityCard', id: 'display-activitycard--task-pending' },
   { name: 'ActivityFormDialog', id: 'dialogs-activityformdialog--create-task' },
+  { name: 'ActivityFormDialog GoalMode', id: 'dialogs-activityformdialog--goal-mode' },
+  { name: 'ActivityFormDialog GroupSocial', id: 'dialogs-activityformdialog--group-social' },
   { name: 'BorderTrace', id: 'feedback-bordertrace--default' },
   { name: 'BorderTraceOnButton', id: 'feedback-bordertrace--on-button' },
   { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
