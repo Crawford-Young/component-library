@@ -1,6 +1,9 @@
 import * as React from 'react'
 
-/** A single day's awake window: valid hours run `wake` (inclusive) → `sleep` (exclusive). */
+/**
+ * A single day's awake window: valid hours run `wake` (inclusive) → `sleep` (exclusive).
+ * Both accept fractional hours (e.g. `6.5` = 6:30am) for minute-granularity windows.
+ */
 export interface DayWindow {
   readonly wake: number
   readonly sleep: number

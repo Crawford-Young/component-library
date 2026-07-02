@@ -40,6 +40,9 @@ export interface WeekCalendarViewProps {
   /**
    * Per-day awake windows, exactly 7 entries, Sun-first. Each `{ wake, sleep }`
    * drives that day's union window, sleep-zone shading, and drag-create blocking.
+   * `wake`/`sleep` accept fractional hours (e.g. `6.5` = 6:30am) — the grid's
+   * row range rounds outward (`floor`/`ceil`) to whole hours, while zone shading
+   * and drag-blocking use the exact fractional value.
    * A length other than 7 is ignored (dev warning); absent ⇒ unchanged behavior.
    */
   readonly dayWindows?: readonly DayWindow[]
@@ -489,11 +492,15 @@ export function WeekCalendarView({
     }
   }, [resolvedDayWindows])
 
-  const effectiveHourStart = sleepEnabled ? DAY_START_HOUR : (unionWindow?.wake ?? hourStart)
+  const effectiveHourStart = sleepEnabled
+    ? DAY_START_HOUR
+    : unionWindow !== undefined
+      ? Math.floor(unionWindow.wake)
+      : hourStart
   const effectiveHourCount = sleepEnabled
     ? HOURS_PER_DAY
     : unionWindow !== undefined
-      ? unionWindow.sleep - unionWindow.wake
+      ? Math.ceil(unionWindow.sleep) - Math.floor(unionWindow.wake)
       : hourCount
 
   function pointerToSlot(clientY: number): number {
@@ -529,9 +536,9 @@ export function WeekCalendarView({
       const minDayIdx = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
 
       if (resolvedDayWindows !== undefined) {
-        const startHour = Math.floor(startSlot / SLOTS_PER_HOUR)
+        const startTime = startSlot / SLOTS_PER_HOUR
         const win = resolvedDayWindows[dragMode.startDayIdx]
-        if (startHour < win.wake || startHour >= win.sleep) {
+        if (startTime < win.wake || startTime >= win.sleep) {
           dragActions.reset()
           return
         }
