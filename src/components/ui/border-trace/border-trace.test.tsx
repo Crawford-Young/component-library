@@ -309,3 +309,175 @@ describe('resolve gesture', () => {
     expect(onResolveComplete).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('TraceBorder resolve gesture', () => {
+  beforeEach(() => {
+    vi.useRealTimers()
+    vi.useFakeTimers({
+      toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+    })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('expands, settles, departs on the overlay, unmounts, and fires onResolveComplete once while the child stays mounted', () => {
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <TraceBorder active appearDelayMs={0} onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    rerender(
+      <TraceBorder active appearDelayMs={0} resolved onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+
+    // expanding: wrapper ring snaps to a full segment, trace loop still sweeping it closed
+    const traceRect = container.querySelector('rect[stroke-dasharray]') as SVGRectElement
+    expect(traceRect.style.strokeDasharray).toBe('100 0')
+    expect(traceRect.style.transition).toContain('stroke-dasharray')
+    expect(traceRect.getAttribute('class')).toContain('motion-safe:animate-trace')
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+
+    // settled: loop animation removed
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(
+      (container.querySelector('rect[stroke-dasharray]') as SVGRectElement).getAttribute('class'),
+    ).not.toContain('motion-safe:animate-trace')
+
+    // departing: overlay svg fades on the exit curve, child never fades
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    const svg = container.querySelector('svg') as SVGSVGElement
+    expect(svg.style.opacity).toBe('0')
+    expect(svg.style.transition).toContain('opacity')
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+
+    // done: overlay unmounts, child persists, callback fires exactly once
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(container.querySelector('svg')).not.toBeInTheDocument()
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+
+    act(() => vi.advanceTimersByTime(2000))
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('is a no-op forever when resolved arrives while inactive — never renders, never fires the callback', () => {
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <TraceBorder active={false} appearDelayMs={0} onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    rerender(
+      <TraceBorder active={false} appearDelayMs={0} resolved onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    expect(container.querySelector('svg')).not.toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(2000))
+    expect(container.querySelector('svg')).not.toBeInTheDocument()
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(onResolveComplete).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+  })
+
+  it('completes immediately without ever rendering the overlay when resolved before the appear threshold', () => {
+    const onResolveComplete = vi.fn()
+    const { container } = render(
+      <TraceBorder active resolved onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>, // default 150ms delay
+    )
+    expect(container.querySelector('svg')).toBeNull()
+    act(() => vi.advanceTimersByTime(2000))
+    expect(container.querySelector('svg')).toBeNull()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+  })
+
+  it('skips the expanding phase under reduced motion, holding the still-ring before departing', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    )
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <TraceBorder active appearDelayMs={0} onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    rerender(
+      <TraceBorder active appearDelayMs={0} resolved onResolveComplete={onResolveComplete}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+
+    const traceRect = container.querySelector('rect[stroke-dasharray]') as SVGRectElement
+    expect(traceRect.getAttribute('class')).not.toContain('motion-safe:animate-trace')
+    expect(traceRect.style.strokeDasharray).toBe('100 0')
+
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect((container.querySelector('svg') as SVGSVGElement).style.opacity).toBe('0')
+
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(container.querySelector('svg')).not.toBeInTheDocument()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('resolves a circle wrapper: the still-ring snaps full then departs', () => {
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <TraceBorder active shape="circle" appearDelayMs={0} onResolveComplete={onResolveComplete}>
+        <button>+</button>
+      </TraceBorder>,
+    )
+    rerender(
+      <TraceBorder
+        active
+        shape="circle"
+        appearDelayMs={0}
+        resolved
+        onResolveComplete={onResolveComplete}
+      >
+        <button>+</button>
+      </TraceBorder>,
+    )
+    const traceCircle = container.querySelector('circle[stroke-dasharray]') as SVGCircleElement
+    expect(traceCircle.style.strokeDasharray).toBe('100 0')
+
+    act(() => vi.advanceTimersByTime(MOTION.base)) // expanding → settled
+    act(() => vi.advanceTimersByTime(MOTION.base)) // settled → departing
+    act(() => vi.advanceTimersByTime(MOTION.base)) // departing → done
+    expect(container.querySelector('svg')).not.toBeInTheDocument()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('carries the reduced-motion still-ring class on both wrapper shapes', () => {
+    const { container: square } = render(
+      <TraceBorder active appearDelayMs={0}>
+        <button>Save</button>
+      </TraceBorder>,
+    )
+    expect(
+      (square.querySelector('rect[stroke-dasharray]') as Element).getAttribute('class'),
+    ).toContain('motion-reduce:[stroke-dasharray:none]')
+
+    const { container: circle } = render(
+      <TraceBorder active shape="circle" appearDelayMs={0}>
+        <button>+</button>
+      </TraceBorder>,
+    )
+    expect(
+      (circle.querySelector('circle[stroke-dasharray]') as Element).getAttribute('class'),
+    ).toContain('motion-reduce:[stroke-dasharray:none]')
+  })
+})
