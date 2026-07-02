@@ -100,3 +100,19 @@
   --info: 14 165 233;
   --info-foreground: 250 250 250;
 }
+
+/* View-transition defaults — brand handoff (see startBrandHandoff) */
+@supports (view-transition-name: none) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: var(--motion-hero);
+    animation-timing-function: var(--ease-in-out);
+  }
+  /* canonical brand pair: full-height snapshots so the wordmark morphs
+     without letterboxing at the size change */
+  ::view-transition-old(brand-wordmark),
+  ::view-transition-new(brand-wordmark) {
+    height: 100%;
+  }
+}
