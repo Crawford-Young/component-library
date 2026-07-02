@@ -49,6 +49,7 @@ const stories = [
   { name: 'BentoGrid', id: 'layout-bentogrid--default' },
   { name: 'Timeline', id: 'display-timeline--default' },
   { name: 'WeekCalendarView', id: 'data-weekcalendarview--default' },
+  { name: 'WeekCalendarView PerDayWindows', id: 'data-weekcalendarview--per-day-windows' },
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
