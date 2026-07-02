@@ -30,16 +30,38 @@ export const Circle: Story = {
 }
 
 export const OnButton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The wrapper trace runs the same resolve choreography as BorderTrace. While `active`, click Save to flip `resolved` — the border expands to a full stroke, settles, and fades off the exit curve while the button underneath never fades. `onResolveComplete` tears the trace down; Replay remounts to run it again.',
+      },
+    },
+  },
   render: function OnButtonStory() {
-    const [pending, setPending] = React.useState(true)
+    const [runId, setRunId] = React.useState(0)
+    const [active, setActive] = React.useState(true)
+    const [resolved, setResolved] = React.useState(false)
+    const replay = (): void => {
+      setActive(true)
+      setResolved(false)
+      setRunId((id) => id + 1)
+    }
     return (
       <div className="flex items-center gap-4">
-        <TraceBorder active={pending}>
-          <Button variant="secondary" onClick={() => setPending((p) => !p)}>
+        <TraceBorder
+          key={runId}
+          active={active}
+          resolved={resolved}
+          onResolveComplete={() => setActive(false)}
+        >
+          <Button variant="secondary" onClick={() => (active ? setResolved(true) : replay())}>
             Save
           </Button>
         </TraceBorder>
-        <span className="text-sm text-muted-foreground">click to toggle</span>
+        <span className="text-sm text-muted-foreground">
+          {active ? 'saving… click Save to resolve' : 'saved — click Save to run again'}
+        </span>
       </div>
     )
   },

@@ -214,6 +214,8 @@ export interface TraceBorderProps {
   readonly shape?: 'square' | 'circle'
   readonly label?: string
   readonly appearDelayMs?: number
+  readonly resolved?: boolean
+  readonly onResolveComplete?: () => void
   readonly children: React.ReactNode
 }
 
@@ -224,17 +226,45 @@ export function TraceBorder({
   shape = 'square',
   label = 'Loading',
   appearDelayMs = DEFAULT_APPEAR_DELAY_MS,
+  resolved = false,
+  onResolveComplete,
   children,
 }: TraceBorderProps): React.JSX.Element {
   const appeared = useAppeared(active, appearDelayMs)
+  const reduced = usePrefersReducedMotion()
+  const phase = useResolvePhase(active, appeared, resolved, reduced, onResolveComplete)
+
+  const showTrace = active && phase !== 'done' && (appeared || phase !== 'idle')
+  const resolving = phase !== 'idle'
+
+  // Keep the loop through `expanding` only — its moving head sweeps the growing
+  // segment closed; from `settled` on the ring is a static full stroke.
+  const traceClass = cn(
+    'stroke-accent',
+    (phase === 'idle' || phase === 'expanding') && 'motion-safe:animate-trace',
+    'motion-reduce:[stroke-dasharray:none]',
+  )
+  const resolveStyle: React.CSSProperties | undefined = resolving
+    ? {
+        strokeDasharray: RESOLVED_SEGMENT,
+        transition: `stroke-dasharray ${MOTION.base}ms ${EASE_CSS.out}`,
+      }
+    : undefined
+  // Departure fades the overlay only — the wrapped children never fade.
+  const departStyle: React.CSSProperties | undefined =
+    phase === 'departing'
+      ? { opacity: 0, transition: `opacity ${MOTION.base}ms ${EASE_CSS.exit}` }
+      : undefined
+
   return (
     <span className="relative inline-block [&>*]:align-top">
       {children}
-      {active && appeared ? (
+      {showTrace ? (
         <>
           <svg
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            style={departStyle}
           >
             {shape === 'square' ? (
               <rect
@@ -244,10 +274,11 @@ export function TraceBorder({
                 height="100%"
                 rx={8}
                 pathLength={100}
-                strokeDasharray="25 75"
+                strokeDasharray={TRACE_SEGMENT}
                 fill="none"
                 strokeLinecap="round"
-                className="stroke-accent motion-safe:animate-trace"
+                className={traceClass}
+                style={resolveStyle}
                 strokeWidth={WRAPPER_STROKE}
               />
             ) : (
@@ -256,10 +287,11 @@ export function TraceBorder({
                 cy="50%"
                 r="50%"
                 pathLength={100}
-                strokeDasharray="25 75"
+                strokeDasharray={TRACE_SEGMENT}
                 fill="none"
                 strokeLinecap="round"
-                className="stroke-accent motion-safe:animate-trace"
+                className={traceClass}
+                style={resolveStyle}
                 strokeWidth={WRAPPER_STROKE}
               />
             )}
