@@ -1,18 +1,34 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { WeekCalendarView } from '@/components/ui/week-calendar-view'
+import { WeekCalendarView, type DayWindow } from '@/components/ui/week-calendar-view'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 
 const meta: Meta<typeof WeekCalendarView> = {
   title: 'Data/WeekCalendarView',
   component: WeekCalendarView,
+  argTypes: {
+    use24h: { control: 'boolean' },
+  },
 }
 
 export default meta
 type Story = StoryObj<typeof WeekCalendarView>
 
 const WEEK = '2026-05-04'
+
+// Sun-first: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]. Uniform 9–17 except Monday
+// (wakes earlier, 6–17) and Friday (stays up later, 9–22) so per-day shading
+// is visibly different across multiple days.
+const PER_DAY_WINDOWS: readonly DayWindow[] = [
+  { wake: 9, sleep: 17 },
+  { wake: 6, sleep: 17 },
+  { wake: 9, sleep: 17 },
+  { wake: 9, sleep: 17 },
+  { wake: 9, sleep: 17 },
+  { wake: 9, sleep: 22 },
+  { wake: 9, sleep: 17 },
+]
 
 export const Default: Story = {
   args: {
@@ -243,4 +259,95 @@ function AllHoursDemo() {
 
 export const AllHoursToggle: Story = {
   render: () => <AllHoursDemo />,
+}
+
+export const Use24h: Story = {
+  args: {
+    defaultWeekStart: WEEK,
+    use24h: true,
+    dayWindows: Array.from({ length: 7 }, () => ({ wake: 9, sleep: 17 })),
+    events: [
+      {
+        id: '1',
+        title: 'Team standup',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T09:30:00',
+        color: 'blue',
+        location: 'Google Meet',
+      },
+      {
+        id: '2',
+        title: 'Design review',
+        start: '2026-05-05T14:00:00',
+        end: '2026-05-05T15:30:00',
+        color: 'violet',
+        location: 'Figma',
+        description: 'Review component specs',
+      },
+      {
+        id: '3',
+        title: 'Sprint planning',
+        start: '2026-05-06T10:00:00',
+        end: '2026-05-06T11:00:00',
+        color: 'teal',
+        location: 'Conference Room B',
+      },
+      {
+        id: '4',
+        title: 'Lunch',
+        start: '2026-05-07T12:00:00',
+        end: '2026-05-07T13:00:00',
+        color: 'green',
+      },
+    ],
+  },
+}
+
+export const PerDayWindows: Story = {
+  args: {
+    defaultWeekStart: WEEK,
+    dayWindows: PER_DAY_WINDOWS,
+    events: [
+      { id: '1', title: 'Team standup', start: '2026-05-04T09:00:00', end: '2026-05-04T09:30:00' },
+      {
+        id: '2',
+        title: 'Early Monday sync',
+        start: '2026-05-04T06:30:00',
+        end: '2026-05-04T07:00:00',
+        color: 'blue',
+      },
+      {
+        id: '3',
+        title: 'Late Friday review',
+        start: '2026-05-08T20:00:00',
+        end: '2026-05-08T21:00:00',
+        color: 'violet',
+      },
+    ],
+  },
+}
+
+export const PerDayWindowsFullDay: Story = {
+  args: {
+    defaultWeekStart: WEEK,
+    dayWindows: PER_DAY_WINDOWS,
+    sleepEnabled: true,
+    events: [
+      { id: '1', title: 'Team standup', start: '2026-05-04T09:00:00', end: '2026-05-04T09:30:00' },
+      {
+        id: '2',
+        title: 'Early Monday sync',
+        start: '2026-05-04T06:30:00',
+        end: '2026-05-04T07:00:00',
+        color: 'blue',
+      },
+      {
+        id: '3',
+        title: 'Late Friday review',
+        start: '2026-05-08T20:00:00',
+        end: '2026-05-08T21:00:00',
+        color: 'violet',
+      },
+    ],
+  },
 }
