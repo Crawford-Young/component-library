@@ -35,13 +35,11 @@ describe('startBrandHandoff', () => {
   it('skips the transition under prefers-reduced-motion even when supported', async () => {
     vi.stubGlobal(
       'matchMedia',
-      vi
-        .fn()
-        .mockReturnValue({
-          matches: true,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-        }),
+      vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
     )
     const update = vi.fn()
     const vt = vi.fn()
