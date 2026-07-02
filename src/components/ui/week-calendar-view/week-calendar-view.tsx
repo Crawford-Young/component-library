@@ -306,6 +306,13 @@ const SLOT_MINS = 15
 const DAYS_PER_WEEK = 7
 const DAY_START_HOUR = 0
 const HOURS_PER_DAY = 24
+/**
+ * Pointer travel (px) a chip press must exceed before a move-drag engages. Below
+ * this, a press-release is treated as a plain click so the chip's Radix popover
+ * opens. Kept just under the √13 ≈ 3.6 px travel that the existing move-commit
+ * guard test relies on, while still rejecting sub-pixel pointer jitter.
+ */
+const DRAG_SLOP_PX = 3
 
 function isProductionEnv(): boolean {
   return (
@@ -335,6 +342,17 @@ interface PendingCreate {
   date: string
   startSlot: number
   endSlot: number
+}
+
+/**
+ * A move-drag that has been armed on pointerdown but not yet engaged. `engage`
+ * transitions the drag state machine into `moving`; it is only invoked once the
+ * pointer travels past `DRAG_SLOP_PX` from the recorded origin.
+ */
+interface PendingDrag {
+  readonly originX: number
+  readonly originY: number
+  readonly engage: () => void
 }
 
 function formatDateISO(d: Date): string {
@@ -424,6 +442,7 @@ export function WeekCalendarView({
   const [dragMode, dragActions] = useDragState()
   const gridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
+  const pendingDragRef = React.useRef<PendingDrag | null>(null)
   const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
 
   function handleEventCreate(event: Omit<CalendarEvent, 'id'>): void {
@@ -523,13 +542,28 @@ export function WeekCalendarView({
   }
 
   function handleGridPointerMove(e: React.PointerEvent): void {
-    if (dragMode.type === 'idle') return
+    const pending = pendingDragRef.current
+    if (pending !== null) {
+      const dx = e.clientX - pending.originX
+      const dy = e.clientY - pending.originY
+      if (Math.hypot(dx, dy) < DRAG_SLOP_PX) return
+      pendingDragRef.current = null
+      pending.engage()
+    } else if (dragMode.type === 'idle') {
+      return
+    }
     const slot = pointerToSlot(e.clientY)
     const dayIdx = getPointerDayIdx(e.clientX)
     dragActions.updateSlot(dayIdx, slot)
   }
 
   function handleGridPointerUp(_e: React.PointerEvent): void {
+    if (pendingDragRef.current !== null) {
+      // Released without crossing the slop threshold → treat as a click, not a
+      // move; the native click then opens the chip's popover.
+      pendingDragRef.current = null
+      return
+    }
     if (dragMode.type === 'creating') {
       const startSlot = Math.min(dragMode.startSlot, dragMode.currentSlot)
       const endSlot = Math.max(dragMode.startSlot, dragMode.currentSlot) + 1
@@ -770,7 +804,7 @@ export function WeekCalendarView({
                     onMoveStart={
                       isOverflow
                         ? undefined
-                        : (ev, clientY, _clientX, shiftKey) => {
+                        : (ev, clientY, clientX, shiftKey) => {
                             if (shiftKey) {
                               const source = isRecur
                                 ? localEvents.find((e) => e.id === originalId)!
@@ -782,7 +816,21 @@ export function WeekCalendarView({
                                 : ev
                               const slot = pointerToSlot(clientY)
                               const slotOffset = Math.max(0, slot - timeToSlot(ev.start))
-                              dragActions.startMove(baseEvent, dayIdx, slotOffset, slot, isRecur)
+                              // Arm the move but defer engagement until the pointer
+                              // crosses DRAG_SLOP_PX, so a stationary press stays a
+                              // click that opens the popover.
+                              pendingDragRef.current = {
+                                originX: clientX,
+                                originY: clientY,
+                                engage: () =>
+                                  dragActions.startMove(
+                                    baseEvent,
+                                    dayIdx,
+                                    slotOffset,
+                                    slot,
+                                    isRecur,
+                                  ),
+                              }
                             }
                           }
                     }

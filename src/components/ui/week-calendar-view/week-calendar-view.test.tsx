@@ -1014,6 +1014,139 @@ describe('drag ghost — resizing and recurrence-select', () => {
   })
 })
 
+describe('drag slop threshold — press-release is a click, not a move', () => {
+  const slopEvent: CalendarEvent = {
+    id: 'sl1',
+    title: 'Slop event',
+    start: '2026-05-04T09:00:00',
+    end: '2026-05-04T10:00:00',
+  }
+
+  it('opens the popover and does not move when the chip is pressed and released without dragging', async () => {
+    const onMove = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[slopEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /slop event/i }))
+    // Radix PopoverTrigger opened on click → the Edit action is visible
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument()
+    expect(onMove).not.toHaveBeenCalled()
+  })
+
+  it('opens the popover and does not move when pointer travel stays under the slop distance', () => {
+    const onMove = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[slopEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /slop event/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200 })
+    // hypot(2, 1) ≈ 2.2 px — below the slop threshold
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 102, clientY: 201 })
+    fireEvent.pointerUp(chip, { pointerId: 1, clientX: 102, clientY: 201 })
+    expect(onMove).not.toHaveBeenCalled()
+    // The native click that follows a stationary press still opens the popover
+    fireEvent.click(chip)
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument()
+  })
+
+  it('commits a move once pointer travel exceeds the slop distance', () => {
+    const onMove = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-04"
+        events={[slopEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /slop event/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200 })
+    // 20 px vertical travel — beyond the 4 px slop threshold → engages move
+    fireEvent.pointerMove(chip, { pointerId: 1, clientX: 100, clientY: 220 })
+    fireEvent.pointerUp(chip, { pointerId: 1, clientX: 100, clientY: 220 })
+    expect(onMove).toHaveBeenCalledOnce()
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ id: 'sl1' }))
+    // A committed drag generates no click → the popover never opened
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument()
+  })
+
+  it('preserves recurrence-instance identity and original date on a slop-exceeding move', () => {
+    const onMove = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r9',
+      title: 'Recur slop',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T10:00:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur slop/i })
+    // chips[1] = Tuesday recurrence instance
+    fireEvent.pointerDown(chips[1], { pointerId: 1, clientX: 100, clientY: 200 })
+    fireEvent.pointerMove(chips[1], { pointerId: 1, clientX: 100, clientY: 230 })
+    fireEvent.pointerUp(chips[1], { pointerId: 1, clientX: 100, clientY: 230 })
+    expect(onMove).toHaveBeenCalledOnce()
+    const moved = onMove.mock.calls[0][0]
+    expect(moved.id).toBe('r9')
+    expect(moved.start.substring(0, 10)).toBe('2026-05-04')
+  })
+
+  it('defers the drag ghost until the slop threshold is crossed, then shows recurrence columns', () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r10',
+      title: 'Ghost slop',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T10:00:00',
+      recurrenceDays: ['Mon', 'Wed'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /ghost slop/i })
+    // Pointerdown alone must NOT engage the drag → no ghost yet
+    fireEvent.pointerDown(chips[0], { pointerId: 1, clientX: 100, clientY: 200 })
+    expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBe(0)
+    // Crossing the threshold engages the move → ghosts render on recurrence columns
+    fireEvent.pointerMove(chips[0], { pointerId: 1, clientX: 100, clientY: 220 })
+    expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThanOrEqual(
+      2,
+    )
+    fireEvent.pointerUp(chips[0], { pointerId: 1, clientX: 100, clientY: 220 })
+  })
+})
+
 describe('internal CRUD state management', () => {
   it('event appears in calendar after drag-to-create without external state management', async () => {
     render(
@@ -1151,6 +1284,8 @@ describe('internal CRUD state management', () => {
     )
     const chip = screen.getByRole('button', { name: /move this/i })
     fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: false })
+    // Move must exceed DRAG_SLOP_PX to engage the drag (see week-calendar-view.tsx)
+    fireEvent.pointerMove(chip, { clientY: 120, clientX: 100, shiftKey: false })
     fireEvent.pointerUp(chip)
     expect(screen.getByRole('button', { name: /move this/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /stay here/i })).toBeInTheDocument()
@@ -1376,6 +1511,8 @@ describe('drag move cross-day', () => {
     )
     const chip = screen.getByRole('button', { name: /test event/i })
     fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: false })
+    // Move must exceed DRAG_SLOP_PX to engage the drag (see week-calendar-view.tsx)
+    fireEvent.pointerMove(chip, { clientY: 120, clientX: 100, shiftKey: false })
     fireEvent.pointerUp(chip)
     expect(onMove).toHaveBeenCalledOnce()
   })
@@ -1974,6 +2111,8 @@ describe('recurrence day expansion', () => {
     const chips = screen.getAllByRole('button', { name: /recur move/i })
     // chips[1] = Tuesday instance (recurrence copy)
     fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: false })
+    // Move must exceed DRAG_SLOP_PX to engage the drag (see week-calendar-view.tsx)
+    fireEvent.pointerMove(chips[1], { clientY: 120, clientX: 100, shiftKey: false })
     fireEvent.pointerUp(chips[1])
     expect(onMove).toHaveBeenCalledOnce()
     // ID must be original, date must be original (Mon), not the recur day (Tue)
@@ -2062,12 +2201,49 @@ describe('recurrence day expansion', () => {
       />,
     )
     const chips = screen.getAllByRole('button', { name: /ghost all/i })
+    // happy-dom returns a zero rect for every element, so the slop-crossing
+    // pointermove below would otherwise resolve to day column 0 (see
+    // getPointerDayIdx) instead of staying on the Monday column the drag
+    // started on. Mock day column 1 (Monday) with a real rect so clientX=100
+    // still resolves there, matching the pre-move dayIdx captured on press.
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    const mondayCol = rows[14]?.parentElement
+    const zeroRect = {
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    const mondayRect = {
+      left: 100,
+      right: 200,
+      top: 0,
+      bottom: 500,
+      width: 100,
+      height: 500,
+      x: 100,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      return this === mondayCol ? mondayRect : zeroRect
+    })
     // Drag Mon (original)
     fireEvent.pointerDown(chips[0], { clientY: 100, clientX: 100, shiftKey: false })
+    // Move must exceed DRAG_SLOP_PX to engage the drag (see week-calendar-view.tsx)
+    fireEvent.pointerMove(chips[0], { clientY: 120, clientX: 100, shiftKey: false })
     // Ghost should appear in both Mon and Wed columns (2 ghosts)
     const ghosts = document.querySelectorAll('[data-testid="ghost-event"]')
     expect(ghosts.length).toBe(2)
     fireEvent.pointerUp(chips[0])
+    vi.restoreAllMocks()
   })
 })
 
