@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// Override with SB_PORT when a parallel worktree session already owns :6006 —
+// reuseExistingServer would otherwise silently test that session's stories.
+const STORYBOOK_PORT = Number(process.env['SB_PORT'] ?? 6006)
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -7,7 +11,7 @@ export default defineConfig({
   retries: process.env['CI'] ? 2 : 0,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:6006',
+    baseURL: `http://localhost:${STORYBOOK_PORT}`,
     trace: 'on-first-retry',
     // Settle motion-safe transitions instantly so axe never samples a mid-fade blended color.
     contextOptions: { reducedMotion: 'reduce' },
@@ -19,8 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm storybook',
-    url: 'http://localhost:6006',
+    command: `pnpm storybook dev -p ${STORYBOOK_PORT} --no-open`,
+    url: `http://localhost:${STORYBOOK_PORT}`,
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
   },
