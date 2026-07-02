@@ -82,6 +82,7 @@ const stories = [
   { name: 'BorderTraceOnButton', id: 'feedback-bordertrace--on-button' },
   { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
   { name: 'SplitText', id: 'display-splittext--default' },
+  { name: 'MagneticButton', id: 'inputs-magneticbutton--default' },
 ]
 
 for (const { name, id } of stories) {
