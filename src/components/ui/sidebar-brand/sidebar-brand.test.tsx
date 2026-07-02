@@ -67,6 +67,27 @@ describe('SidebarBrand', () => {
     expect(title.className).toContain('flex-1')
   })
 
+  it('applies handoffName as the title view-transition-name', () => {
+    render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarBrand logo={logo} title="Cybond" handoffName="brand-wordmark" />
+      </SidebarContext.Provider>,
+    )
+    const title = screen.getByText('Cybond')
+    expect(title.style.viewTransitionName).toBe('brand-wordmark')
+  })
+
+  it('transitions the title on motion tokens, not raw duration literals', () => {
+    render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarBrand logo={logo} title="Cybond" />
+      </SidebarContext.Provider>,
+    )
+    const title = screen.getByText('Cybond')
+    expect(title.className).toContain('duration-base')
+    expect(title.className).not.toContain('duration-200')
+  })
+
   it('applies custom className', () => {
     const { container } = render(
       <SidebarContext.Provider value={{ collapsed: false }}>

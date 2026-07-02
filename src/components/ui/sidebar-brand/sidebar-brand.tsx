@@ -8,6 +8,10 @@ export interface SidebarBrandProps {
   readonly title: string
   readonly href?: string
   readonly className?: string
+  /** view-transition-name for the splash → app morph. Pass ONLY once the
+      splash is gone (same state update) — two mounted elements sharing a
+      name make the browser skip the transition. See startBrandHandoff. */
+  readonly handoffName?: string
 }
 
 export function SidebarBrand({
@@ -15,6 +19,7 @@ export function SidebarBrand({
   title,
   href,
   className,
+  handoffName,
 }: SidebarBrandProps): React.JSX.Element {
   const { collapsed } = React.useContext(SidebarContext)
   const Tag = href !== undefined ? 'a' : 'div'
@@ -31,8 +36,9 @@ export function SidebarBrand({
       {/* Fixed-width slot matches collapsed sidebar width — logo never moves */}
       <span className="flex w-14 shrink-0 items-center justify-center">{logo}</span>
       <span
+        style={handoffName !== undefined ? { viewTransitionName: handoffName } : undefined}
         className={cn(
-          'text-foreground truncate text-sm font-bold transition-all duration-200',
+          'text-foreground truncate text-sm font-bold transition-all duration-base ease-out',
           collapsed ? 'w-0 overflow-hidden opacity-0' : 'flex-1 pr-4',
         )}
       >
