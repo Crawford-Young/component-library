@@ -9,19 +9,19 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Display
 
-| Component      | Notes                                                                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions                                                           |
-| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                                                               |
-| `Badge`        | default, secondary, destructive, outline                                                                                                     |
-| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                                                            |
-| `Separator`    | Horizontal and vertical orientations                                                                                                         |
-| `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle, `appearDelayMs` (default 150, `0` disables) |
-| `BrandSplash`  | App intro / first-paint animation — wordmark split + signal, optional quote, `onComplete`                                                    |
-| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch                                                            |
-| `Spinner`      | **Deprecated** — use `BorderTrace` / `TraceBorder`. sm / md / lg, `role="status"` + `aria-label`                                             |
-| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                                                                                    |
-| `TraceBorder`  | Wraps a control (e.g. `Button`) to trace its border while `active` — pending state for actions, `appearDelayMs` (default 150, `0` disables)  |
+| Component      | Notes                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions                                                                      |
+| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                                                                          |
+| `Badge`        | default, secondary, destructive, outline                                                                                                                |
+| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                                                                       |
+| `Separator`    | Horizontal and vertical orientations                                                                                                                    |
+| `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle, `appearDelayMs` (default 150, `0` disables)            |
+| `BrandSplash`  | App intro / first-paint animation — wordmark split + signal, optional quote, `onComplete`; `handoffName` + `exit="external"` for the splash → app morph |
+| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch                                                                       |
+| `Spinner`      | **Deprecated** — use `BorderTrace` / `TraceBorder`. sm / md / lg, `role="status"` + `aria-label`                                                        |
+| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                                                                                               |
+| `TraceBorder`  | Wraps a control (e.g. `Button`) to trace its border while `active` — pending state for actions, `appearDelayMs` (default 150, `0` disables)             |
 
 ### Inputs
 
@@ -93,10 +93,12 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Layout
 
-| Component     | Notes                                |
-| ------------- | ------------------------------------ |
-| `AspectRatio` | Wraps `@radix-ui/react-aspect-ratio` |
-| `ScrollArea`  | `ScrollArea`, `ScrollBar`            |
+| Component      | Notes                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| `AspectRatio`  | Wraps `@radix-ui/react-aspect-ratio`                                                     |
+| `ScrollArea`   | `ScrollArea`, `ScrollBar`                                                                |
+| `Sidebar`      | Collapsible app sidebar shell — `header` slot, context-driven collapse                   |
+| `SidebarBrand` | Logo + title header for `Sidebar`; `handoffName` receives the splash → app morph landing |
 
 ### Motion
 
@@ -260,6 +262,57 @@ pnpm add framer-motion
 ```
 
 The `useReducedMotionSafe` hook and pure motion variant builders are also exported from `@crawfordyoung/ui` for composing custom animations against the same token system.
+
+## Splash → app handoff
+
+`startBrandHandoff` morphs the `BrandSplash` wordmark into its landing slot (e.g. `SidebarBrand`) using the native View Transitions API. Browsers without the API — and reduced-motion users — fall back to an instant swap; the splash's own exit fade covers everything else.
+
+The consumer contract:
+
+1. Same `handoffName` on `BrandSplash` and `SidebarBrand`
+2. `exit="external"` on the splash — `startBrandHandoff` owns the exit
+3. Name the sidebar side ONLY once the splash is gone (same state update, inside `flushSync`) — two mounted elements sharing a `view-transition-name` make the browser skip the morph
+
+```tsx
+import { flushSync } from 'react-dom'
+import { BrandSplash, SidebarBrand, startBrandHandoff } from '@crawfordyoung/ui'
+
+const HANDOFF_NAME = 'brand-wordmark'
+
+function App() {
+  const [playing, setPlaying] = useState(true)
+
+  const handleComplete = () => {
+    // defer past BrandSplash's effect so flushSync is legal
+    queueMicrotask(() => {
+      void startBrandHandoff(() => {
+        flushSync(() => setPlaying(false))
+      })
+    })
+  }
+
+  return (
+    <>
+      <SidebarBrand
+        logo={<Logo />}
+        title="Cybond"
+        handoffName={playing ? undefined : HANDOFF_NAME}
+      />
+      {playing && (
+        <BrandSplash
+          wordmark="Cybond"
+          splitIndex={2}
+          handoffName={HANDOFF_NAME}
+          exit="external"
+          onComplete={handleComplete}
+        />
+      )}
+    </>
+  )
+}
+```
+
+Transition timing defaults live in `styles.css` (`::view-transition-*` rules on the `--motion-hero` / `--ease-in-out` tokens) and apply in any browser that supports `view-transition-name`.
 
 ## Dark mode
 
