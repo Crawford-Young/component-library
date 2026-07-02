@@ -2,12 +2,14 @@ import * as React from 'react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { TaskTimeFields } from '@/components/ui/task-time-fields'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/ui/number-input'
@@ -19,12 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { type CalendarEventColor } from '@/components/ui/calendar-event-chip'
 import { buildIso, toTimeSlot } from '@/lib/time'
-import { cn } from '@/lib/utils'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Public types ─────────────────────────────────────────────────────────────
 
-export type ActivityType = 'task' | 'goal' | 'habit'
+export type ActivityType = 'task' | 'goal'
 
 export interface ActivitySocial {
   readonly activityType: 'solo' | 'group'
@@ -36,11 +40,20 @@ export interface ActivitySocial {
 export interface ActivityFormValues {
   readonly type: ActivityType
   readonly title: string
+  /**
+   * Goal target date, emitted date-only as `YYYY-MM-DD`. The dialog never emits
+   * a time component for goals — consumers that persist a timestamp (e.g. a
+   * `.datetime()` schema) must convert to noon-UTC (`T12:00:00.000Z`) themselves.
+   */
   readonly targetDate?: string | null
   readonly startAt?: string | null
   readonly endAt?: string | null
   readonly recurrence?: string | null
   readonly recurrenceCount?: number
+  readonly color?: string | null
+  readonly location?: string | null
+  readonly description?: string | null
+  readonly allDay?: boolean
   readonly social: ActivitySocial
 }
 
@@ -62,54 +75,71 @@ const DEFAULT_TYPE: ActivityType = 'task'
 const DEFAULT_START_TIME = '09:00'
 const DEFAULT_END_TIME = '10:00'
 const DEFAULT_RECURRENCE = 'none'
-const DEFAULT_RECURRENCE_COUNT = 1
-const DEFAULT_MAX_PARTICIPANTS = 10
+const REPEAT_MIN = 2
+const REPEAT_MAX = 52
+const MIN_PARTICIPANTS = 2
+const MAX_TITLE_LENGTH = 200
+const DEFAULT_COLOR: CalendarEventColor = 'default'
+const DEFAULT_VISIBILITY: ActivitySocial['visibility'] = 'only_me'
+const DEFAULT_JOINABILITY: NonNullable<ActivitySocial['joinability']> = 'open'
 
-const ACTIVITY_TYPE_OPTIONS: readonly { value: ActivityType; label: string }[] = [
+const TYPE_OPTIONS: readonly { readonly value: ActivityType; readonly label: string }[] = [
   { value: 'task', label: 'Task' },
   { value: 'goal', label: 'Goal' },
-  { value: 'habit', label: 'Habit' },
 ] as const
 
-const SOCIAL_TYPE_OPTIONS: readonly { value: 'solo' | 'group'; label: string }[] = [
-  { value: 'solo', label: 'Solo' },
-  { value: 'group', label: 'Group' },
+const COLOR_OPTIONS: readonly { readonly value: CalendarEventColor; readonly label: string }[] = [
+  { value: 'default', label: 'Default' },
+  { value: 'blue', label: 'Blue' },
+  { value: 'violet', label: 'Violet' },
+  { value: 'green', label: 'Green' },
+  { value: 'red', label: 'Red' },
+  { value: 'amber', label: 'Amber' },
+  { value: 'pink', label: 'Pink' },
+  { value: 'cyan', label: 'Cyan' },
+  { value: 'indigo', label: 'Indigo' },
+  { value: 'teal', label: 'Teal' },
+  { value: 'orange', label: 'Orange' },
+  { value: 'rose', label: 'Rose' },
+  { value: 'sky', label: 'Sky' },
+  { value: 'fuchsia', label: 'Fuchsia' },
+  { value: 'lime', label: 'Lime' },
 ] as const
 
 const VISIBILITY_OPTIONS: readonly {
-  value: 'everyone' | 'friends' | 'busy' | 'only_me'
-  label: string
+  readonly value: ActivitySocial['visibility']
+  readonly label: string
 }[] = [
-  { value: 'everyone', label: 'Everyone' },
+  { value: 'only_me', label: 'Only me' },
   { value: 'friends', label: 'Friends' },
   { value: 'busy', label: 'Busy' },
-  { value: 'only_me', label: 'Only Me' },
+  { value: 'everyone', label: 'Everyone' },
 ] as const
 
-const JOINABILITY_OPTIONS: readonly { value: 'open' | 'request' | 'closed'; label: string }[] = [
+const JOINABILITY_OPTIONS: readonly {
+  readonly value: NonNullable<ActivitySocial['joinability']>
+  readonly label: string
+}[] = [
   { value: 'open', label: 'Open' },
   { value: 'request', label: 'Request' },
   { value: 'closed', label: 'Closed' },
 ] as const
 
-/** Visibility values that hide joinability even in group mode */
-const JOINABILITY_HIDDEN_VISIBILITY = new Set<string>(['busy', 'only_me'])
+/** Visibility values that hide joinability even in group mode. */
+const JOINABILITY_HIDDEN_VISIBILITY = new Set<ActivitySocial['visibility']>(['busy', 'only_me'])
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Parse a YYYY-MM-DD string (or null/undefined) into a Date (UTC noon). */
+/** Parse a `YYYY-MM-DD` string (or null/undefined) into a Date at local noon. */
 function parseDateString(dateStr: string | null | undefined): Date | undefined {
   if (!dateStr) return undefined
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
+  return new Date(`${dateStr}T12:00:00`)
 }
 
-/** Format a Date to a YYYY-MM-DD string using UTC parts. */
+/** Format a Date to a `YYYY-MM-DD` string using its local calendar parts. */
 function formatDateOnly(date: Date): string {
-  const y = date.getUTCFullYear()
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
-  const d = String(date.getUTCDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -144,14 +174,18 @@ export function ActivityFormDialog({
   const [endTime, setEndTime] = React.useState<string>(() =>
     initialValues?.endAt ? toTimeSlot(initialValues.endAt) : DEFAULT_END_TIME,
   )
-
-  // shared recurrence
   const [recurrence, setRecurrence] = React.useState(
     initialValues?.recurrence ?? DEFAULT_RECURRENCE,
   )
   const [recurrenceCount, setRecurrenceCount] = React.useState(
-    initialValues?.recurrenceCount ?? DEFAULT_RECURRENCE_COUNT,
+    initialValues?.recurrenceCount ?? REPEAT_MIN,
   )
+  const [color, setColor] = React.useState<CalendarEventColor>(
+    (initialValues?.color as CalendarEventColor | undefined) ?? DEFAULT_COLOR,
+  )
+  const [location, setLocation] = React.useState(initialValues?.location ?? '')
+  const [description, setDescription] = React.useState(initialValues?.description ?? '')
+  const [allDay, setAllDay] = React.useState(initialValues?.allDay ?? false)
 
   // goal fields
   const [goalDate, setGoalDate] = React.useState<Date | undefined>(() =>
@@ -162,18 +196,27 @@ export function ActivityFormDialog({
   const [socialType, setSocialType] = React.useState<'solo' | 'group'>(
     initialValues?.social?.activityType ?? 'solo',
   )
-  const [visibility, setVisibility] = React.useState<'everyone' | 'friends' | 'busy' | 'only_me'>(
-    initialValues?.social?.visibility ?? 'everyone',
+  const [visibility, setVisibility] = React.useState<ActivitySocial['visibility']>(
+    initialValues?.social?.visibility ?? DEFAULT_VISIBILITY,
   )
-  const [joinability, setJoinability] = React.useState<'open' | 'request' | 'closed'>(
-    initialValues?.social?.joinability ?? 'open',
+  const [joinability, setJoinability] = React.useState<NonNullable<ActivitySocial['joinability']>>(
+    initialValues?.social?.joinability ?? DEFAULT_JOINABILITY,
   )
   const [maxParticipants, setMaxParticipants] = React.useState<number>(
-    initialValues?.social?.maxParticipants ?? DEFAULT_MAX_PARTICIPANTS,
+    initialValues?.social?.maxParticipants ?? MIN_PARTICIPANTS,
   )
 
   // ── derived ─────────────────────────────────────────────────────────────────
   const showJoinability = socialType === 'group' && !JOINABILITY_HIDDEN_VISIBILITY.has(visibility)
+  const dialogTitle = `${initialValues ? 'Edit' : 'New'} ${type}`
+  const isSaveDisabled =
+    title.trim() === '' ||
+    isPending ||
+    (type === 'task' && !allDay && !taskDate) ||
+    (type === 'goal' && !goalDate)
+
+  const formId = React.useId()
+  const titleId = React.useId()
 
   // ── submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
@@ -187,57 +230,58 @@ export function ActivityFormDialog({
             ...(showJoinability ? { joinability } : {}),
             maxParticipants,
           }
-        : {
-            activityType: 'solo',
-            visibility,
-          }
+        : { activityType: 'solo', visibility }
 
-    let values: ActivityFormValues
-
-    if (type === 'task') {
-      const startAt = taskDate ? buildIso(taskDate, startTime) : undefined
-      const endAt = taskDate ? buildIso(taskDate, endTime) : undefined
-      values = {
-        type,
+    if (type === 'goal') {
+      if (!goalDate) return
+      void onSubmit({
+        type: 'goal',
         title,
-        startAt,
-        endAt,
-        recurrence: recurrence !== DEFAULT_RECURRENCE ? recurrence : undefined,
-        recurrenceCount: recurrence !== DEFAULT_RECURRENCE ? recurrenceCount : undefined,
+        targetDate: formatDateOnly(goalDate),
+        location: location.trim() || null,
+        description: description.trim() || null,
         social,
-      }
-    } else if (type === 'goal') {
-      values = {
-        type,
-        title,
-        targetDate: goalDate ? formatDateOnly(goalDate) : undefined,
-        social,
-      }
-    } else {
-      // habit
-      values = {
-        type,
-        title,
-        recurrence: recurrence !== DEFAULT_RECURRENCE ? recurrence : undefined,
-        recurrenceCount: recurrence !== DEFAULT_RECURRENCE ? recurrenceCount : undefined,
-        social,
-      }
+      })
+      return
     }
 
-    void onSubmit(values)
+    if (!allDay && !taskDate) return
+
+    void onSubmit({
+      type: 'task',
+      title,
+      startAt: allDay ? null : buildIso(taskDate!, startTime),
+      endAt: allDay ? null : buildIso(taskDate!, endTime),
+      recurrence: recurrence === DEFAULT_RECURRENCE ? null : recurrence,
+      recurrenceCount: recurrence === DEFAULT_RECURRENCE ? undefined : recurrenceCount,
+      color: color === DEFAULT_COLOR ? null : color,
+      location: location.trim() || null,
+      description: description.trim() || null,
+      allDay,
+      social,
+    })
   }
 
-  // ── render ───────────────────────────────────────────────────────────────────
-  const titleId = React.useId()
+  const handleCancel = (): void => onOpenChange(false)
 
+  // ── render ───────────────────────────────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="default">
-        <DialogHeader>
-          <DialogTitle>New Activity</DialogTitle>
+      <DialogContent
+        size="default"
+        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0"
+      >
+        <DialogHeader className="border-b border-border px-6 py-4">
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>Create or edit an activity.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          id={formId}
+          onSubmit={handleSubmit}
+          data-testid="activity-form-scroll"
+          className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4"
+        >
           {/* Type picker */}
           {!lockType && (
             <div className="flex flex-col gap-1.5">
@@ -247,7 +291,7 @@ export function ActivityFormDialog({
                 onValueChange={(v) => setType(v as ActivityType)}
                 className="flex flex-row gap-4"
               >
-                {ACTIVITY_TYPE_OPTIONS.map((opt) => (
+                {TYPE_OPTIONS.map((opt) => (
                   <div key={opt.value} className="flex items-center gap-2">
                     <RadioGroupItem
                       value={opt.value}
@@ -270,42 +314,114 @@ export function ActivityFormDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Activity title"
+              maxLength={MAX_TITLE_LENGTH}
             />
           </div>
 
-          {/* Type-specific fields */}
+          {/* Task fields */}
           {type === 'task' && (
-            <TaskTimeFields
-              date={taskDate}
-              onDateChange={setTaskDate}
-              startTime={startTime}
-              onStartTimeChange={setStartTime}
-              endTime={endTime}
-              onEndTimeChange={setEndTime}
-              recurrence={recurrence}
-              onRecurrenceChange={setRecurrence}
-              recurrenceCount={recurrenceCount}
-              onRecurrenceCountChange={setRecurrenceCount}
-              showDate
-              showRecurrence
-              use24h={use24h}
-            />
+            <>
+              <div className="flex items-center gap-2">
+                <Switch id={`${formId}-all-day`} checked={allDay} onCheckedChange={setAllDay} />
+                <Label htmlFor={`${formId}-all-day`}>All day</Label>
+              </div>
+
+              {!allDay && (
+                <TaskTimeFields
+                  date={taskDate}
+                  onDateChange={setTaskDate}
+                  startTime={startTime}
+                  onStartTimeChange={setStartTime}
+                  endTime={endTime}
+                  onEndTimeChange={setEndTime}
+                  recurrence={recurrence}
+                  onRecurrenceChange={setRecurrence}
+                  recurrenceCount={recurrenceCount}
+                  onRecurrenceCountChange={setRecurrenceCount}
+                  showDate
+                  showRecurrence
+                  use24h={use24h}
+                  repeatMin={REPEAT_MIN}
+                  repeatMax={REPEAT_MAX}
+                />
+              )}
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Color</Label>
+                  <Select value={color} onValueChange={(v) => setColor(v as CalendarEventColor)}>
+                    <SelectTrigger aria-label="Color">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLOR_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${formId}-task-location`}>Location</Label>
+                  <Input
+                    id={`${formId}-task-location`}
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Location (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`${formId}-task-description`}>Description</Label>
+                <Textarea
+                  id={`${formId}-task-description`}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Description (optional)"
+                  className="min-h-16"
+                />
+              </div>
+            </>
           )}
 
+          {/* Goal fields */}
           {type === 'goal' && (
-            <div className="flex flex-col gap-1.5">
-              <Label>Target date</Label>
-              <DatePicker value={goalDate} onValueChange={setGoalDate} placeholder="Pick a date" />
-            </div>
-          )}
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Target date</Label>
+                  <DatePicker
+                    value={goalDate}
+                    onValueChange={setGoalDate}
+                    placeholder="Pick a date"
+                  />
+                </div>
 
-          {type === 'habit' && (
-            <HabitRecurrenceFields
-              recurrence={recurrence}
-              onRecurrenceChange={setRecurrence}
-              recurrenceCount={recurrenceCount}
-              onRecurrenceCountChange={setRecurrenceCount}
-            />
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${formId}-goal-location`}>Location</Label>
+                  <Input
+                    id={`${formId}-goal-location`}
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Location (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`${formId}-goal-description`}>Description</Label>
+                <Textarea
+                  id={`${formId}-goal-description`}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Description (optional)"
+                  className="min-h-16"
+                />
+              </div>
+            </>
           )}
 
           {/* Social section */}
@@ -320,24 +436,16 @@ export function ActivityFormDialog({
             maxParticipants={maxParticipants}
             onMaxParticipantsChange={setMaxParticipants}
           />
-
-          <DialogFooter>
-            <button
-              type="submit"
-              disabled={isPending}
-              className={cn(
-                'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded text-sm font-medium',
-                'ring-offset-background transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                'disabled:pointer-events-none disabled:opacity-50',
-                'bg-primary text-primary-foreground hover:bg-primary/90',
-                'h-10 px-4 py-2',
-              )}
-            >
-              {isPending ? 'Saving…' : 'Save'}
-            </button>
-          </DialogFooter>
         </form>
+
+        <DialogFooter className="border-t border-border px-6 py-4">
+          <Button type="button" variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" form={formId} disabled={isSaveDisabled}>
+            {isPending ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -345,76 +453,16 @@ export function ActivityFormDialog({
 
 ActivityFormDialog.displayName = 'ActivityFormDialog'
 
-// ─── Habit Recurrence Fields ─────────────────────────────────────────────────
-
-const RECURRENCE_OPTIONS = [
-  { value: 'none', label: 'None' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-] as const
-
-interface HabitRecurrenceFieldsProps {
-  readonly recurrence: string
-  readonly onRecurrenceChange: (r: string) => void
-  readonly recurrenceCount: number
-  readonly onRecurrenceCountChange: (n: number) => void
-}
-
-function HabitRecurrenceFields({
-  recurrence,
-  onRecurrenceChange,
-  recurrenceCount,
-  onRecurrenceCountChange,
-}: HabitRecurrenceFieldsProps): React.JSX.Element {
-  const recurrenceId = React.useId()
-  const repeatCountId = React.useId()
-  const showRepeatCount = recurrence !== 'none'
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={recurrenceId}>Recurrence</Label>
-        <Select value={recurrence} onValueChange={onRecurrenceChange}>
-          <SelectTrigger id={recurrenceId} aria-label="Recurrence">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {RECURRENCE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {showRepeatCount && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={repeatCountId}>Repeat count</Label>
-          <NumberInput
-            id={repeatCountId}
-            aria-label="Repeat count"
-            value={recurrenceCount}
-            onChange={onRecurrenceCountChange}
-            min={1}
-          />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Social Section (extracted to keep main component lean) ──────────────────
+// ─── Social Section (extracted to keep the main component lean) ───────────────
 
 interface SocialSectionProps {
   readonly socialType: 'solo' | 'group'
   readonly onSocialTypeChange: (v: 'solo' | 'group') => void
-  readonly visibility: 'everyone' | 'friends' | 'busy' | 'only_me'
-  readonly onVisibilityChange: (v: 'everyone' | 'friends' | 'busy' | 'only_me') => void
+  readonly visibility: ActivitySocial['visibility']
+  readonly onVisibilityChange: (v: ActivitySocial['visibility']) => void
   readonly showJoinability: boolean
-  readonly joinability: 'open' | 'request' | 'closed'
-  readonly onJoinabilityChange: (v: 'open' | 'request' | 'closed') => void
+  readonly joinability: NonNullable<ActivitySocial['joinability']>
+  readonly onJoinabilityChange: (v: NonNullable<ActivitySocial['joinability']>) => void
   readonly maxParticipants: number
   readonly onMaxParticipantsChange: (n: number) => void
 }
@@ -436,58 +484,38 @@ function SocialSection({
     <div className="flex flex-col gap-3 border-t border-border pt-3">
       <p className="text-sm font-medium text-foreground">Social</p>
 
-      {/* Activity type: solo / group */}
-      <div className="flex flex-col gap-1.5">
-        <Label>Activity type</Label>
-        <Select value={socialType} onValueChange={(v) => onSocialTypeChange(v as 'solo' | 'group')}>
-          <SelectTrigger aria-label="Activity type">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SOCIAL_TYPE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Visibility */}
-      <div className="flex flex-col gap-1.5">
-        <Label>Visibility</Label>
-        <Select
-          value={visibility}
-          onValueChange={(v) =>
-            onVisibilityChange(v as 'everyone' | 'friends' | 'busy' | 'only_me')
-          }
-        >
-          <SelectTrigger aria-label="Visibility">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {VISIBILITY_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Joinability (group + non-private visibility only) */}
-      {showJoinability && (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Activity type: solo / group */}
         <div className="flex flex-col gap-1.5">
-          <Label>Joinability</Label>
-          <Select
-            value={joinability}
-            onValueChange={(v) => onJoinabilityChange(v as 'open' | 'request' | 'closed')}
+          <Label>Activity type</Label>
+          <RadioGroup
+            value={socialType}
+            onValueChange={(v) => onSocialTypeChange(v as 'solo' | 'group')}
+            className="flex flex-row gap-4"
           >
-            <SelectTrigger aria-label="Joinability">
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="solo" id="social-solo" aria-label="Solo" />
+              <Label htmlFor="social-solo">Solo</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="group" id="social-group" aria-label="Group" />
+              <Label htmlFor="social-group">Group</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* Visibility */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Visibility</Label>
+          <Select
+            value={visibility}
+            onValueChange={(v) => onVisibilityChange(v as ActivitySocial['visibility'])}
+          >
+            <SelectTrigger aria-label="Visibility">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {JOINABILITY_OPTIONS.map((opt) => (
+              {VISIBILITY_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -495,19 +523,47 @@ function SocialSection({
             </SelectContent>
           </Select>
         </div>
-      )}
+      </div>
 
-      {/* Max participants (group only) */}
-      {socialType === 'group' && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={maxParticipantsId}>Max participants</Label>
-          <NumberInput
-            id={maxParticipantsId}
-            aria-label="Max participants"
-            value={maxParticipants}
-            onChange={onMaxParticipantsChange}
-            min={1}
-          />
+      {(showJoinability || socialType === 'group') && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Joinability (group + non-private visibility only) */}
+          {showJoinability && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Joinability</Label>
+              <Select
+                value={joinability}
+                onValueChange={(v) =>
+                  onJoinabilityChange(v as NonNullable<ActivitySocial['joinability']>)
+                }
+              >
+                <SelectTrigger aria-label="Joinability">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {JOINABILITY_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Max participants (group only) */}
+          {socialType === 'group' && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={maxParticipantsId}>Max participants</Label>
+              <NumberInput
+                id={maxParticipantsId}
+                aria-label="Max participants"
+                value={maxParticipants}
+                onChange={onMaxParticipantsChange}
+                min={MIN_PARTICIPANTS}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

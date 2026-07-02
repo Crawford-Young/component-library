@@ -45,30 +45,11 @@ export const CreateTask: Story = {
   render: () => <ControlledDialog initialType="task" />,
 }
 
-export const CreateGoal: Story = {
+export const GoalMode: Story = {
   render: () => <ControlledDialog initialType="goal" />,
 }
 
-export const CreateHabit: Story = {
-  render: () => <ControlledDialog initialType="habit" />,
-}
-
-export const EditLockType: Story = {
-  render: () => (
-    <ControlledDialog
-      lockType
-      initialType="task"
-      initialValues={{
-        title: 'Morning run',
-        startAt: '2025-06-15T09:00:00.000Z',
-        endAt: '2025-06-15T10:00:00.000Z',
-        social: { activityType: 'solo', visibility: 'everyone' },
-      }}
-    />
-  ),
-}
-
-export const GroupWithJoinability: Story = {
+export const GroupSocial: Story = {
   render: () => (
     <ControlledDialog
       initialType="task"
@@ -80,6 +61,24 @@ export const GroupWithJoinability: Story = {
           joinability: 'request',
           maxParticipants: 8,
         },
+      }}
+    />
+  ),
+}
+
+export const EditLockType: Story = {
+  render: () => (
+    <ControlledDialog
+      lockType
+      initialType="task"
+      initialValues={{
+        title: 'Morning run',
+        startAt: '2025-06-15T09:00:00.000Z',
+        endAt: '2025-06-15T10:00:00.000Z',
+        color: 'blue',
+        location: 'Riverside path',
+        description: 'Easy 5k',
+        social: { activityType: 'solo', visibility: 'only_me' },
       }}
     />
   ),
