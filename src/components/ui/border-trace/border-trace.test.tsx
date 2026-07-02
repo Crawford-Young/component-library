@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MOTION } from '@/lib/motion'
 import { BorderTrace, TraceBorder } from './border-trace'
 
 describe('BorderTrace', () => {
@@ -170,5 +171,141 @@ describe('appearance threshold', () => {
     )
     act(() => vi.advanceTimersByTime(100))
     expect(container.querySelector('svg')).not.toBeInTheDocument()
+  })
+})
+
+describe('resolve gesture', () => {
+  beforeEach(() => {
+    vi.useRealTimers()
+    vi.useFakeTimers({
+      toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+    })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('expands, settles, departs, unmounts, and fires onResolveComplete once', () => {
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <BorderTrace appearDelayMs={0} onResolveComplete={onResolveComplete} />,
+    )
+    rerender(<BorderTrace appearDelayMs={0} resolved onResolveComplete={onResolveComplete} />)
+
+    // expanding: ring snaps to a full segment, trace loop still running to sweep it closed
+    const traceRect = container.querySelectorAll('rect')[1]
+    expect(traceRect.style.strokeDasharray).toBe('100 0')
+    expect(traceRect.getAttribute('class')).toContain('motion-safe:animate-trace')
+
+    // settle reached: loop animation removed
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(container.querySelectorAll('rect')[1].getAttribute('class')).not.toContain(
+      'motion-safe:animate-trace',
+    )
+
+    // departing: wrapper fades with the exit transition
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    const status = screen.getByRole('status')
+    expect(status.style.opacity).toBe('0')
+    expect(status.style.transition).toContain('opacity')
+
+    // done: trace unmounts, callback fires exactly once
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+
+    act(() => vi.advanceTimersByTime(2000))
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('completes immediately without ever rendering when resolved before the appear threshold', () => {
+    const onResolveComplete = vi.fn()
+    const { container } = render(
+      <BorderTrace resolved onResolveComplete={onResolveComplete} />, // default 150ms delay
+    )
+    expect(screen.queryByRole('status')).toBeNull()
+    act(() => vi.advanceTimersByTime(2000))
+    expect(container.querySelector('svg')).toBeNull()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores resolved flipping back to false mid-gesture', () => {
+    const onResolveComplete = vi.fn()
+    const { rerender } = render(
+      <BorderTrace appearDelayMs={0} onResolveComplete={onResolveComplete} />,
+    )
+    rerender(<BorderTrace appearDelayMs={0} resolved onResolveComplete={onResolveComplete} />)
+    rerender(
+      <BorderTrace appearDelayMs={0} resolved={false} onResolveComplete={onResolveComplete} />,
+    )
+    act(() => vi.advanceTimersByTime(MOTION.base)) // expanding → settled
+    act(() => vi.advanceTimersByTime(MOTION.base)) // settled → departing
+    act(() => vi.advanceTimersByTime(MOTION.base)) // departing → done
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not fire the callback when unmounted mid-resolve', () => {
+    const onResolveComplete = vi.fn()
+    const { rerender, unmount } = render(
+      <BorderTrace appearDelayMs={0} onResolveComplete={onResolveComplete} />,
+    )
+    rerender(<BorderTrace appearDelayMs={0} resolved onResolveComplete={onResolveComplete} />)
+    act(() => vi.advanceTimersByTime(MOTION.base)) // settled
+    unmount()
+    act(() => vi.advanceTimersByTime(MOTION.base * 3))
+    expect(onResolveComplete).not.toHaveBeenCalled()
+  })
+
+  it('skips the expanding phase under reduced motion, holding the still-ring before departing', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    )
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <BorderTrace appearDelayMs={0} onResolveComplete={onResolveComplete} />,
+    )
+    rerender(<BorderTrace appearDelayMs={0} resolved onResolveComplete={onResolveComplete} />)
+
+    // straight to settled: full still-ring, no loop animation
+    const traceRect = container.querySelectorAll('rect')[1]
+    expect(traceRect.getAttribute('class')).not.toContain('motion-safe:animate-trace')
+    expect(traceRect.style.strokeDasharray).toBe('100 0')
+
+    // holds one beat, then departs
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(screen.getByRole('status').style.opacity).toBe('0')
+
+    act(() => vi.advanceTimersByTime(MOTION.base))
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('resolves the xs dot: solid, then fades, then unmounts, callback once', () => {
+    const onResolveComplete = vi.fn()
+    const { container, rerender } = render(
+      <BorderTrace size="xs" appearDelayMs={0} onResolveComplete={onResolveComplete} />,
+    )
+    rerender(
+      <BorderTrace size="xs" appearDelayMs={0} resolved onResolveComplete={onResolveComplete} />,
+    )
+
+    const dot = container.querySelector('[data-trace-dot]')
+    expect(dot?.getAttribute('class')).not.toContain('motion-safe:animate-trace-dot')
+    expect(dot?.getAttribute('class')).toContain('opacity-100')
+
+    act(() => vi.advanceTimersByTime(MOTION.base)) // settled
+    act(() => vi.advanceTimersByTime(MOTION.base)) // departing
+    expect(screen.getByRole('status').style.opacity).toBe('0')
+
+    act(() => vi.advanceTimersByTime(MOTION.base)) // done
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(onResolveComplete).toHaveBeenCalledTimes(1)
   })
 })

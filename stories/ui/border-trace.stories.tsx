@@ -44,3 +44,45 @@ export const OnButton: Story = {
     )
   },
 }
+
+export const Resolved: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The resolve gesture is a fixed, non-configurable choreography: the trace ring expands to a full stroke, settles, then fades away (expand → settle → depart, ~750ms total). It fires once. The consumer flips `resolved` true to trigger it and tears the trace down on `onResolveComplete` — there are no timing knobs. Use the replay button to remount and watch it again.',
+      },
+    },
+  },
+  render: function ResolvedStory() {
+    const [resolved, setResolved] = React.useState(false)
+    const [done, setDone] = React.useState(false)
+    const [runId, setRunId] = React.useState(0)
+    return (
+      <div className="flex items-center gap-4">
+        <BorderTrace
+          key={runId}
+          size="lg"
+          resolved={resolved}
+          onResolveComplete={() => setDone(true)}
+        />
+        <Button variant="secondary" onClick={() => setResolved(true)} disabled={resolved || done}>
+          Resolve
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setResolved(false)
+            setDone(false)
+            setRunId((id) => id + 1)
+          }}
+        >
+          Replay
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          {done ? 'resolved — trace torn down' : 'click Resolve'}
+        </span>
+      </div>
+    )
+  },
+}
