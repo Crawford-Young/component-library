@@ -81,6 +81,7 @@ const stories = [
   { name: 'BorderTrace', id: 'feedback-bordertrace--default' },
   { name: 'BorderTraceOnButton', id: 'feedback-bordertrace--on-button' },
   { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
+  { name: 'SplitText', id: 'display-splittext--default' },
 ]
 
 for (const { name, id } of stories) {
