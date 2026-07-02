@@ -78,6 +78,7 @@ export interface CalendarEventChipProps {
   readonly onResizeStart?: (event: CalendarEvent, edge: 'start' | 'end') => void
   readonly renderPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
+  readonly use24h?: boolean
 }
 
 const ALL_COLORS: readonly CalendarEventColor[] = [
@@ -122,9 +123,18 @@ function toDraft(ev: CalendarEvent): DraftEvent {
   }
 }
 
-function formatTimeRange(start: string, end: string): string {
+function fmt24h(d: Date): string {
+  const h = String(d.getHours()).padStart(2, '0')
+  const m = d.getMinutes().toString().padStart(2, '0')
+  return `${h}:${m}`
+}
+
+function formatTimeRange(start: string, end: string, use24h = false): string {
   const s = new Date(start)
   const e = new Date(end)
+  if (use24h) {
+    return `${fmt24h(s)}–${fmt24h(e)}`
+  }
   const sH = s.getHours()
   const eH = e.getHours()
   const sPeriod = sH < 12 ? 'AM' : 'PM'
@@ -225,6 +235,7 @@ export function CalendarEventChip({
   onResizeStart,
   renderPopover,
   className,
+  use24h = false,
 }: CalendarEventChipProps): React.JSX.Element {
   const [open, setOpen] = React.useState(false)
   const [isEditing, setIsEditing] = React.useState(false)
@@ -272,10 +283,11 @@ export function CalendarEventChip({
     (!expanded && !isNaN(heightPct) && heightPct > 10 && event.location !== undefined)
   const showDescription = expanded && event.description !== undefined
 
-  const timeRange = formatTimeRange(event.start, event.end)
+  const timeRange = formatTimeRange(event.start, event.end, use24h)
   const startDate = new Date(event.start)
   const displayHour = startDate.getHours() % 12 || 12
   const displayMin = startDate.getMinutes().toString().padStart(2, '0')
+  const displayStartTime = use24h ? fmt24h(startDate) : `${displayHour}:${displayMin}`
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -307,11 +319,7 @@ export function CalendarEventChip({
         >
           <div className="truncate font-semibold">{event.title}</div>
           {showTimeRange && <div className="text-[9px]">{timeRange}</div>}
-          {showStartTime && (
-            <div className="text-[9px]">
-              {displayHour}:{displayMin}
-            </div>
-          )}
+          {showStartTime && <div className="text-[9px]">{displayStartTime}</div>}
           {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
           {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
           <div

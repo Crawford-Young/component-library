@@ -728,6 +728,7 @@ export function WeekCalendarView({
                     style={evtStyle}
                     className={isOverflow ? 'opacity-70' : undefined}
                     expanded={dayIdx === expandedDayIndex}
+                    use24h={use24h}
                     onClick={onEventClick}
                     onEdit={
                       isOverflow

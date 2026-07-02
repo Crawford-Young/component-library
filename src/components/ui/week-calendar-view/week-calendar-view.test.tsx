@@ -95,6 +95,35 @@ describe('WeekCalendarView', () => {
     expect(screen.queryByText('9am')).not.toBeInTheDocument()
   })
 
+  it('renders event chip start time in 24h format when use24h is set', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[1]]}
+        hourStart={9}
+        hourCount={8}
+        use24h
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /design review/i })
+    expect(chip).toHaveTextContent('14:00')
+    expect(chip).not.toHaveTextContent('2:00')
+  })
+
+  it('renders event chip start time in 12h format when use24h is not set', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[1]]}
+        hourStart={9}
+        hourCount={8}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /design review/i })
+    expect(chip).toHaveTextContent('2:00')
+    expect(chip).not.toHaveTextContent('14:00')
+  })
+
   it('only renders events that fall within the displayed week', () => {
     const outsideEvent: CalendarEvent = {
       id: '3',

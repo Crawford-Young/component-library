@@ -346,6 +346,43 @@ describe('CalendarEventChip', () => {
     expect(screen.queryByText('9:00')).not.toBeInTheDocument()
   })
 
+  describe('use24h', () => {
+    it('shows start time in 24h format on chip when use24h is set', () => {
+      const tallStyle = { ...style, height: '10%' }
+      render(<CalendarEventChip event={event} style={tallStyle} use24h />)
+      expect(screen.getByText('09:00')).toBeInTheDocument()
+      expect(screen.queryByText('9:00')).not.toBeInTheDocument()
+    })
+
+    it('chip aria-label shows 24h time range when use24h is set', () => {
+      render(<CalendarEventChip event={event} style={style} use24h />)
+      expect(screen.getByRole('button', { name: /team standup 09:00–09:30/i })).toBeInTheDocument()
+    })
+
+    it('popover shows 24h time range when use24h is set', async () => {
+      render(<CalendarEventChip event={event} style={style} use24h />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.getByText('09:00–09:30')).toBeInTheDocument()
+    })
+
+    it('formats cross-period 24h time range without AM/PM', async () => {
+      const crossEvent: CalendarEvent = {
+        id: '2',
+        title: 'Long meeting',
+        start: '2026-05-04T10:00:00',
+        end: '2026-05-04T14:00:00',
+      }
+      render(<CalendarEventChip event={crossEvent} style={style} use24h />)
+      await userEvent.click(screen.getByRole('button', { name: /long meeting/i }))
+      expect(screen.getByText('10:00–14:00')).toBeInTheDocument()
+    })
+
+    it('defaults to 12h format when use24h is omitted', () => {
+      render(<CalendarEventChip event={event} style={style} />)
+      expect(screen.getByRole('button', { name: /team standup 9:00–9:30 am/i })).toBeInTheDocument()
+    })
+  })
+
   describe('expanded mode', () => {
     it('shows full time range in chip when expanded', () => {
       const shortStyle = { ...style, height: '2%' }
