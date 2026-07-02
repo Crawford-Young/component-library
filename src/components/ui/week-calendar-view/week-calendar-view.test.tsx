@@ -2148,3 +2148,166 @@ describe('sleep zone drag blocking', () => {
     expect(screen.getByLabelText('Event title')).toBeInTheDocument()
   })
 })
+
+describe('dayWindows (per-day wake/sleep windows)', () => {
+  interface Window {
+    wake: number
+    sleep: number
+  }
+  const WINDOW_SUN_START = '2026-05-03' // Sunday
+
+  function uniform(win: Window): Window[] {
+    return Array.from({ length: 7 }, () => ({ ...win }))
+  }
+  function override(base: Window[], idx: number, win: Window): Window[] {
+    return base.map((w, i) => (i === idx ? win : w))
+  }
+
+  const UNIFORM = uniform({ wake: 9, sleep: 17 })
+  const EARLY_RISER = override(UNIFORM, 1, { wake: 6, sleep: 17 }) // Mon
+  const NIGHT_OWL = override(UNIFORM, 5, { wake: 9, sleep: 23 }) // Fri
+
+  function dayColumns(): HTMLElement[] {
+    const seen = new Set<HTMLElement>()
+    const cols: HTMLElement[] = []
+    document.querySelectorAll('[data-drag-cell]').forEach((cell) => {
+      const parent = cell.parentElement as HTMLElement
+      if (!seen.has(parent)) {
+        seen.add(parent)
+        cols.push(parent)
+      }
+    })
+    return cols
+  }
+
+  function cellCount(): number {
+    return document.querySelectorAll('[data-drag-cell]').length
+  }
+
+  it('uniform windowed: grid spans the shared window (9am, 8 rows) with no shading', () => {
+    render(
+      <WeekCalendarView defaultWeekStart={WINDOW_SUN_START} events={[]} dayWindows={UNIFORM} />,
+    )
+    expect(screen.getAllByText('9am').length).toBeGreaterThan(0)
+    expect(screen.queryAllByText('8am')).toHaveLength(0)
+    expect(cellCount()).toBe(8 * 7)
+    // Union equals every day's own window → nothing to shade.
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(0)
+  })
+
+  it('early-riser windowed: union starts 6am (11 rows); only non-early days shade 6->9am', () => {
+    render(
+      <WeekCalendarView defaultWeekStart={WINDOW_SUN_START} events={[]} dayWindows={EARLY_RISER} />,
+    )
+    expect(screen.getAllByText('6am').length).toBeGreaterThan(0)
+    expect(cellCount()).toBe(11 * 7)
+    const cols = dayColumns()
+    // Mon (idx 1) fills the union floor → no region.
+    expect(cols[1].querySelectorAll('[data-testid="sleep-region"]').length).toBe(0)
+    // Sun (idx 0) shades 6->9am: height 3/11 of grid, pinned to top.
+    const sunRegions = cols[0].querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(sunRegions.length).toBe(1)
+    expect(sunRegions[0].style.top).toBe('0%')
+    expect(sunRegions[0].style.height).toBe(`${(3 / 11) * 100}%`)
+    // 6 shading days × 1 region.
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(6)
+  })
+
+  it('night-owl windowed: union ends 11pm (14 rows); only non-owl days shade 5pm->11pm', () => {
+    render(
+      <WeekCalendarView defaultWeekStart={WINDOW_SUN_START} events={[]} dayWindows={NIGHT_OWL} />,
+    )
+    expect(cellCount()).toBe(14 * 7)
+    const cols = dayColumns()
+    // Fri (idx 5) fills the union ceiling → no region.
+    expect(cols[5].querySelectorAll('[data-testid="sleep-region"]').length).toBe(0)
+    const sunRegions = cols[0].querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(sunRegions.length).toBe(1)
+    // 5pm(17) -> 11pm(23) within a 9->23 grid.
+    expect(sunRegions[0].style.top).toBe(`${((17 - 9) / 14) * 100}%`)
+    expect(sunRegions[0].style.height).toBe(`${(6 / 14) * 100}%`)
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(6)
+  })
+
+  it('full-day + dayWindows: 24h grid with two wrap regions per uniform day', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WINDOW_SUN_START}
+        events={[]}
+        sleepEnabled
+        dayWindows={UNIFORM}
+      />,
+    )
+    // Full-day mode keeps the 0/24 grid regardless of dayWindows.
+    expect(screen.getAllByText('12am').length).toBeGreaterThan(0)
+    expect(cellCount()).toBe(24 * 7)
+    // Each day: morning 0->9 + evening 17->24 = 2 regions × 7 days.
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(14)
+  })
+
+  it('drag-create is blocked when the drag starts outside that day’s window', () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WINDOW_SUN_START}
+        events={[]}
+        dayWindows={EARLY_RISER}
+        onEventCreate={onCreate}
+      />,
+    )
+    // Sun window is 9->17; union grid starts 6am. Sun col row 0 = 6am < wake(9) → blocked.
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(cells[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(cells[0], { pointerId: 1 })
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('drag-create is allowed when the drag starts inside that day’s window', () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WINDOW_SUN_START}
+        events={[]}
+        dayWindows={EARLY_RISER}
+        onEventCreate={onCreate}
+      />,
+    )
+    // Mon window is 6->17; Mon col row 0 = 6am >= wake(6) → allowed. Mon = col idx 1, 11 rows/col.
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(cells[11], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(cells[11], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+  })
+
+  it('warns and falls back to default behavior when dayWindows length is not 7', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WINDOW_SUN_START}
+        events={[]}
+        dayWindows={uniform({ wake: 9, sleep: 17 }).slice(0, 5)}
+      />,
+    )
+    expect(warnSpy).toHaveBeenCalled()
+    // Falls back to default hourStart=8 / hourCount=14 grid.
+    expect(screen.getAllByText('8am').length).toBeGreaterThan(0)
+    expect(cellCount()).toBe(14 * 7)
+    expect(document.querySelectorAll('[data-testid="sleep-region"]').length).toBe(0)
+    warnSpy.mockRestore()
+  })
+
+  it('does not warn for a malformed length in production', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WINDOW_SUN_START}
+        events={[]}
+        dayWindows={uniform({ wake: 9, sleep: 17 }).slice(0, 5)}
+      />,
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
+    warnSpy.mockRestore()
+    vi.unstubAllEnvs()
+  })
+})
