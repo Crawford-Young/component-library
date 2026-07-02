@@ -9,37 +9,39 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Display
 
-| Component      | Notes                                                                                                                                                   |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions                                                                      |
-| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                                                                          |
-| `Badge`        | default, secondary, destructive, outline                                                                                                                |
-| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                                                                       |
-| `Separator`    | Horizontal and vertical orientations                                                                                                                    |
-| `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle, `appearDelayMs` (default 150, `0` disables)            |
-| `BrandSplash`  | App intro / first-paint animation — wordmark split + signal, optional quote, `onComplete`; `handoffName` + `exit="external"` for the splash → app morph |
-| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch                                                                       |
-| `Spinner`      | **Deprecated** — use `BorderTrace` / `TraceBorder`. sm / md / lg, `role="status"` + `aria-label`                                                        |
-| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                                                                                               |
-| `TraceBorder`  | Wraps a control (e.g. `Button`) to trace its border while `active` — pending state for actions, `appearDelayMs` (default 150, `0` disables)             |
+| Component      | Notes                                                                                                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions                                                                                                                         |
+| `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                                                                                                                             |
+| `Badge`        | default, secondary, destructive, outline                                                                                                                                                                   |
+| `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                                                                                                                          |
+| `Separator`    | Horizontal and vertical orientations                                                                                                                                                                       |
+| `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle, `appearDelayMs` (default 150, `0` disables); `resolved` + `onResolveComplete` play the completion gesture |
+| `BrandSplash`  | App intro / first-paint animation — wordmark split + signal, optional quote, `onComplete`; `handoffName` + `exit="external"` for the splash → app morph                                                    |
+| `Skeleton`     | Loading placeholder — `variant` prop: `shimmer` (default) or `pulse` escape hatch                                                                                                                          |
+| `Spinner`      | **Deprecated** — use `BorderTrace` / `TraceBorder`. sm / md / lg, `role="status"` + `aria-label`                                                                                                           |
+| `SplitText`    | Staggered per-character text reveal — brand cadence (`STAGGER.charMs`), `delayMs` offset, reduced-motion renders plain text                                                                                |
+| `StreakBadge`  | Inline streak pill (flame icon + count), built on `Badge`                                                                                                                                                  |
+| `TraceBorder`  | Wraps a control (e.g. `Button`) to trace its border while `active` — pending state for actions, `appearDelayMs` (default 150, `0` disables); `resolved` + `onResolveComplete` play the completion gesture  |
 
 ### Inputs
 
-| Component        | Notes                                                                      |
-| ---------------- | -------------------------------------------------------------------------- |
-| `Button`         | 6 variants × 4 sizes, `asChild` via Radix Slot                             |
-| `Checkbox`       | Controlled and uncontrolled                                                |
-| `DatePicker`     | Popover + react-day-picker v9                                              |
-| `Input`          | Forwarded ref, fully accessible                                            |
-| `RadioGroup`     | `RadioGroup`, `RadioGroupItem`                                             |
-| `Select`         | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`    |
-| `Slider`         | Single value, forwarded ref                                                |
-| `Switch`         | Controlled and uncontrolled                                                |
-| `TaskTimeFields` | Date + start/end time + recurrence group; `use24h` toggles 12h/24h display |
-| `TimeInput`      | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle    |
-| `Textarea`       | Forwarded ref, resizable                                                   |
-| `Toggle`         | default / outline × sm / md / lg                                           |
-| `ToggleGroup`    | single / multiple                                                          |
+| Component        | Notes                                                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`         | 6 variants × 4 sizes, `asChild` via Radix Slot                                                                                                              |
+| `Checkbox`       | Controlled and uncontrolled                                                                                                                                 |
+| `DatePicker`     | Popover + react-day-picker v9                                                                                                                               |
+| `Input`          | Forwarded ref, fully accessible                                                                                                                             |
+| `MagneticButton` | `Button` with magnetic cursor pull (≤8px, `SPRING_MAGNETIC`) — hero CTAs on cinematic surfaces only; falls back to plain `Button` on touch / reduced motion |
+| `RadioGroup`     | `RadioGroup`, `RadioGroupItem`                                                                                                                              |
+| `Select`         | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`                                                                                     |
+| `Slider`         | Single value, forwarded ref                                                                                                                                 |
+| `Switch`         | Controlled and uncontrolled                                                                                                                                 |
+| `TaskTimeFields` | Date + start/end time + recurrence group; `use24h` toggles 12h/24h display                                                                                  |
+| `TimeInput`      | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle                                                                                     |
+| `Textarea`       | Forwarded ref, resizable                                                                                                                                    |
+| `Toggle`         | default / outline × sm / md / lg                                                                                                                            |
+| `ToggleGroup`    | single / multiple                                                                                                                                           |
 
 ### Form
 
@@ -136,12 +138,12 @@ pnpm add react react-dom tailwindcss
 
 Some components require additional peer deps:
 
-| Component                       | Extra peer dep              |
-| ------------------------------- | --------------------------- |
-| `DatePicker`                    | `react-day-picker date-fns` |
-| `Toast`                         | `sonner`                    |
-| `Command`, `Combobox`           | `cmdk`                      |
-| `ScrollReveal`, `StaggerReveal` | `framer-motion`             |
+| Component                                                      | Extra peer dep              |
+| -------------------------------------------------------------- | --------------------------- |
+| `DatePicker`                                                   | `react-day-picker date-fns` |
+| `Toast`                                                        | `sonner`                    |
+| `Command`, `Combobox`                                          | `cmdk`                      |
+| `ScrollReveal`, `StaggerReveal`, `SplitText`, `MagneticButton` | `framer-motion`             |
 
 ## Setup
 
@@ -220,11 +222,12 @@ Motion design tokens are exported as typed constants from `@crawfordyoung/ui` an
 
 ```ts
 import {
-  MOTION,           // durations in ms: instant(100) fast(150) base(250) slow(400) hero(600)
-  EASE,             // Framer Motion cubic-bezier arrays — spread required: ease: [...EASE.out]
-  EASE_CSS,         // CSS cubic-bezier strings for raw style props
-  STAGGER,          // stagger timing: wordMs(30) cardMs(40) capItems(5)
-  SPRING_MAGNETIC,  // spring config: stiffness(300) damping(25)
+  MOTION,            // durations in ms: instant(100) fast(150) base(250) slow(400) hero(600)
+  EASE,              // Framer Motion cubic-bezier arrays — spread required: ease: [...EASE.out]
+  EASE_CSS,          // CSS cubic-bezier strings for raw style props
+  STAGGER,           // stagger timing: wordMs(30) cardMs(40) charMs(28) capItems(5)
+  SPRING_MAGNETIC,   // spring config: stiffness(300) damping(25)
+  SHIMMER_PERIOD_MS, // Skeleton shimmer period (1500)
 } from '@crawfordyoung/ui'
 
 // Framer Motion example — spread EASE arrays because Framer rejects readonly tuples
@@ -313,6 +316,30 @@ function App() {
 ```
 
 Transition timing defaults live in `styles.css` (`::view-transition-*` rules on the `--motion-hero` / `--ease-in-out` tokens) and apply in any browser that supports `view-transition-name`.
+
+## Trace resolve gesture
+
+`BorderTrace` and `TraceBorder` close the loop on success instead of vanishing mid-lap: set `resolved` when the pending work finishes, await `onResolveComplete`, then tear the trace down.
+
+```tsx
+const [state, setState] = useState<'idle' | 'pending' | 'resolved'>('idle')
+
+<TraceBorder
+  active={state !== 'idle'}
+  resolved={state === 'resolved'}
+  onResolveComplete={() => setState('idle')}
+>
+  <Button onClick={async () => {
+    setState('pending')
+    await save()
+    setState('resolved') // trace completes the ring, settles, departs, then fires onResolveComplete
+  }}>
+    Save
+  </Button>
+</TraceBorder>
+```
+
+Reduced-motion users get a designed still-state equivalent (full ring, brief settle) instead of the animated gesture.
 
 ## Dark mode
 
