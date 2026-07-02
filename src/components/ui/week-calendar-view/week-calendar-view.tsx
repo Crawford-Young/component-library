@@ -9,7 +9,7 @@ import {
 import { CalendarNavBar, type CalendarNavSource } from '@/components/ui/calendar-nav-bar'
 import { useDragState } from './drag'
 import { GhostEvent } from './ghost-event'
-import { SleepBand } from './sleep-band'
+import { SleepBand, type DayWindow } from './sleep-band'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { EventCreateForm } from './event-create-form'
 
@@ -37,6 +37,12 @@ export interface WeekCalendarViewProps {
   readonly sleepEnabled?: boolean
   readonly sleepStart?: number
   readonly sleepEnd?: number
+  /**
+   * Per-day awake windows, exactly 7 entries, Sun-first. Each `{ wake, sleep }`
+   * drives that day's union window, sleep-zone shading, and drag-create blocking.
+   * A length other than 7 is ignored (dev warning); absent ⇒ unchanged behavior.
+   */
+  readonly dayWindows?: readonly DayWindow[]
   readonly renderEventPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
@@ -294,6 +300,16 @@ function formatHour(hour: number, use24h: boolean): string {
 const MS_PER_HOUR = 3_600_000
 const SLOTS_PER_HOUR = 4
 const SLOT_MINS = 15
+const DAYS_PER_WEEK = 7
+const DAY_START_HOUR = 0
+const HOURS_PER_DAY = 24
+
+function isProductionEnv(): boolean {
+  return (
+    (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV ===
+    'production'
+  )
+}
 
 function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
@@ -342,6 +358,7 @@ export function WeekCalendarView({
   sleepEnabled,
   sleepStart,
   sleepEnd,
+  dayWindows,
   renderEventPopover,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
@@ -453,8 +470,31 @@ export function WeekCalendarView({
     return () => window.removeEventListener('keydown', onKey)
   }, [dragActions, onEventRestore])
 
-  const effectiveHourStart = sleepEnabled ? 0 : hourStart
-  const effectiveHourCount = sleepEnabled ? 24 : hourCount
+  const resolvedDayWindows =
+    dayWindows !== undefined && dayWindows.length === DAYS_PER_WEEK ? dayWindows : undefined
+
+  React.useEffect(() => {
+    if (dayWindows !== undefined && dayWindows.length !== DAYS_PER_WEEK && !isProductionEnv()) {
+      console.warn(
+        `WeekCalendarView: \`dayWindows\` must have exactly ${DAYS_PER_WEEK} entries (Sun-first); received ${dayWindows.length}. Falling back to non-windowed behavior.`,
+      )
+    }
+  }, [dayWindows])
+
+  const unionWindow = React.useMemo<DayWindow | undefined>(() => {
+    if (resolvedDayWindows === undefined) return undefined
+    return {
+      wake: Math.min(...resolvedDayWindows.map((w) => w.wake)),
+      sleep: Math.max(...resolvedDayWindows.map((w) => w.sleep)),
+    }
+  }, [resolvedDayWindows])
+
+  const effectiveHourStart = sleepEnabled ? DAY_START_HOUR : (unionWindow?.wake ?? hourStart)
+  const effectiveHourCount = sleepEnabled
+    ? HOURS_PER_DAY
+    : unionWindow !== undefined
+      ? unionWindow.sleep - unionWindow.wake
+      : hourCount
 
   function pointerToSlot(clientY: number): number {
     const rect = gridRef.current!.getBoundingClientRect()
@@ -488,7 +528,14 @@ export function WeekCalendarView({
       const endSlot = Math.max(dragMode.startSlot, dragMode.currentSlot) + 1
       const minDayIdx = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
 
-      if (sleepEnabled && sleepStart !== undefined && sleepEnd !== undefined) {
+      if (resolvedDayWindows !== undefined) {
+        const startHour = Math.floor(startSlot / SLOTS_PER_HOUR)
+        const win = resolvedDayWindows[dragMode.startDayIdx]
+        if (startHour < win.wake || startHour >= win.sleep) {
+          dragActions.reset()
+          return
+        }
+      } else if (sleepEnabled && sleepStart !== undefined && sleepEnd !== undefined) {
         const startHour = Math.floor(startSlot / SLOTS_PER_HOUR)
         if (startHour < sleepEnd || startHour >= sleepStart) {
           dragActions.reset()
@@ -822,15 +869,26 @@ export function WeekCalendarView({
                     label="Recur"
                   />
                 )}
-              {sleepStart !== undefined && sleepEnd !== undefined && (
+              {resolvedDayWindows !== undefined ? (
                 <SleepBand
-                  sleepStart={sleepStart}
-                  sleepEnd={sleepEnd}
+                  awakeWindow={resolvedDayWindows[dayIdx]}
                   hourStart={effectiveHourStart}
                   hourCount={effectiveHourCount}
                   hourHeight={hourHeight}
                   interactive={!!sleepEnabled}
                 />
+              ) : (
+                sleepStart !== undefined &&
+                sleepEnd !== undefined && (
+                  <SleepBand
+                    sleepStart={sleepStart}
+                    sleepEnd={sleepEnd}
+                    hourStart={effectiveHourStart}
+                    hourCount={effectiveHourCount}
+                    hourHeight={hourHeight}
+                    interactive={!!sleepEnabled}
+                  />
+                )
               )}
               {pendingCreate?.startDayIdx === dayIdx && (
                 <Popover open onOpenChange={() => setPendingCreate(null)}>
