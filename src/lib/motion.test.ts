@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EASE, EASE_CSS, MOTION, SPRING_MAGNETIC, STAGGER } from './motion'
+import { EASE, EASE_CSS, MOTION, SHIMMER_PERIOD_MS, SPRING_MAGNETIC, STAGGER } from './motion'
 
 describe('MOTION', () => {
   it('defines the five duration tokens in ms', () => {
@@ -24,8 +24,15 @@ describe('EASE_CSS', () => {
 })
 
 describe('STAGGER', () => {
-  it('defines word/card stagger and item cap', () => {
-    expect(STAGGER).toEqual({ wordMs: 30, cardMs: 40, capItems: 5 })
+  it('defines word/card/char stagger and item cap', () => {
+    expect(STAGGER).toEqual({ wordMs: 30, cardMs: 40, charMs: 28, capItems: 5 })
+  })
+})
+
+describe('SHIMMER_PERIOD_MS', () => {
+  it('is 1500ms, defined on the scale as hero * 2.5', () => {
+    expect(SHIMMER_PERIOD_MS).toBe(1500)
+    expect(SHIMMER_PERIOD_MS).toBe(MOTION.hero * 2.5)
   })
 })
 
