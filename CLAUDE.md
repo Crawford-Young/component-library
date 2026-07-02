@@ -14,25 +14,25 @@ This file overrides specific rules from `~/code/CLAUDE.md` for this repository. 
 
 ## Wave status
 
-| Wave | Components                                                                                                                      | Status                                |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                               | Merged to main                        |
-| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                                 | Merged to main                        |
-| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                                     | Merged to main                        |
-| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                                  | Merged to main                        |
-| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                                            | Merged to main                        |
-| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                              | Merged to main                        |
-| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                                           | Merged to main                        |
-| 5b   | Kbd, HoverCard, NumberInput                                                                                                     | In PR #38                             |
-| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag                                                | Merged to main                        |
-| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps                                              | In PR #51                             |
-| 9    | TokenChip, TokenCost                                                                                                            | Merged to main                        |
-| 10   | Motion primitives: ScrollReveal, StaggerReveal, ProgressLine, Skeleton shimmer, Motion.mdx, framer-motion peer dep              | Merged to main                        |
-| 11   | Activities Unification: StreakBadge, TaskTimeFields, ActivityCard, ActivityFormDialog, TimeInput size + `lib/time` helpers      | In PR                                 |
-| 12   | Loading indicators: BorderTrace, TraceBorder, BrandSplash; Spinner deprecated                                                   | Merged to main                        |
-| 13   | Precision foundation: motion-token adoption, eased trace, appearance threshold, reduced-motion still-ring, BrandSplash entrance | Merged to main                        |
-| 14   | Splash → app handoff: startBrandHandoff, BrandSplash handoffName/exit, SidebarBrand handoffName, VT CSS defaults                | Merged to main                        |
-| 15   | Cohesion + signatures: trace resolve vocabulary, eased shimmer, SplitText, MagneticButton, charMs/shimmer tokens                | On `feat/wave-15-cohesion-signatures` |
+| Wave | Components                                                                                                                      | Status         |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1    | Avatar, Badge, Button, Card, Input, Label, Separator, Skeleton, Spinner, Textarea                                               | Merged to main |
+| 2    | Alert, Checkbox, Dialog, Popover, Progress, RadioGroup, Select, Switch, Tooltip                                                 | Merged to main |
+| 3a   | AlertDialog, Sheet, DropdownMenu, ContextMenu, Tabs, Accordion, Collapsible                                                     | Merged to main |
+| 3b   | NavigationMenu, ScrollArea, AspectRatio, Table, Breadcrumb, Pagination, Slider                                                  | Merged to main |
+| 3c   | FormField, Toggle, ToggleGroup, Command, Combobox, Toast, DatePicker                                                            | Merged to main |
+| 4    | DataTable, PaginationControl, ErrorBoundary + DatePicker polish, Foundation/Colors                                              | Merged to main |
+| 5a   | CountUp, BentoGrid/BentoCell, Timeline/TimelineItem, WeekCalendarView                                                           | Merged to main |
+| 5b   | Kbd, HoverCard, NumberInput                                                                                                     | In PR #38      |
+| 7    | WeekCalendarView evolution: recurrence system, expandRecurringEvents, undo, drag                                                | Merged to main |
+| 8    | Motion tokens: CSS vars, MOTION/EASE/EASE_CSS/STAGGER/SPRING_MAGNETIC, preset maps                                              | In PR #51      |
+| 9    | TokenChip, TokenCost                                                                                                            | Merged to main |
+| 10   | Motion primitives: ScrollReveal, StaggerReveal, ProgressLine, Skeleton shimmer, Motion.mdx, framer-motion peer dep              | Merged to main |
+| 11   | Activities Unification: StreakBadge, TaskTimeFields, ActivityCard, ActivityFormDialog, TimeInput size + `lib/time` helpers      | In PR          |
+| 12   | Loading indicators: BorderTrace, TraceBorder, BrandSplash; Spinner deprecated                                                   | Merged to main |
+| 13   | Precision foundation: motion-token adoption, eased trace, appearance threshold, reduced-motion still-ring, BrandSplash entrance | Merged to main |
+| 14   | Splash → app handoff: startBrandHandoff, BrandSplash handoffName/exit, SidebarBrand handoffName, VT CSS defaults                | Merged to main |
+| 15   | Cohesion + signatures: trace resolve vocabulary, eased shimmer, SplitText, MagneticButton, charMs/shimmer tokens                | Merged to main |
 
 Update this table whenever a wave PR is merged. **Post-merge status flips** (the only repo-doc edit that can't land pre-merge): micro `docs/` branch + PR, bundled with any reflect-surfaced repo edits — everything else in this file still lands in the wave branch BEFORE merge.
 
@@ -57,6 +57,7 @@ Update this table whenever a wave PR is merged. **Post-merge status flips** (the
 - **SVG components can pass every gate while rendering nothing (2026-07-01).** SVG geometry attributes (`<rect width/height>`, `<circle r>`, `x`/`cx`/…) silently reject CSS `calc()` — jsdom has no SVG layout and axe checks only a11y, so 100% coverage + axe + tsc are all green on an invisible trace. Use `%`/numeric geometry (`width="100%"`, `r="50%"` on an `overflow-visible` svg), assert in a unit test that geometry attrs aren't `calc()`, and always eyeball SVG components in Storybook. (TraceBorder trace was invisible on a wrapped button.)
 - **Playwright roundtrip latency overshoots sub-second animation windows (2026-07-01).** Chained `waitForTimeout` calls accumulate 200–400ms of tool-roundtrip drift — screenshots land after a 600ms animation already finished. Verify animations by hooking the API before it fires (e.g. wrap `document.startViewTransition` to set a flag) and burst-capture from a single `t0 = Date.now()` anchor with delta waits, not sequential timeouts. (Splash-handoff spike QA.)
 - **Playwright-MCP `run_code_unsafe` session gotchas (2026-07-02).** `page.addInitScript` accumulates across `run_code_unsafe` calls for the page's lifetime — a counter registered twice increments 2× per event, so assert counter DELTAS, never exact counts. The snippet sandbox has no `require` and no `setTimeout` at top level — sleep via `page.evaluate((until) => new Promise(...), t0 + delta)` on the browser clock (also eliminates cross-process clock drift). `waitForFunction` options go in the THIRD argument (`fn, arg, { timeout })` — passing `{ timeout }` second silently becomes the fn's arg and the default 30s applies. (Splash-handoff 2b QA.)
+- **SVG animation probes must select the specific shape, not the first match (2026-07-02).** Trace components render TWO rects/circles — a static track (`stroke-border`, no animation) before the animated trace (`stroke-accent`, `motion-safe:animate-trace`). `querySelector('svg rect')` grabs the track and reports `animationName: "none"`, `dasharray: "none"` — a working loop looks broken. Probe with `querySelectorAll` + filter by class/stroke, or a class-qualified selector. (Wave-15 sweep false alarm.)
 
 ## Storybook authoring notes
 
