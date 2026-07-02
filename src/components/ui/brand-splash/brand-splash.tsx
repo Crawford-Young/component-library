@@ -28,6 +28,8 @@ export interface BrandSplashProps {
   readonly signal?: 'glow' | 'dim' | 'none'
   readonly onComplete: () => void
   readonly durations?: Partial<Record<Exclude<Phase, 'done'>, number>>
+  readonly handoffName?: string
+  readonly exit?: 'fade' | 'external'
 }
 
 export function BrandSplash({
@@ -38,6 +40,8 @@ export function BrandSplash({
   signal = 'glow',
   onComplete,
   durations,
+  handoffName,
+  exit = 'fade',
 }: BrandSplashProps): React.JSX.Element | null {
   const [phase, setPhase] = React.useState<Phase>('initial')
   const [hidden, setHidden] = React.useState(false)
@@ -67,10 +71,13 @@ export function BrandSplash({
     if (phase === 'done' && !completed.current) {
       completed.current = true
       onComplete()
+      // external exit: hold the final frame — the consumer's view transition
+      // (startBrandHandoff) owns removal
+      if (exit === 'external') return
       const t = setTimeout(() => setHidden(true), EXIT_MS * scale)
       return () => clearTimeout(t)
     }
-  }, [phase, onComplete, scale])
+  }, [phase, onComplete, scale, exit])
 
   if (hidden) return null
 
@@ -88,11 +95,12 @@ export function BrandSplash({
       className={cn(
         'fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-background',
         'motion-safe:transition-opacity motion-safe:duration-base motion-safe:ease-exit',
-        phase === 'done' ? 'opacity-0' : 'opacity-100',
+        phase === 'done' && exit === 'fade' ? 'opacity-0' : 'opacity-100',
       )}
     >
       <div
         data-wordmark="true"
+        style={handoffName !== undefined ? { viewTransitionName: handoffName } : undefined}
         className="flex select-none items-center text-7xl font-bold tracking-[-0.04em] text-foreground motion-safe:animate-brand-enter"
       >
         <span

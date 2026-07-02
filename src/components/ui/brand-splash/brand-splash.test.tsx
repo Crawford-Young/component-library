@@ -166,6 +166,30 @@ describe('BrandSplash', () => {
     expect(container.querySelector('[data-possessive]')?.className).toContain('ease-out')
   })
 
+  it('applies handoffName as the wordmark view-transition-name', () => {
+    const { container } = render(
+      <BrandSplash
+        wordmark="Cybond"
+        splitIndex={2}
+        handoffName="brand-wordmark"
+        onComplete={vi.fn()}
+      />,
+    )
+    const wm = container.querySelector('[data-wordmark]') as HTMLElement
+    expect(wm.style.viewTransitionName).toBe('brand-wordmark')
+  })
+
+  it('holds the final frame without unmounting when exit="external"', () => {
+    const onComplete = vi.fn()
+    render(<BrandSplash wordmark="Cybond" splitIndex={2} exit="external" onComplete={onComplete} />)
+    advance(400 + 600 + 1000)
+    expect(onComplete).toHaveBeenCalledTimes(1)
+    // overlay must stay visible — the consumer's view transition owns the exit
+    expect(screen.getByRole('status').className).toContain('opacity-100')
+    advance(5000)
+    expect(screen.getByRole('status')).toBeInTheDocument()
+  })
+
   it('halves durations and skips slide transforms under reduced motion', () => {
     vi.stubGlobal(
       'matchMedia',
