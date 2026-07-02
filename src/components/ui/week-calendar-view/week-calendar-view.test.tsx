@@ -2339,4 +2339,70 @@ describe('dayWindows (per-day wake/sleep windows)', () => {
     warnSpy.mockRestore()
     vi.unstubAllEnvs()
   })
+
+  const EARLY_HALF = override(UNIFORM, 1, { wake: 6.5, sleep: 17 }) // Mon wakes at 6:30am
+  const NIGHT_HALF = override(UNIFORM, 5, { wake: 9, sleep: 22.5 }) // Fri sleeps at 10:30pm
+
+  it('fractional wake: grid floors to 6am (11 rows); Mon shades a half-hour, others a full 3 hours', () => {
+    render(
+      <WeekCalendarView defaultWeekStart={WINDOW_SUN_START} events={[]} dayWindows={EARLY_HALF} />,
+    )
+    expect(screen.getAllByText('6am').length).toBeGreaterThan(0)
+    expect(cellCount()).toBe(11 * 7)
+    const cols = dayColumns()
+    // Mon (idx 1) shades only 6:00->6:30, pinned to the grid top.
+    const monRegions = cols[1].querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(monRegions.length).toBe(1)
+    expect(monRegions[0].style.top).toBe('0%')
+    expect(monRegions[0].style.height).toBe(`${((6.5 - 6) / 11) * 100}%`)
+    // Sun (idx 0, wake 9) shades the full 6->9am gap.
+    const sunRegions = cols[0].querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(sunRegions.length).toBe(1)
+    expect(sunRegions[0].style.top).toBe('0%')
+    expect(sunRegions[0].style.height).toBe(`${((9 - 6) / 11) * 100}%`)
+  })
+
+  it('fractional sleep: grid ceils to 11pm (14 rows); Fri shades a half-hour, others a full 6 hours', () => {
+    render(
+      <WeekCalendarView defaultWeekStart={WINDOW_SUN_START} events={[]} dayWindows={NIGHT_HALF} />,
+    )
+    expect(cellCount()).toBe(14 * 7)
+    const cols = dayColumns()
+    // Fri (idx 5) shades only 10:30pm->11pm.
+    const friRegions = cols[5].querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(friRegions.length).toBe(1)
+    expect(friRegions[0].style.top).toBe(`${((22.5 - 9) / 14) * 100}%`)
+    expect(friRegions[0].style.height).toBe(`${((23 - 22.5) / 14) * 100}%`)
+    // Sun (idx 0, sleep 17) shades the full 5pm->11pm gap.
+    const sunRegions = cols[0].querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(sunRegions.length).toBe(1)
+    expect(sunRegions[0].style.top).toBe(`${((17 - 9) / 14) * 100}%`)
+    expect(sunRegions[0].style.height).toBe(`${((23 - 17) / 14) * 100}%`)
+  })
+
+  it('drag-create compares the exact fractional slot time, not the floored hour', () => {
+    const onCreate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WINDOW_SUN_START}
+        events={[]}
+        dayWindows={EARLY_HALF}
+        onEventCreate={onCreate}
+      />,
+    )
+    // Mon (idx 1) window is 6:30am->5pm; grid floors to 6am so Mon's row 0 spans 6:00-7:00.
+    // Mon is the 2nd day column → cells 11-21 (11 rows/day).
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    const monRow0 = cells[11]
+
+    // offsetY 0 => 6:00 exactly => still before wake(6.5) => blocked.
+    fireEvent.pointerDown(monRow0, { pointerId: 1, clientY: 0, offsetY: 0 })
+    fireEvent.pointerUp(monRow0, { pointerId: 1 })
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+
+    // offsetY halfway through the 56px hour row => 6:30 exactly => at wake(6.5) => allowed.
+    fireEvent.pointerDown(monRow0, { pointerId: 1, clientY: 0, offsetY: 28 })
+    fireEvent.pointerUp(monRow0, { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+  })
 })

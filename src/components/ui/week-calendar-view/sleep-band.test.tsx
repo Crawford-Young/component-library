@@ -29,6 +29,13 @@ describe('computeRegion', () => {
     expect(region!.height).toBe(`${(3 / 11) * 100}%`)
   })
 
+  it('computes proportional top/height for fractional-hour boundaries', () => {
+    const region = computeRegion(6.5, 17, 6, 11)
+    expect(region).not.toBeNull()
+    expect(region!.top).toBe(`${((6.5 - 6) / 11) * 100}%`)
+    expect(region!.height).toBe(`${((17 - 6.5) / 11) * 100}%`)
+  })
+
   it('returns null when the region is entirely after the visible range', () => {
     expect(computeRegion(20, 30, 0, 10)).toBeNull()
   })
