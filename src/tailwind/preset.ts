@@ -1,5 +1,6 @@
 import tailwindAnimate from 'tailwindcss-animate'
 import type { Config } from 'tailwindcss'
+import { SHIMMER_PERIOD_MS } from '../lib/motion'
 
 export const cyUIPreset: Partial<Config> = {
   darkMode: 'class',
@@ -139,7 +140,7 @@ export const cyUIPreset: Partial<Config> = {
       animation: {
         'draw-check': 'draw-check 150ms var(--ease-out) forwards',
         'radio-dot': 'radio-dot 120ms var(--ease-out)',
-        shimmer: 'shimmer 1.5s linear infinite',
+        shimmer: `shimmer ${SHIMMER_PERIOD_MS}ms var(--ease-in-out) infinite`,
         'switch-thumb': 'switch-thumb 200ms var(--ease-in-out)',
         'progress-indeterminate': 'progress-indeterminate 1.4s var(--ease-in-out) infinite',
         'accordion-down': 'accordion-down 200ms var(--ease-out)',

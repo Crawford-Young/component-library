@@ -31,8 +31,13 @@ export const EASE_CSS = {
 export const STAGGER = {
   wordMs: 30,
   cardMs: 40,
+  charMs: 28,
   capItems: 5,
 } as const
+
+/** Skeleton shimmer sweep period — a choreography loop (like BrandSplash's
+    signal hold), defined on the scale rather than as a bare literal. */
+export const SHIMMER_PERIOD_MS = MOTION.hero * 2.5 // 1500
 
 export const SPRING_MAGNETIC = {
   stiffness: 300,
