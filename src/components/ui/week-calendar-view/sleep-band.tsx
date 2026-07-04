@@ -52,8 +52,12 @@ export function computeRegion(
   }
 }
 
-const stripeBackground =
-  'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 8px)'
+// Theme-aware diagonal stripes: derived from --muted-foreground so they stay
+// visible on both the light and dark backgrounds (a fixed black stripe washes
+// out in dark mode). Kept as a class, not an inline style — test-DOM CSS
+// parsers drop rgb(var() / alpha) inline declarations, hiding regressions.
+const stripeClass =
+  'bg-[repeating-linear-gradient(-45deg,transparent,transparent_4px,rgb(var(--muted-foreground)/0.15)_4px,rgb(var(--muted-foreground)/0.15)_8px)]'
 
 const HOURS_PER_DAY = 24
 
@@ -70,7 +74,6 @@ export function SleepBand(props: SleepBandProps): React.JSX.Element {
   // rejected in sleep hours by the slot-level guard in WeekCalendarView's
   // pointer-up handler, so no overlay-level blocking is needed here.
   const regionStyle: React.CSSProperties = {
-    backgroundImage: stripeBackground,
     pointerEvents: 'none',
   }
 
@@ -80,7 +83,7 @@ export function SleepBand(props: SleepBandProps): React.JSX.Element {
         <div
           data-testid="sleep-region"
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 z-10 bg-muted/40"
+          className={`pointer-events-none absolute inset-x-0 z-10 bg-muted/70 ${stripeClass}`}
           style={{ ...topRegion, ...regionStyle }}
         />
       )}
@@ -88,7 +91,7 @@ export function SleepBand(props: SleepBandProps): React.JSX.Element {
         <div
           data-testid="sleep-region"
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 z-10 bg-muted/40"
+          className={`pointer-events-none absolute inset-x-0 z-10 bg-muted/70 ${stripeClass}`}
           style={{ ...bottomRegion, ...regionStyle }}
         />
       )}
