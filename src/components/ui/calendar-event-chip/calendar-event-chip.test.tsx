@@ -693,4 +693,33 @@ describe('inline complete circle', () => {
     const box = screen.getByRole('checkbox', { name: 'Mark incomplete' })
     expect(box).toHaveAttribute('aria-checked', 'true')
   })
+
+  describe('inline streak', () => {
+    it('renders flame count next to the time when streak > 0', () => {
+      render(<CalendarEventChip event={{ ...event, streak: 4 }} style={style} />)
+      expect(screen.getByLabelText('4-day streak')).toBeInTheDocument()
+      expect(screen.getByText('4')).toBeInTheDocument()
+    })
+
+    it('renders no streak at 0 or undefined', () => {
+      const { rerender } = render(
+        <CalendarEventChip event={{ ...event, streak: 0 }} style={style} />,
+      )
+      expect(screen.queryByLabelText(/streak/)).not.toBeInTheDocument()
+      rerender(<CalendarEventChip event={event} style={style} />)
+      expect(screen.queryByLabelText(/streak/)).not.toBeInTheDocument()
+    })
+
+    it('streak hides with the time line on tiny chips (height ≤ 4%)', () => {
+      render(
+        <CalendarEventChip event={{ ...event, streak: 4 }} style={{ ...style, height: '3%' }} />,
+      )
+      expect(screen.queryByLabelText(/streak/)).not.toBeInTheDocument()
+    })
+
+    it('streak renders on the expanded time-range line too', () => {
+      render(<CalendarEventChip event={{ ...event, streak: 4 }} style={style} expanded />)
+      expect(screen.getByLabelText('4-day streak')).toBeInTheDocument()
+    })
+  })
 })

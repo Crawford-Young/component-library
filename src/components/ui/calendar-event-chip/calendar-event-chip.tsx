@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cva } from 'class-variance-authority'
-import { CircleCheck } from 'lucide-react'
+import { CircleCheck, Flame } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -41,6 +41,8 @@ export interface CalendarEvent {
   readonly completed?: boolean
   /** Opt-in for the chip's one-click complete circle (renders only when a toggle handler is also wired). */
   readonly completable?: boolean
+  /** Current completion streak, computed by the app. Shown as flame+count on the time line when > 0. */
+  readonly streak?: number
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
@@ -233,6 +235,18 @@ function CheckIcon(): React.JSX.Element {
   )
 }
 
+function InlineStreak({ streak }: { readonly streak: number }): React.JSX.Element {
+  return (
+    <span
+      aria-label={`${streak}-day streak`}
+      className="ml-1 inline-flex items-center gap-0.5 align-bottom"
+    >
+      <Flame className="h-2.5 w-2.5" aria-hidden />
+      <span>{streak}</span>
+    </span>
+  )
+}
+
 const inputCls =
   'w-full rounded border border-input bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
@@ -314,6 +328,7 @@ export function CalendarEventChip({
   const displayMin = startDate.getMinutes().toString().padStart(2, '0')
   const displayStartTime = use24h ? fmt24h(startDate) : `${displayHour}:${displayMin}`
   const showCheckbox = event.completable === true && onToggleComplete !== undefined
+  const showStreak = event.streak !== undefined && event.streak > 0
 
   return (
     <div
@@ -353,8 +368,18 @@ export function CalendarEventChip({
             >
               {event.title}
             </div>
-            {showTimeRange && <div className="text-[9px]">{timeRange}</div>}
-            {showStartTime && <div className="text-[9px]">{displayStartTime}</div>}
+            {showTimeRange && (
+              <div className="text-[9px]">
+                {timeRange}
+                {showStreak && <InlineStreak streak={event.streak!} />}
+              </div>
+            )}
+            {showStartTime && (
+              <div className="text-[9px]">
+                {displayStartTime}
+                {showStreak && <InlineStreak streak={event.streak!} />}
+              </div>
+            )}
             {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
             {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
             <div
