@@ -64,6 +64,29 @@ export const WithDescription: Story = {
     style: chipStyle,
     onEdit: () => {},
     onDelete: () => {},
+    onToggleComplete: () => {},
+  },
+}
+
+export const Completed: Story = {
+  render: (args) => (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '5',
+      title: 'Team standup',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T09:30:00',
+      color: 'blue',
+      completed: true,
+    },
+    style: chipStyle,
+    onEdit: () => {},
+    onDelete: () => {},
+    onToggleComplete: () => {},
   },
 }
 

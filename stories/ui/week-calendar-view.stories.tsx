@@ -170,7 +170,15 @@ export const EditAndDelete: Story = {
         end: '2026-05-05T15:00:00',
         color: 'teal',
       },
+      {
+        id: '3',
+        title: 'Open popover → Mark complete',
+        start: '2026-05-06T09:00:00',
+        end: '2026-05-06T09:30:00',
+        color: 'green',
+      },
     ],
+    onEventToggleComplete: () => {},
   },
 }
 
