@@ -433,9 +433,8 @@ describe('CalendarEventChip', () => {
     it.each(cases)('applies %s color class to chip', (color, expectedClass) => {
       const coloredEvent: CalendarEvent = { ...event, color }
       render(<CalendarEventChip event={coloredEvent} style={style} />)
-      expect(screen.getAllByRole('button', { name: /team standup/i })[0].className).toContain(
-        expectedClass,
-      )
+      const button = screen.getAllByRole('button', { name: /team standup/i })[0]
+      expect(button.parentElement?.className).toContain(expectedClass)
     })
   })
 })
@@ -638,5 +637,60 @@ describe('CalendarEventChip complete toggle', () => {
   it('does not strike through an incomplete event title', () => {
     render(<CalendarEventChip event={event} style={style} />)
     expect(screen.getByText('Team standup').className).not.toContain('line-through')
+  })
+})
+
+describe('inline complete circle', () => {
+  const completable = { ...event, completable: true }
+
+  it('renders no checkbox when completable is unset', () => {
+    render(<CalendarEventChip event={event} style={style} onToggleComplete={vi.fn()} />)
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  it('renders no checkbox when onToggleComplete is missing', () => {
+    render(<CalendarEventChip event={completable} style={style} />)
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  it('renders checkbox when completable and handler wired', () => {
+    render(<CalendarEventChip event={completable} style={style} onToggleComplete={vi.fn()} />)
+    expect(screen.getByRole('checkbox', { name: 'Mark complete' })).toBeInTheDocument()
+  })
+
+  it('click fires onToggleComplete with the event and does NOT open the popover', async () => {
+    const onToggleComplete = vi.fn()
+    render(
+      <CalendarEventChip event={completable} style={style} onToggleComplete={onToggleComplete} />,
+    )
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Mark complete' }))
+    expect(onToggleComplete).toHaveBeenCalledWith(completable)
+    expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument() // popover content absent
+  })
+
+  it('pointerdown on the circle never starts a move drag', () => {
+    const onMoveStart = vi.fn()
+    render(
+      <CalendarEventChip
+        event={completable}
+        style={style}
+        onToggleComplete={vi.fn()}
+        onMoveStart={onMoveStart}
+      />,
+    )
+    fireEvent.pointerDown(screen.getByRole('checkbox', { name: 'Mark complete' }))
+    expect(onMoveStart).not.toHaveBeenCalled()
+  })
+
+  it('reflects completed state via aria-checked and flipped label', () => {
+    render(
+      <CalendarEventChip
+        event={{ ...completable, completed: true }}
+        style={style}
+        onToggleComplete={vi.fn()}
+      />,
+    )
+    const box = screen.getByRole('checkbox', { name: 'Mark incomplete' })
+    expect(box).toHaveAttribute('aria-checked', 'true')
   })
 })
