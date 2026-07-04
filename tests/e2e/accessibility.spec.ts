@@ -56,6 +56,10 @@ const stories = [
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
   { name: 'CalendarEventChip', id: 'data-calendareventchip--default' },
   { name: 'CalendarEventChip Completed', id: 'data-calendareventchip--completed' },
+  {
+    name: 'CalendarEventChip CompletableWithStreak',
+    id: 'data-calendareventchip--completable-with-streak',
+  },
   { name: 'CalendarNavBar', id: 'data-calendarnavbar--default' },
   { name: 'AppShell', id: 'layout-appshell--default' },
   { name: 'Sidebar', id: 'layout-sidebar--default' },

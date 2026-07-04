@@ -82,10 +82,33 @@ export const Completed: Story = {
       end: '2026-05-04T09:30:00',
       color: 'blue',
       completed: true,
+      completable: true,
+      streak: 12,
     },
     style: chipStyle,
     onEdit: () => {},
     onDelete: () => {},
+    onToggleComplete: () => {},
+  },
+}
+
+export const CompletableWithStreak: Story = {
+  render: (args) => (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '7',
+      title: 'Morning run',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T08:00:00',
+      color: 'orange',
+      completable: true,
+      streak: 12,
+    },
+    style: chipStyle,
     onToggleComplete: () => {},
   },
 }
