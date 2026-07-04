@@ -583,3 +583,60 @@ describe('resize handles', () => {
     expect(chip.className).not.toContain('cursor-grab')
   })
 })
+
+describe('CalendarEventChip complete toggle', () => {
+  it('toggle button absent when onToggleComplete not provided', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.queryByRole('button', { name: /mark complete/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /mark incomplete/i })).not.toBeInTheDocument()
+  })
+
+  it('shows "Mark complete" for an incomplete event', async () => {
+    render(<CalendarEventChip event={event} style={style} onToggleComplete={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('button', { name: /mark complete/i })).toBeInTheDocument()
+  })
+
+  it('shows "Mark incomplete" for a completed event', async () => {
+    const done: CalendarEvent = { ...event, completed: true }
+    render(<CalendarEventChip event={done} style={style} onToggleComplete={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('button', { name: /mark incomplete/i })).toBeInTheDocument()
+  })
+
+  it('clicking the toggle calls onToggleComplete with the event', async () => {
+    const onToggleComplete = vi.fn()
+    render(<CalendarEventChip event={event} style={style} onToggleComplete={onToggleComplete} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+    expect(onToggleComplete).toHaveBeenCalledWith(event)
+  })
+
+  it('toggle renders alongside Edit and Delete in the action row', async () => {
+    render(
+      <CalendarEventChip
+        event={event}
+        style={style}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onToggleComplete={vi.fn()}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /mark complete/i })).toBeInTheDocument()
+  })
+
+  it('strikes through the completed event title on the chip', () => {
+    const done: CalendarEvent = { ...event, completed: true }
+    render(<CalendarEventChip event={done} style={style} />)
+    expect(screen.getByText('Team standup').className).toContain('line-through')
+  })
+
+  it('does not strike through an incomplete event title', () => {
+    render(<CalendarEventChip event={event} style={style} />)
+    expect(screen.getByText('Team standup').className).not.toContain('line-through')
+  })
+})

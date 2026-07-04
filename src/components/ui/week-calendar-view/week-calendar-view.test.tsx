@@ -372,6 +372,82 @@ describe('event forwarding', () => {
   })
 })
 
+describe('WeekCalendarView complete toggle', () => {
+  it('clicking "Mark complete" calls onEventToggleComplete with the toggled event', async () => {
+    const onEventToggleComplete = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventToggleComplete={onEventToggleComplete}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+    expect(onEventToggleComplete).toHaveBeenCalledWith({ ...events[0], completed: true })
+  })
+
+  it('toggling an already-completed event calls onEventToggleComplete with completed: false', async () => {
+    const onEventToggleComplete = vi.fn()
+    const doneEvent: CalendarEvent = { ...events[0], id: 'done-1', completed: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[doneEvent]}
+        onEventToggleComplete={onEventToggleComplete}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /mark incomplete/i }))
+    expect(onEventToggleComplete).toHaveBeenCalledWith({ ...doneEvent, completed: false })
+  })
+
+  it('toggle updates local state — chip title gets line-through after marking complete, other events untouched', async () => {
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={events} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+    const titleEls = screen.getAllByText('Team standup')
+    const chipTitle = titleEls.find((el) => el.classList.contains('truncate'))
+    expect(chipTitle).toHaveClass('line-through')
+    const otherTitleEls = screen.getAllByText('Design review')
+    const otherChipTitle = otherTitleEls.find((el) => el.classList.contains('truncate'))
+    expect(otherChipTitle).not.toHaveClass('line-through')
+  })
+
+  it('toggling a recurrence instance resolves and toggles the original event', async () => {
+    const onEventToggleComplete = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur complete',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventToggleComplete={onEventToggleComplete}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur complete/i })
+    // Tuesday instance (recurrence copy) — toggling must resolve the original by id
+    await userEvent.click(chips[1])
+    await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+    expect(onEventToggleComplete).toHaveBeenCalledWith({ ...recurringEvent, completed: true })
+  })
+
+  it('toggles locally without crashing when onEventToggleComplete is not provided', async () => {
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+    expect(screen.getByRole('button', { name: /mark incomplete/i })).toBeInTheDocument()
+  })
+})
+
 describe('time indicator', () => {
   it('renders time indicator in today column when time is within visible hours', () => {
     vi.useFakeTimers()
@@ -576,29 +652,10 @@ describe('SleepBand', () => {
     expect(regions.length).toBe(0)
   })
 
-  it('has pointer-events auto so drag is blocked in sleep hours', () => {
+  it('shading never blocks pointer events so chips stay clickable in sleep hours', () => {
     const { container } = render(
       <div style={{ position: 'relative', height: '800px' }}>
         <SleepBand sleepStart={23} sleepEnd={7} hourStart={0} hourCount={24} hourHeight={30} />
-      </div>,
-    )
-    const regions = container.querySelectorAll('[data-testid="sleep-region"]')
-    regions.forEach((r) => {
-      expect((r as HTMLElement).style.pointerEvents).toBe('auto')
-    })
-  })
-
-  it('interactive=false sets pointer-events none (visual-only mode)', () => {
-    const { container } = render(
-      <div style={{ position: 'relative', height: '800px' }}>
-        <SleepBand
-          sleepStart={23}
-          sleepEnd={7}
-          hourStart={0}
-          hourCount={24}
-          hourHeight={30}
-          interactive={false}
-        />
       </div>,
     )
     const regions = container.querySelectorAll('[data-testid="sleep-region"]')
@@ -611,14 +668,7 @@ describe('SleepBand', () => {
   it('renders sleep regions when hour range overlaps sleep hours (6am-midnight range)', () => {
     const { container } = render(
       <div style={{ position: 'relative', height: '800px' }}>
-        <SleepBand
-          sleepStart={23}
-          sleepEnd={7}
-          hourStart={6}
-          hourCount={18}
-          hourHeight={36}
-          interactive={false}
-        />
+        <SleepBand sleepStart={23} sleepEnd={7} hourStart={6} hourCount={18} hourHeight={36} />
       </div>,
     )
     // Top region: 0:00–7:00 clamps to 6:00–7:00 → renders (1/18 height)
@@ -628,6 +678,50 @@ describe('SleepBand', () => {
     const topRegion = regions[0] as HTMLElement
     expect(topRegion.style.top).toBe('0%')
     expect(parseFloat(topRegion.style.height)).toBeCloseTo(5.56, 1)
+  })
+})
+
+describe('WeekCalendarView sleep-region interactivity', () => {
+  const SLEEP_WINDOWS: CalendarEvent[] = [
+    {
+      id: 'night',
+      title: 'Night reading',
+      start: '2026-05-04T22:00:00',
+      end: '2026-05-04T22:30:00',
+      color: 'blue',
+    },
+  ]
+  const dayWindows = Array.from({ length: 7 }, () => ({ wake: 9, sleep: 17 }))
+
+  it('sleep-region shading never blocks pointer events even when sleepEnabled', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={SLEEP_WINDOWS}
+        sleepEnabled
+        dayWindows={dayWindows}
+      />,
+    )
+    const regions = document.querySelectorAll<HTMLElement>('[data-testid="sleep-region"]')
+    expect(regions.length).toBeGreaterThan(0)
+    regions.forEach((r) => expect(r.style.pointerEvents).toBe('none'))
+  })
+
+  it('opens the popover for an event that sits inside the sleep-shaded region', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={SLEEP_WINDOWS}
+        sleepEnabled
+        dayWindows={dayWindows}
+        onEventEdit={vi.fn()}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /night reading/i })
+    fireEvent.pointerDown(chip, { clientY: 400, clientX: 200 })
+    fireEvent.pointerUp(chip, { clientY: 400, clientX: 200 })
+    await userEvent.click(chip)
+    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
   })
 })
 

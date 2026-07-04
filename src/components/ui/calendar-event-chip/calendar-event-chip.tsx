@@ -36,6 +36,8 @@ export interface CalendarEvent {
   readonly location?: string
   readonly recurrenceDays?: readonly DayOfWeek[]
   readonly recurrenceFrequency?: RecurrenceFrequency
+  /** Whether the event has been marked complete. Toggled via `onToggleComplete`. */
+  readonly completed?: boolean
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
@@ -69,6 +71,7 @@ export interface CalendarEventChipProps {
   readonly onClick?: (event: CalendarEvent) => void
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
+  readonly onToggleComplete?: (event: CalendarEvent) => void
   readonly onMoveStart?: (
     event: CalendarEvent,
     clientY: number,
@@ -209,6 +212,24 @@ function NoteIcon(): React.JSX.Element {
   )
 }
 
+function CheckIcon(): React.JSX.Element {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5 shrink-0"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
 const inputCls =
   'w-full rounded border border-input bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
@@ -231,6 +252,7 @@ export function CalendarEventChip({
   onClick,
   onEdit,
   onDelete,
+  onToggleComplete,
   onMoveStart,
   onResizeStart,
   renderPopover,
@@ -317,7 +339,9 @@ export function CalendarEventChip({
             }
           }}
         >
-          <div className="truncate font-semibold">{event.title}</div>
+          <div className={cn('truncate font-semibold', event.completed && 'line-through')}>
+            {event.title}
+          </div>
           {showTimeRange && <div className="text-[9px]">{timeRange}</div>}
           {showStartTime && <div className="text-[9px]">{displayStartTime}</div>}
           {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
@@ -532,8 +556,19 @@ export function CalendarEventChip({
               )}
             </div>
             {renderPopover?.(event)}
-            {(onEdit !== undefined || onDelete !== undefined) && (
-              <div className="flex gap-2 border-t border-border px-3 py-2">
+            {(onEdit !== undefined || onDelete !== undefined || onToggleComplete !== undefined) && (
+              <div className="flex flex-wrap gap-2 border-t border-border px-3 py-2">
+                {onToggleComplete !== undefined && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => onToggleComplete(event)}
+                  >
+                    <CheckIcon />
+                    {event.completed ? 'Mark incomplete' : 'Mark complete'}
+                  </Button>
+                )}
                 {onEdit !== undefined && (
                   <Button variant="outline" size="sm" onClick={handleEditClick}>
                     Edit

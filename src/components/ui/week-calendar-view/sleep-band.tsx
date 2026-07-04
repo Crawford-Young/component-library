@@ -13,8 +13,6 @@ interface SleepBandBaseProps {
   readonly hourStart: number
   readonly hourCount: number
   readonly hourHeight: number
-  /** When true, blocks pointer events (drag/click) in sleep hours. When false, visual only. Default: true. */
-  readonly interactive?: boolean
 }
 
 /** Global wrapping sleep window (sleepStart → sleepEnd across midnight). */
@@ -60,16 +58,20 @@ const stripeBackground =
 const HOURS_PER_DAY = 24
 
 export function SleepBand(props: SleepBandProps): React.JSX.Element {
-  const { hourStart, hourCount, interactive = true } = props
+  const { hourStart, hourCount } = props
   const topRegion = props.awakeWindow
     ? computeRegion(hourStart, props.awakeWindow.wake, hourStart, hourCount)
     : computeRegion(0, props.sleepEnd, hourStart, hourCount)
   const bottomRegion = props.awakeWindow
     ? computeRegion(props.awakeWindow.sleep, hourStart + hourCount, hourStart, hourCount)
     : computeRegion(props.sleepStart, HOURS_PER_DAY, hourStart, hourCount)
+  // Shading is purely decorative and must never intercept pointer events — chips
+  // that fall inside a sleep zone stay fully clickable. Drag-create is still
+  // rejected in sleep hours by the slot-level guard in WeekCalendarView's
+  // pointer-up handler, so no overlay-level blocking is needed here.
   const regionStyle: React.CSSProperties = {
     backgroundImage: stripeBackground,
-    pointerEvents: interactive ? 'auto' : 'none',
+    pointerEvents: 'none',
   }
 
   return (
@@ -78,7 +80,7 @@ export function SleepBand(props: SleepBandProps): React.JSX.Element {
         <div
           data-testid="sleep-region"
           aria-hidden="true"
-          className="absolute inset-x-0 z-10 bg-muted/40"
+          className="pointer-events-none absolute inset-x-0 z-10 bg-muted/40"
           style={{ ...topRegion, ...regionStyle }}
         />
       )}
@@ -86,7 +88,7 @@ export function SleepBand(props: SleepBandProps): React.JSX.Element {
         <div
           data-testid="sleep-region"
           aria-hidden="true"
-          className="absolute inset-x-0 z-10 bg-muted/40"
+          className="pointer-events-none absolute inset-x-0 z-10 bg-muted/40"
           style={{ ...bottomRegion, ...regionStyle }}
         />
       )}
