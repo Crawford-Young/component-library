@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { cva } from 'class-variance-authority'
+import { CircleCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -38,6 +39,8 @@ export interface CalendarEvent {
   readonly recurrenceFrequency?: RecurrenceFrequency
   /** Whether the event has been marked complete. Toggled via `onToggleComplete`. */
   readonly completed?: boolean
+  /** Opt-in for the chip's one-click complete circle (renders only when a toggle handler is also wired). */
+  readonly completable?: boolean
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
@@ -310,287 +313,326 @@ export function CalendarEventChip({
   const displayHour = startDate.getHours() % 12 || 12
   const displayMin = startDate.getMinutes().toString().padStart(2, '0')
   const displayStartTime = use24h ? fmt24h(startDate) : `${displayHour}:${displayMin}`
+  const showCheckbox = event.completable === true && onToggleComplete !== undefined
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'relative cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            onMoveStart !== undefined && 'cursor-grab',
-            eventColorVariants({ color: event.color }),
-            className,
-          )}
-          style={style}
-          aria-label={`${event.title} ${timeRange}`}
-          onClick={() => onClick?.(event)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onClick?.(event)
-          }}
-          onPointerDown={(e) => {
-            const target = e.target as HTMLElement
-            const resize = target.dataset.resize
-            if (resize === 'start' || resize === 'end') {
-              e.stopPropagation()
-              onResizeStart?.(event, resize)
-            } else {
-              onMoveStart?.(event, e.clientY, e.clientX, e.shiftKey)
-            }
-          }}
-        >
-          <div className={cn('truncate font-semibold', event.completed && 'line-through')}>
-            {event.title}
-          </div>
-          {showTimeRange && <div className="text-[9px]">{timeRange}</div>}
-          {showStartTime && <div className="text-[9px]">{displayStartTime}</div>}
-          {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
-          {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
-          <div
-            data-resize="start"
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
-          />
-          <div
-            data-resize="end"
-            aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-72 p-0"
-        side="right"
-        align="start"
-        sideOffset={0}
-        collisionPadding={8}
-      >
-        {isEditing ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleSave()
+    <div
+      className={cn('relative', eventColorVariants({ color: event.color }), className)}
+      style={style}
+    >
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              'block h-full w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              onMoveStart !== undefined && 'cursor-grab',
+            )}
+            aria-label={`${event.title} ${timeRange}`}
+            onClick={() => onClick?.(event)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') onClick?.(event)
+            }}
+            onPointerDown={(e) => {
+              const target = e.target as HTMLElement
+              const resize = target.dataset.resize
+              if (resize === 'start' || resize === 'end') {
+                e.stopPropagation()
+                onResizeStart?.(event, resize)
+              } else {
+                onMoveStart?.(event, e.clientY, e.clientX, e.shiftKey)
+              }
             }}
           >
-            <div className="space-y-2.5 px-3 py-3">
-              <div>
-                <label htmlFor={`${event.id}-title`} className={labelCls}>
-                  Title
-                </label>
-                <input
-                  id={`${event.id}-title`}
-                  required
-                  className={inputCls}
-                  value={draft.title}
-                  onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <p className={labelCls} aria-hidden="true">
-                  Color
-                </p>
-                <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Color">
-                  {ALL_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      aria-label={`Color: ${c}`}
-                      aria-pressed={draft.color === c}
-                      onClick={() => setDraft((d) => ({ ...d, color: c }))}
-                      className={cn(
-                        eventColorVariants({ color: c }),
-                        'h-5 w-5 cursor-pointer rounded-full p-0 overflow-visible',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                        draft.color === c && 'ring-2 ring-ring ring-offset-1',
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className={labelCls} aria-hidden="true">
-                  Repeat
-                </p>
-                <select
-                  aria-label="Repeat"
-                  className={cn(inputCls, 'mt-1')}
-                  value={draft.recurrenceFrequency}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      recurrenceFrequency: e.target.value as RecurrenceFrequency | 'none',
-                    }))
-                  }
-                >
-                  <option value="none">None</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-              </div>
-
-              <div>
-                <p className={labelCls} aria-hidden="true">
-                  Days
-                </p>
-                <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
-                  {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as DayOfWeek[]).map((d) => {
-                    const active = draft.recurrenceDays.includes(d)
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        aria-label={`Day: ${d}`}
-                        aria-pressed={active}
-                        onClick={() =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            recurrenceDays: active
-                              ? prev.recurrenceDays.filter((x) => x !== d)
-                              : [...prev.recurrenceDays, d],
-                          }))
-                        }
-                        className={cn(
-                          'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                          active
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                        )}
-                      >
-                        {d[0]}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
+            <div
+              className={cn(
+                'truncate font-semibold',
+                event.completed && 'line-through',
+                showCheckbox && 'pl-3.5',
+              )}
+            >
+              {event.title}
+            </div>
+            {showTimeRange && <div className="text-[9px]">{timeRange}</div>}
+            {showStartTime && <div className="text-[9px]">{displayStartTime}</div>}
+            {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
+            {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
+            <div
+              data-resize="start"
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+            />
+            <div
+              data-resize="end"
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-72 p-0"
+          side="right"
+          align="start"
+          sideOffset={0}
+          collisionPadding={8}
+        >
+          {isEditing ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleSave()
+              }}
+            >
+              <div className="space-y-2.5 px-3 py-3">
                 <div>
-                  <label htmlFor={`${event.id}-start`} className={labelCls}>
-                    Start
+                  <label htmlFor={`${event.id}-title`} className={labelCls}>
+                    Title
                   </label>
-                  <TimeInput
-                    id={`${event.id}-start`}
-                    label="Start"
-                    value={draft.startTime}
-                    onChange={(v) => setDraft((d) => ({ ...d, startTime: v }))}
+                  <input
+                    id={`${event.id}-title`}
+                    required
+                    className={inputCls}
+                    value={draft.title}
+                    onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
                   />
                 </div>
+
                 <div>
-                  <div className="flex items-center gap-1">
-                    <label htmlFor={`${event.id}-end`} className={labelCls}>
-                      End
-                    </label>
-                    {draft.endTime < draft.startTime && (
-                      <span className="text-[10px] text-muted-foreground">+1 day</span>
-                    )}
+                  <p className={labelCls} aria-hidden="true">
+                    Color
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Color">
+                    {ALL_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        aria-label={`Color: ${c}`}
+                        aria-pressed={draft.color === c}
+                        onClick={() => setDraft((d) => ({ ...d, color: c }))}
+                        className={cn(
+                          eventColorVariants({ color: c }),
+                          'h-5 w-5 cursor-pointer rounded-full p-0 overflow-visible',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                          draft.color === c && 'ring-2 ring-ring ring-offset-1',
+                        )}
+                      />
+                    ))}
                   </div>
-                  <TimeInput
-                    id={`${event.id}-end`}
-                    label="End"
-                    value={draft.endTime}
-                    onChange={(v) => setDraft((d) => ({ ...d, endTime: v }))}
+                </div>
+
+                <div>
+                  <p className={labelCls} aria-hidden="true">
+                    Repeat
+                  </p>
+                  <select
+                    aria-label="Repeat"
+                    className={cn(inputCls, 'mt-1')}
+                    value={draft.recurrenceFrequency}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        recurrenceFrequency: e.target.value as RecurrenceFrequency | 'none',
+                      }))
+                    }
+                  >
+                    <option value="none">None</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+
+                <div>
+                  <p className={labelCls} aria-hidden="true">
+                    Days
+                  </p>
+                  <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
+                    {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as DayOfWeek[]).map((d) => {
+                      const active = draft.recurrenceDays.includes(d)
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          aria-label={`Day: ${d}`}
+                          aria-pressed={active}
+                          onClick={() =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              recurrenceDays: active
+                                ? prev.recurrenceDays.filter((x) => x !== d)
+                                : [...prev.recurrenceDays, d],
+                            }))
+                          }
+                          className={cn(
+                            'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            active
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                          )}
+                        >
+                          {d[0]}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div>
+                    <label htmlFor={`${event.id}-start`} className={labelCls}>
+                      Start
+                    </label>
+                    <TimeInput
+                      id={`${event.id}-start`}
+                      label="Start"
+                      value={draft.startTime}
+                      onChange={(v) => setDraft((d) => ({ ...d, startTime: v }))}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <label htmlFor={`${event.id}-end`} className={labelCls}>
+                        End
+                      </label>
+                      {draft.endTime < draft.startTime && (
+                        <span className="text-[10px] text-muted-foreground">+1 day</span>
+                      )}
+                    </div>
+                    <TimeInput
+                      id={`${event.id}-end`}
+                      label="End"
+                      value={draft.endTime}
+                      onChange={(v) => setDraft((d) => ({ ...d, endTime: v }))}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor={`${event.id}-location`} className={labelCls}>
+                    Location
+                  </label>
+                  <input
+                    id={`${event.id}-location`}
+                    className={inputCls}
+                    value={draft.location}
+                    onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor={`${event.id}-desc`} className={labelCls}>
+                    Description
+                  </label>
+                  <textarea
+                    id={`${event.id}-desc`}
+                    rows={2}
+                    className={cn(inputCls, 'resize-none')}
+                    value={draft.description}
+                    onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
                   />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor={`${event.id}-location`} className={labelCls}>
-                  Location
-                </label>
-                <input
-                  id={`${event.id}-location`}
-                  className={inputCls}
-                  value={draft.location}
-                  onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
-                />
+              <div className="flex gap-2 border-t border-border px-3 py-2">
+                <Button type="submit" size="sm">
+                  Save
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancel
+                </Button>
               </div>
-
-              <div>
-                <label htmlFor={`${event.id}-desc`} className={labelCls}>
-                  Description
-                </label>
-                <textarea
-                  id={`${event.id}-desc`}
-                  rows={2}
-                  className={cn(inputCls, 'resize-none')}
-                  value={draft.description}
-                  onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                />
+            </form>
+          ) : (
+            <>
+              <div className="border-b border-border px-3 pb-2 pt-3">
+                <p className="text-sm font-semibold text-foreground">{event.title}</p>
               </div>
-            </div>
-
-            <div className="flex gap-2 border-t border-border px-3 py-2">
-              <Button type="submit" size="sm">
-                Save
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <>
-            <div className="border-b border-border px-3 pb-2 pt-3">
-              <p className="text-sm font-semibold text-foreground">{event.title}</p>
-            </div>
-            <div className="space-y-2 px-3 py-2">
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <ClockIcon />
-                <p className="text-xs">{timeRange}</p>
-              </div>
-              {event.location !== undefined && (
+              <div className="space-y-2 px-3 py-2">
                 <div className="flex items-start gap-2 text-muted-foreground">
-                  <MapPinIcon />
-                  <p className="text-xs">{event.location}</p>
+                  <ClockIcon />
+                  <p className="text-xs">{timeRange}</p>
+                </div>
+                {event.location !== undefined && (
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <MapPinIcon />
+                    <p className="text-xs">{event.location}</p>
+                  </div>
+                )}
+                {event.description !== undefined && (
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <NoteIcon />
+                    <p className="text-xs">{event.description}</p>
+                  </div>
+                )}
+              </div>
+              {renderPopover?.(event)}
+              {(onEdit !== undefined ||
+                onDelete !== undefined ||
+                onToggleComplete !== undefined) && (
+                <div className="flex flex-wrap gap-2 border-t border-border px-3 py-2">
+                  {onToggleComplete !== undefined && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => onToggleComplete(event)}
+                    >
+                      <CheckIcon />
+                      {event.completed ? 'Mark incomplete' : 'Mark complete'}
+                    </Button>
+                  )}
+                  {onEdit !== undefined && (
+                    <Button variant="outline" size="sm" onClick={handleEditClick}>
+                      Edit
+                    </Button>
+                  )}
+                  {onDelete !== undefined && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setOpen(false)
+                        onDelete(event)
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </div>
               )}
-              {event.description !== undefined && (
-                <div className="flex items-start gap-2 text-muted-foreground">
-                  <NoteIcon />
-                  <p className="text-xs">{event.description}</p>
-                </div>
-              )}
-            </div>
-            {renderPopover?.(event)}
-            {(onEdit !== undefined || onDelete !== undefined || onToggleComplete !== undefined) && (
-              <div className="flex flex-wrap gap-2 border-t border-border px-3 py-2">
-                {onToggleComplete !== undefined && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => onToggleComplete(event)}
-                  >
-                    <CheckIcon />
-                    {event.completed ? 'Mark incomplete' : 'Mark complete'}
-                  </Button>
-                )}
-                {onEdit !== undefined && (
-                  <Button variant="outline" size="sm" onClick={handleEditClick}>
-                    Edit
-                  </Button>
-                )}
-                {onDelete !== undefined && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setOpen(false)
-                      onDelete(event)
-                    }}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </PopoverContent>
-    </Popover>
+            </>
+          )}
+        </PopoverContent>
+      </Popover>
+      {showCheckbox && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={event.completed === true}
+          aria-label={event.completed === true ? 'Mark incomplete' : 'Mark complete'}
+          className="absolute left-1 top-[3px] z-10 flex h-3 w-3 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleComplete!(event)
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {event.completed === true ? (
+            <CircleCheck className="h-3 w-3" aria-hidden />
+          ) : (
+            <span
+              className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-current"
+              aria-hidden
+            />
+          )}
+        </button>
+      )}
+    </div>
   )
 }

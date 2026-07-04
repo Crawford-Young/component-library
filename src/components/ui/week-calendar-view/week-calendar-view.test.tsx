@@ -64,13 +64,13 @@ describe('WeekCalendarView', () => {
   it('applies default event color class when color prop omitted', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
     const chip = screen.getByRole('button', { name: /team standup/i })
-    expect(chip.className).toContain('bg-emerald-700')
+    expect(chip.parentElement?.className).toContain('bg-emerald-700')
   })
 
   it('applies named color class when color prop provided', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[1]]} />)
     const chip = screen.getByRole('button', { name: /design review/i })
-    expect(chip.className).toContain('bg-blue-600')
+    expect(chip.parentElement?.className).toContain('bg-blue-600')
   })
 
   it('renders correct number of hour rows with custom hourCount', () => {
@@ -446,6 +446,45 @@ describe('WeekCalendarView complete toggle', () => {
     await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
     expect(screen.getByRole('button', { name: /mark incomplete/i })).toBeInTheDocument()
   })
+
+  it('completable event renders the chip circle and toggles via onEventToggleComplete', async () => {
+    const onEventToggleComplete = vi.fn()
+    const completableEvent: CalendarEvent = { ...events[0], completable: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[completableEvent]}
+        onEventToggleComplete={onEventToggleComplete}
+      />,
+    )
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Mark complete' }))
+    expect(onEventToggleComplete).toHaveBeenCalledWith({ ...completableEvent, completed: true })
+  })
+
+  it('circle on a recurrence instance toggles the ORIGINAL event', async () => {
+    const onEventToggleComplete = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur complete',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+      completable: true,
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventToggleComplete={onEventToggleComplete}
+      />,
+    )
+    const circles = screen.getAllByRole('checkbox', { name: 'Mark complete' })
+    await userEvent.click(circles[circles.length - 1]) // an expanded instance, not the base chip
+    expect(onEventToggleComplete).toHaveBeenCalledWith({ ...recurringEvent, completed: true })
+  })
 })
 
 describe('time indicator', () => {
@@ -569,8 +608,8 @@ describe('overlap layout', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={overlapping} />)
     const chipA = screen.getByRole('button', { name: /event a/i })
     const chipB = screen.getByRole('button', { name: /event b/i })
-    expect(chipA.style.left).toBe('calc(0% + 1px)')
-    expect(chipB.style.left).toBe('calc(50% + 1px)')
+    expect(chipA.parentElement?.style.left).toBe('calc(0% + 1px)')
+    expect(chipB.parentElement?.style.left).toBe('calc(50% + 1px)')
   })
 })
 
@@ -783,9 +822,9 @@ describe('event position clamping', () => {
       />,
     )
     const chip = screen.getByRole('button', { name: /early bird/i })
-    expect(chip.style.top).toBe('0%')
+    expect(chip.parentElement?.style.top).toBe('0%')
     // Only the visible 1h (8–9am) portion shows — 1/14 ≈ 7.14%
-    expect(parseFloat(chip.style.height)).toBeCloseTo(7.14, 1)
+    expect(parseFloat(chip.parentElement?.style.height ?? '')).toBeCloseTo(7.14, 1)
   })
 
   it('event ending past the visible range has height clipped to remaining grid', () => {
@@ -807,9 +846,9 @@ describe('event position clamping', () => {
     const chips = screen.getAllByRole('button', { name: /overnight/i })
     const chip = chips[0] // original in Mon column
     // top = (21-8)/14*100 ≈ 92.86%
-    expect(parseFloat(chip.style.top)).toBeCloseTo(92.86, 1)
+    expect(parseFloat(chip.parentElement?.style.top ?? '')).toBeCloseTo(92.86, 1)
     // visible portion: 9pm–10pm = 1h → 1/14*100 ≈ 7.14%
-    expect(parseFloat(chip.style.height)).toBeCloseTo(7.14, 1)
+    expect(parseFloat(chip.parentElement?.style.height ?? '')).toBeCloseTo(7.14, 1)
   })
 })
 
