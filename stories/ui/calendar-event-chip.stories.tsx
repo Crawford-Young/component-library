@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import * as React from 'react'
 import { CalendarEventChip } from '@/components/ui/calendar-event-chip'
+import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 
 const meta: Meta<typeof CalendarEventChip> = {
   title: 'Data/CalendarEventChip',
@@ -24,6 +26,19 @@ const tallChipStyle: React.CSSProperties = {
   height: '30%',
   left: 'calc(0% + 1px)',
   width: 'calc(100% - 2px)',
+}
+
+function ToggleableChipDemo({ event: base }: { readonly event: CalendarEvent }): React.JSX.Element {
+  const [completed, setCompleted] = React.useState(base.completed ?? false)
+  return (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip
+        event={{ ...base, completed }}
+        style={chipStyle}
+        onToggleComplete={() => setCompleted((c) => !c)}
+      />
+    </div>
+  )
 }
 
 export const Default: Story = {
@@ -69,11 +84,7 @@ export const WithDescription: Story = {
 }
 
 export const Completed: Story = {
-  render: (args) => (
-    <div className="relative h-48 w-56 rounded border">
-      <CalendarEventChip {...args} />
-    </div>
-  ),
+  render: (args) => <ToggleableChipDemo event={args.event} />,
   args: {
     event: {
       id: '5',
@@ -93,11 +104,7 @@ export const Completed: Story = {
 }
 
 export const CompletableWithStreak: Story = {
-  render: (args) => (
-    <div className="relative h-48 w-56 rounded border">
-      <CalendarEventChip {...args} />
-    </div>
-  ),
+  render: (args) => <ToggleableChipDemo event={args.event} />,
   args: {
     event: {
       id: '7',
