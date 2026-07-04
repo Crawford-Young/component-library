@@ -30,6 +30,7 @@ export interface WeekCalendarViewProps {
   readonly onEventClick?: (event: CalendarEvent) => void
   readonly onEventEdit?: (event: CalendarEvent) => void
   readonly onEventDelete?: (event: CalendarEvent) => void
+  readonly onEventToggleComplete?: (event: CalendarEvent) => void
   readonly onEventCreate?: (event: Omit<CalendarEvent, 'id'>) => void
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
@@ -372,6 +373,7 @@ export function WeekCalendarView({
   onEventClick,
   onEventEdit,
   onEventDelete,
+  onEventToggleComplete,
   onEventCreate,
   onEventMove,
   onEventResize,
@@ -453,6 +455,12 @@ export function WeekCalendarView({
   function handleEventEdit(event: CalendarEvent): void {
     setLocalEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))
     onEventEdit?.(event)
+  }
+
+  function handleEventToggleComplete(event: CalendarEvent): void {
+    const toggled: CalendarEvent = { ...event, completed: !event.completed }
+    setLocalEvents((prev) => prev.map((e) => (e.id === toggled.id ? toggled : e)))
+    onEventToggleComplete?.(toggled)
   }
 
   const deletedHistoryRef = React.useRef<CalendarEvent[]>([])
@@ -800,6 +808,17 @@ export function WeekCalendarView({
                             handleEventDelete(localEvents.find((e) => e.id === originalId)!)
                           }
                     }
+                    onToggleComplete={
+                      isOverflow
+                        ? undefined
+                        : (toggledEvent) => {
+                            if (!isRecur) {
+                              handleEventToggleComplete(toggledEvent)
+                              return
+                            }
+                            handleEventToggleComplete(localEvents.find((e) => e.id === originalId)!)
+                          }
+                    }
                     renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}
                     onMoveStart={
                       isOverflow
@@ -931,7 +950,6 @@ export function WeekCalendarView({
                   hourStart={effectiveHourStart}
                   hourCount={effectiveHourCount}
                   hourHeight={hourHeight}
-                  interactive={!!sleepEnabled}
                 />
               ) : (
                 sleepStart !== undefined &&
@@ -942,7 +960,6 @@ export function WeekCalendarView({
                     hourStart={effectiveHourStart}
                     hourCount={effectiveHourCount}
                     hourHeight={hourHeight}
-                    interactive={!!sleepEnabled}
                   />
                 )
               )}

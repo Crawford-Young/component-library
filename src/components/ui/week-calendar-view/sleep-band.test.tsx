@@ -120,8 +120,8 @@ describe('SleepBand awake-window model (per-day)', () => {
     expect(found[1].style.height).toBe(`${(7 / 24) * 100}%`)
   })
 
-  it('blocks pointer events by default and passes them through when non-interactive', () => {
-    const { container: on } = render(
+  it('shading is always pointer-events-none so it never blocks chip interaction', () => {
+    const { container } = render(
       <SleepBand
         awakeWindow={{ wake: 9, sleep: 17 }}
         hourStart={0}
@@ -129,17 +129,8 @@ describe('SleepBand awake-window model (per-day)', () => {
         hourHeight={30}
       />,
     )
-    expect(regions(on)[0].style.pointerEvents).toBe('auto')
-
-    const { container: off } = render(
-      <SleepBand
-        awakeWindow={{ wake: 9, sleep: 17 }}
-        hourStart={0}
-        hourCount={24}
-        hourHeight={30}
-        interactive={false}
-      />,
-    )
-    expect(regions(off)[0].style.pointerEvents).toBe('none')
+    const found = regions(container)
+    expect(found.length).toBe(2)
+    found.forEach((r) => expect(r.style.pointerEvents).toBe('none'))
   })
 })
