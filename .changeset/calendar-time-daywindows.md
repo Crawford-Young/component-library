@@ -9,3 +9,5 @@ ActivityFormDialog: rich-field parity (color, location, description, all-day), s
 WeekCalendarView: drag-create/move now only engages after the pointer crosses a slop threshold, so a stationary press (click) no longer misfires as a drag.
 
 CalendarEvent gains an optional `completed` field; `CalendarEventChip` gains an `onToggleComplete` prop that renders a "Mark complete" / "Mark incomplete" popover action and strikes through the title when completed. `WeekCalendarView` gains a matching `onEventToggleComplete` prop — toggling a recurrence instance toggles the original event. `SleepBand`'s `interactive` prop is removed: off-hour shading is now always `pointer-events-none`, so event chips inside sleep zones stay clickable while drag-create is still blocked by the existing slot-level window guard.
+
+CalendarEvent gains `streak` and `completable`: completable events render a one-click complete circle on the chip itself (sibling checkbox button — no nested-interactive), and streaks show as an inline flame+count on the chip's time line.
