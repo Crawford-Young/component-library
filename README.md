@@ -93,6 +93,13 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | --------- | ------------------------------------------------------------------------- |
 | `Table`   | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` |
 
+### Calendar
+
+| Component           | Notes                                                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `WeekCalendarView`  | Full week grid — recurring events, drag move/resize/create (slop threshold), undo, `use24h`, `dayWindows` per-day visible windows with sleep-zone shading, complete-toggle passthrough     |
+| `CalendarEventChip` | Event chip — edit/delete popover, drag handles, `use24h` time display, inline streak count (`streak`), one-click complete circle (`completable` + `onToggleComplete`), `completed` styling |
+
 ### Layout
 
 | Component      | Notes                                                                                    |
