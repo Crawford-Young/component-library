@@ -1,6 +1,8 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { WeekCalendarView, type DayWindow } from '@/components/ui/week-calendar-view'
+import { EventCreateForm } from '@/components/ui/week-calendar-view/event-create-form'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 
@@ -206,6 +208,78 @@ export const Interactive: Story = {
     onEventMove: () => {},
     onEventResize: () => {},
   },
+}
+
+const REPEAT_SELECT_LABEL = 'Repeat'
+
+function EventCreatePopoverWithRepeatDemo(): React.JSX.Element {
+  React.useEffect(() => {
+    function selectWeekly(select: HTMLSelectElement): void {
+      select.value = 'weekly'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+
+    // The Radix Popover portals its content on a subsequent tick, so the Repeat
+    // select isn't in the DOM yet on this effect's first run — observe for it.
+    const existing = document.querySelector<HTMLSelectElement>(
+      `select[aria-label="${REPEAT_SELECT_LABEL}"]`,
+    )
+    if (existing) {
+      selectWeekly(existing)
+      return
+    }
+    const observer = new MutationObserver(() => {
+      const select = document.querySelector<HTMLSelectElement>(
+        `select[aria-label="${REPEAT_SELECT_LABEL}"]`,
+      )
+      if (select) {
+        selectWeekly(select)
+        observer.disconnect()
+      }
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div className="relative inline-block">
+      <Popover open onOpenChange={() => {}}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="rounded border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground"
+          >
+            9:00 – 10:00 (drag anchor)
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-0" side="bottom" align="start">
+          <EventCreateForm
+            startSlot={36}
+            endSlot={40}
+            date="2026-05-04"
+            dayCount={1}
+            days={[new Date('2026-05-04T00:00:00')]}
+            startDayIdx={0}
+            currentDayIdx={0}
+            onSubmit={() => {}}
+            onCancel={() => {}}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+export const CreateWithRepeatCount: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'This is the same create popover WeekCalendarView opens after a drag-to-create gesture. Its Repeat select drives a repeat-count NumberInput that only renders once a non-None frequency is chosen. This demo pre-selects Weekly on mount so the count knob is visible without an extra click — in the real calendar it appears live as soon as you change Repeat yourself.',
+      },
+    },
+  },
+  render: () => <EventCreatePopoverWithRepeatDemo />,
 }
 
 export const SleepMode: Story = {

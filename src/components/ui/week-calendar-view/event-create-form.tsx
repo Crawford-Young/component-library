@@ -69,10 +69,12 @@ interface CreateDraft {
   recurrenceCount: number
 }
 
-/** Shape emitted to `onSubmit` — `CalendarEvent` fields plus the repeat-count draft. */
-export interface EventCreateSubmitPayload extends Omit<CalendarEvent, 'id'> {
-  readonly recurrenceCount?: number
-}
+/**
+ * Shape emitted to `onSubmit` — `CalendarEvent` fields minus `id`. `recurrenceCount` is inherited
+ * from `CalendarEvent` (declared there for typed consumers of the chip's edit payload too), so no
+ * separate declaration is needed here.
+ */
+export type EventCreateSubmitPayload = Omit<CalendarEvent, 'id'>
 
 export interface EventCreateFormProps {
   readonly startSlot: number
