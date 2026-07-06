@@ -51,6 +51,10 @@ const stories = [
   { name: 'WeekCalendarView', id: 'data-weekcalendarview--default' },
   { name: 'WeekCalendarView PerDayWindows', id: 'data-weekcalendarview--per-day-windows' },
   { name: 'WeekCalendarView EditAndDelete', id: 'data-weekcalendarview--edit-and-delete' },
+  {
+    name: 'WeekCalendarView CreateWithRepeatCount',
+    id: 'data-weekcalendarview--create-with-repeat-count',
+  },
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
@@ -59,6 +63,10 @@ const stories = [
   {
     name: 'CalendarEventChip CompletableWithStreak',
     id: 'data-calendareventchip--completable-with-streak',
+  },
+  {
+    name: 'CalendarEventChip SeriesDaysEditSeed',
+    id: 'data-calendareventchip--series-days-edit-seed',
   },
   { name: 'CalendarNavBar', id: 'data-calendarnavbar--default' },
   { name: 'AppShell', id: 'layout-appshell--default' },
@@ -87,6 +95,10 @@ const stories = [
   { name: 'ActivityFormDialog', id: 'dialogs-activityformdialog--create-task' },
   { name: 'ActivityFormDialog GoalMode', id: 'dialogs-activityformdialog--goal-mode' },
   { name: 'ActivityFormDialog GroupSocial', id: 'dialogs-activityformdialog--group-social' },
+  {
+    name: 'ActivityFormDialog WeeklyRecurrence',
+    id: 'dialogs-activityformdialog--weekly-recurrence',
+  },
   { name: 'BorderTrace', id: 'feedback-bordertrace--default' },
   { name: 'BorderTraceOnButton', id: 'feedback-bordertrace--on-button' },
   { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
