@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { EventCreateForm } from './event-create-form'
+import { EventCreateForm, type EventCreateSubmitPayload } from './event-create-form'
 
 const DAYS = [
   new Date('2026-05-03T00:00:00'), // Sun
@@ -333,5 +333,17 @@ describe('EventCreateForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     const payload = onSubmit.mock.calls[0][0]
     expect(JSON.stringify(payload)).not.toContain('recurrenceCount')
+  })
+
+  it('a typed onSubmit handler can read recurrenceCount with no cast (compile-time proof)', async () => {
+    const received: (number | undefined)[] = []
+    const onSubmit = (draft: EventCreateSubmitPayload): void => {
+      received.push(draft.recurrenceCount)
+    }
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(received).toEqual([2])
   })
 })
