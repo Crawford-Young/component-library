@@ -274,4 +274,64 @@ describe('EventCreateForm', () => {
     expect(screen.queryAllByRole('button', { name: 'AM' })).toHaveLength(0)
     expect(screen.queryAllByRole('button', { name: 'PM' })).toHaveLength(0)
   })
+
+  it('does not render repeat count input when frequency is none', () => {
+    render(<EventCreateForm {...baseProps} />)
+    expect(screen.queryByLabelText('Repeat count')).not.toBeInTheDocument()
+  })
+
+  it('renders repeat count input once a non-none frequency is chosen', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    expect(screen.getByLabelText('Repeat count')).toBeInTheDocument()
+  })
+
+  it('hides repeat count input again when frequency is set back to none', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'none')
+    expect(screen.queryByLabelText('Repeat count')).not.toBeInTheDocument()
+  })
+
+  it('submit includes recurrenceCount when frequency is non-none', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceCount).toBe(2)
+  })
+
+  it('submit uses the edited repeat count value', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    await userEvent.click(screen.getByRole('button', { name: 'Increment' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceCount).toBe(3)
+  })
+
+  it('repeat count cannot go below the minimum of 2', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    expect(screen.getByRole('button', { name: 'Decrement' })).toBeDisabled()
+  })
+
+  it('submit omits recurrenceCount when frequency is none (back-compat)', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceCount).toBeUndefined()
+  })
+
+  it('submit payload shape is unchanged when repeat count is untouched (back-compat)', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    const payload = onSubmit.mock.calls[0][0]
+    expect(JSON.stringify(payload)).not.toContain('recurrenceCount')
+  })
 })
