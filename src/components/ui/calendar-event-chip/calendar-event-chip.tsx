@@ -37,6 +37,22 @@ export interface CalendarEvent {
   readonly location?: string
   readonly recurrenceDays?: readonly DayOfWeek[]
   readonly recurrenceFrequency?: RecurrenceFrequency
+  /**
+   * Total occurrence count (e.g. weeks) for the event's recurrence, as emitted by
+   * `EventCreateForm`'s create-time submit payload (`EventCreateSubmitPayload.recurrenceCount`).
+   * Declared here so typed consumers can read/write it on the public `CalendarEvent` shape
+   * without a cast. `WeekCalendarView` does not read this field for display.
+   */
+  readonly recurrenceCount?: number
+  /**
+   * Edit-seed days for the chip's edit popover Days picker, decoupled from `recurrenceDays`'s
+   * WeekCalendarView display fan-out. When present, `seriesDays` takes precedence over
+   * `recurrenceDays` as the initial value shown in the picker (see `toDraft`); `recurrenceDays`
+   * alone continues to drive which days WeekCalendarView fans the chip across. Lets a consumer
+   * seed the picker from a wider recurring series (e.g. a streak group) without that series
+   * causing this chip instance to render on every series day.
+   */
+  readonly seriesDays?: readonly DayOfWeek[]
   /** Whether the event has been marked complete. Toggled via `onToggleComplete`. */
   readonly completed?: boolean
   /** Opt-in for the chip's one-click complete circle (renders only when a toggle handler is also wired). */
@@ -118,6 +134,13 @@ interface DraftEvent {
   recurrenceFrequency: RecurrenceFrequency | 'none'
 }
 
+/**
+ * Builds the edit form's initial draft from an event. The Days picker seed prefers
+ * `seriesDays` over `recurrenceDays` — `seriesDays` exists precisely to seed this picker
+ * without also driving WeekCalendarView's display fan-out, so when present it wins outright
+ * rather than merging with `recurrenceDays`. Saving still writes the resulting selection back
+ * under `recurrenceDays` (see `handleSave`) — `seriesDays` on the source event is left untouched.
+ */
 function toDraft(ev: CalendarEvent): DraftEvent {
   return {
     title: ev.title,
@@ -126,7 +149,7 @@ function toDraft(ev: CalendarEvent): DraftEvent {
     description: ev.description ?? '',
     startTime: ev.start.substring(11, 16),
     endTime: ev.end.substring(11, 16),
-    recurrenceDays: ev.recurrenceDays ?? [],
+    recurrenceDays: ev.seriesDays ?? ev.recurrenceDays ?? [],
     recurrenceFrequency: ev.recurrenceFrequency ?? 'none',
   }
 }

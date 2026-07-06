@@ -523,6 +523,88 @@ describe('recurrence fields in edit form', () => {
   })
 })
 
+describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', () => {
+  it('seeds the edit popover Days picker from seriesDays when recurrenceDays is absent', async () => {
+    const eventWithSeriesOnly: CalendarEvent = {
+      id: 's1',
+      title: 'Series only',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T07:30:00',
+      seriesDays: ['Tue', 'Thu'],
+    }
+    render(<CalendarEventChip event={eventWithSeriesOnly} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /series only/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Thu' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('seriesDays takes precedence over recurrenceDays when both are present', async () => {
+    const eventWithBoth: CalendarEvent = {
+      id: 's2',
+      title: 'Series precedence',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T07:30:00',
+      recurrenceDays: ['Mon'],
+      seriesDays: ['Wed', 'Fri'],
+    }
+    render(<CalendarEventChip event={eventWithBoth} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /series precedence/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Fri' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('saving with a seriesDays-seeded draft emits the picked days under recurrenceDays (handleSave shape unchanged)', async () => {
+    const onEdit = vi.fn()
+    const eventWithSeriesOnly: CalendarEvent = {
+      id: 's3',
+      title: 'Series persisted',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T07:30:00',
+      seriesDays: ['Tue', 'Thu'],
+    }
+    render(<CalendarEventChip event={eventWithSeriesOnly} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /series persisted/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: ['Tue', 'Thu'], seriesDays: ['Tue', 'Thu'] }),
+    )
+  })
+
+  it('a typed onEdit handler can read seriesDays and recurrenceCount with no cast (compile-time proof)', async () => {
+    const seenSeriesDays: (readonly string[] | undefined)[] = []
+    const seenRecurrenceCount: (number | undefined)[] = []
+    const onEdit = (updated: CalendarEvent): void => {
+      seenSeriesDays.push(updated.seriesDays)
+      seenRecurrenceCount.push(updated.recurrenceCount)
+    }
+    const eventWithBothFields: CalendarEvent = {
+      id: 's4',
+      title: 'Typed fields',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T07:30:00',
+      seriesDays: ['Mon'],
+      recurrenceCount: 6,
+    }
+    render(<CalendarEventChip event={eventWithBothFields} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /typed fields/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(seenSeriesDays).toEqual([['Mon']])
+    expect(seenRecurrenceCount).toEqual([6])
+  })
+})
+
 describe('resize handles', () => {
   it('renders bottom resize handle with data-resize="end"', () => {
     const { container } = render(<CalendarEventChip event={event} style={style} />)
