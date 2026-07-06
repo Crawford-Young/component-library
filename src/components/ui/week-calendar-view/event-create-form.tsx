@@ -8,6 +8,7 @@ import {
   type DayOfWeek,
   type RecurrenceFrequency,
 } from '@/components/ui/calendar-event-chip'
+import { NumberInput } from '@/components/ui/number-input'
 import { TimeInput } from '@/components/ui/time-input'
 
 const ALL_COLORS: readonly CalendarEventColor[] = [
@@ -29,6 +30,9 @@ const ALL_COLORS: readonly CalendarEventColor[] = [
 ]
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+/** Minimum value for the repeat-count field — mirrors TaskTimeFields/ActivityFormDialog. */
+const REPEAT_MIN = 2
 
 const inputCls =
   'w-full rounded border border-input bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -62,6 +66,7 @@ interface CreateDraft {
   allDay: boolean
   recurrenceDays: readonly DayOfWeek[]
   recurrenceFrequency: RecurrenceFrequency | 'none'
+  recurrenceCount: number
 }
 
 export interface EventCreateFormProps {
@@ -104,13 +109,14 @@ export function EventCreateForm({
     recurrenceDays:
       dayCount > 1 ? (coveredDays.map((d) => DAY_ABBR[d.getDay()]) as readonly DayOfWeek[]) : [],
     recurrenceFrequency: 'none',
+    recurrenceCount: REPEAT_MIN,
   })
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
     const isOvernight = !draft.allDay && draft.endTime < draft.startTime
     const endDate = isOvernight ? nextDayISO(date) : date
-    onSubmit({
+    const payload: Omit<CalendarEvent, 'id'> & { recurrenceCount?: number } = {
       title: draft.title,
       start: `${date}T${draft.startTime}:00`,
       end: `${endDate}T${draft.endTime}:00`,
@@ -121,7 +127,9 @@ export function EventCreateForm({
       recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays : undefined,
       recurrenceFrequency:
         draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
-    })
+      recurrenceCount: draft.recurrenceFrequency !== 'none' ? draft.recurrenceCount : undefined,
+    }
+    onSubmit(payload)
   }
 
   return (
@@ -258,6 +266,22 @@ export function EventCreateForm({
           <option value="yearly">Yearly</option>
         </select>
       </div>
+
+      {draft.recurrenceFrequency !== 'none' && (
+        <div>
+          <label htmlFor="create-event-repeat-count" className={labelCls}>
+            Repeat count
+          </label>
+          <NumberInput
+            id="create-event-repeat-count"
+            aria-label="Repeat count"
+            className="mt-1"
+            value={draft.recurrenceCount}
+            onChange={(n) => setDraft((d) => ({ ...d, recurrenceCount: n }))}
+            min={REPEAT_MIN}
+          />
+        </div>
+      )}
 
       <div>
         <p className={labelCls} aria-hidden="true">
