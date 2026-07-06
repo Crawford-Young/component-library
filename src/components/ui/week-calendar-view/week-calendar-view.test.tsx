@@ -2222,6 +2222,27 @@ describe('recurrence day expansion', () => {
     expect(screen.getAllByRole('button', { name: /no dup/i }).length).toBe(1)
   })
 
+  it('event with seriesDays but no recurrenceDays renders on its own day only (no fan-out)', () => {
+    const seriesSeedOnly: CalendarEvent = {
+      id: 'seed1',
+      title: 'Series seed only',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      seriesDays: ['Mon', 'Wed', 'Fri'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[seriesSeedOnly]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    // seriesDays is edit-seed-only — it must NOT drive WeekCalendarView's display fan-out
+    expect(screen.getAllByRole('button', { name: /series seed only/i }).length).toBe(1)
+  })
+
   it('move on recurrence instance calls onEventMove with original event id and preserved date', () => {
     const onMove = vi.fn()
     const recurringEvent: CalendarEvent = {
