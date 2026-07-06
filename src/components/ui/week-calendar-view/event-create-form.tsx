@@ -69,6 +69,11 @@ interface CreateDraft {
   recurrenceCount: number
 }
 
+/** Shape emitted to `onSubmit` — `CalendarEvent` fields plus the repeat-count draft. */
+export interface EventCreateSubmitPayload extends Omit<CalendarEvent, 'id'> {
+  readonly recurrenceCount?: number
+}
+
 export interface EventCreateFormProps {
   readonly startSlot: number
   readonly endSlot: number
@@ -78,7 +83,7 @@ export interface EventCreateFormProps {
   readonly startDayIdx: number
   readonly currentDayIdx: number
   readonly use24h?: boolean
-  readonly onSubmit: (draft: Omit<CalendarEvent, 'id'>) => void
+  readonly onSubmit: (draft: EventCreateSubmitPayload) => void
   readonly onCancel: () => void
 }
 
@@ -116,7 +121,7 @@ export function EventCreateForm({
     e.preventDefault()
     const isOvernight = !draft.allDay && draft.endTime < draft.startTime
     const endDate = isOvernight ? nextDayISO(date) : date
-    const payload: Omit<CalendarEvent, 'id'> & { recurrenceCount?: number } = {
+    const payload: EventCreateSubmitPayload = {
       title: draft.title,
       start: `${date}T${draft.startTime}:00`,
       end: `${endDate}T${draft.endTime}:00`,
