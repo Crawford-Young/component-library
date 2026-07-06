@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { type CalendarEventColor } from '@/components/ui/calendar-event-chip'
+import { type CalendarEventColor, type DayOfWeek } from '@/components/ui/calendar-event-chip'
 import { buildIso, toTimeSlot } from '@/lib/time'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -50,6 +50,7 @@ export interface ActivityFormValues {
   readonly endAt?: string | null
   readonly recurrence?: string | null
   readonly recurrenceCount?: number
+  readonly recurrenceDays?: readonly DayOfWeek[]
   readonly color?: string | null
   readonly location?: string | null
   readonly description?: string | null
@@ -75,6 +76,7 @@ const DEFAULT_TYPE: ActivityType = 'task'
 const DEFAULT_START_TIME = '09:00'
 const DEFAULT_END_TIME = '10:00'
 const DEFAULT_RECURRENCE = 'none'
+const WEEKLY_RECURRENCE = 'weekly'
 const REPEAT_MIN = 2
 const REPEAT_MAX = 52
 const MIN_PARTICIPANTS = 2
@@ -180,6 +182,9 @@ export function ActivityFormDialog({
   const [recurrenceCount, setRecurrenceCount] = React.useState(
     initialValues?.recurrenceCount ?? REPEAT_MIN,
   )
+  const [recurrenceDays, setRecurrenceDays] = React.useState<readonly DayOfWeek[]>(
+    initialValues?.recurrenceDays ?? [],
+  )
   const [color, setColor] = React.useState<CalendarEventColor>(
     (initialValues?.color as CalendarEventColor | undefined) ?? DEFAULT_COLOR,
   )
@@ -254,6 +259,8 @@ export function ActivityFormDialog({
       endAt: allDay ? null : buildIso(taskDate!, endTime),
       recurrence: recurrence === DEFAULT_RECURRENCE ? null : recurrence,
       recurrenceCount: recurrence === DEFAULT_RECURRENCE ? undefined : recurrenceCount,
+      recurrenceDays:
+        recurrence === WEEKLY_RECURRENCE && recurrenceDays.length > 0 ? recurrenceDays : undefined,
       color: color === DEFAULT_COLOR ? null : color,
       location: location.trim() || null,
       description: description.trim() || null,
@@ -338,6 +345,8 @@ export function ActivityFormDialog({
                   onRecurrenceChange={setRecurrence}
                   recurrenceCount={recurrenceCount}
                   onRecurrenceCountChange={setRecurrenceCount}
+                  recurrenceDays={recurrenceDays}
+                  onRecurrenceDaysChange={setRecurrenceDays}
                   showDate
                   showRecurrence
                   use24h={use24h}

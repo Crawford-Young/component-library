@@ -187,6 +187,93 @@ describe('TaskTimeFields', () => {
     })
   })
 
+  describe('weekday picker', () => {
+    it('does not render when recurrence is "none"', () => {
+      render(<TaskTimeFields {...makeProps({ recurrence: 'none' })} />)
+      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
+    })
+
+    it('does not render when recurrence is "daily"', () => {
+      render(<TaskTimeFields {...makeProps({ recurrence: 'daily' })} />)
+      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
+    })
+
+    it('does not render when recurrence is "monthly"', () => {
+      render(<TaskTimeFields {...makeProps({ recurrence: 'monthly' })} />)
+      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
+    })
+
+    it('renders a toggle group with the 3-letter day tokens when recurrence is "weekly"', () => {
+      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly' })} />)
+      expect(screen.getByRole('group', { name: 'Recurrence days' })).toBeInTheDocument()
+      for (const d of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+        expect(screen.getByRole('button', { name: `Day: ${d}` })).toBeInTheDocument()
+      }
+    })
+
+    it('marks seeded recurrenceDays as pressed and the rest as not pressed', () => {
+      render(
+        <TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceDays: ['Mon', 'Wed'] })} />,
+      )
+      expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      )
+    })
+
+    it('calls onRecurrenceDaysChange adding a day when an unselected day is clicked', async () => {
+      const user = userEvent.setup()
+      const onRecurrenceDaysChange = vi.fn()
+      render(
+        <TaskTimeFields
+          {...makeProps({
+            recurrence: 'weekly',
+            recurrenceDays: ['Mon'],
+            onRecurrenceDaysChange,
+          })}
+        />,
+      )
+      await user.click(screen.getByRole('button', { name: 'Day: Wed' }))
+      expect(onRecurrenceDaysChange).toHaveBeenCalledWith(['Mon', 'Wed'])
+    })
+
+    it('calls onRecurrenceDaysChange removing a day when a selected day is clicked', async () => {
+      const user = userEvent.setup()
+      const onRecurrenceDaysChange = vi.fn()
+      render(
+        <TaskTimeFields
+          {...makeProps({
+            recurrence: 'weekly',
+            recurrenceDays: ['Mon', 'Wed'],
+            onRecurrenceDaysChange,
+          })}
+        />,
+      )
+      await user.click(screen.getByRole('button', { name: 'Day: Mon' }))
+      expect(onRecurrenceDaysChange).toHaveBeenCalledWith(['Wed'])
+    })
+
+    it('does not throw when a day is clicked and no onRecurrenceDaysChange is provided', async () => {
+      const user = userEvent.setup()
+      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly' })} />)
+      await user.click(screen.getByRole('button', { name: 'Day: Fri' }))
+      expect(screen.getByRole('button', { name: 'Day: Fri' })).toBeInTheDocument()
+    })
+
+    it('hides the weekday picker when showRecurrence is false even if recurrence is "weekly"', () => {
+      render(<TaskTimeFields {...makeProps({ showRecurrence: false, recurrence: 'weekly' })} />)
+      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
+    })
+  })
+
   describe('labels', () => {
     it('renders Start time label', () => {
       render(<TaskTimeFields {...makeProps()} />)

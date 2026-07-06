@@ -700,6 +700,159 @@ describe('submit — social', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Weekday recurrence picker
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('weekday recurrence', () => {
+  it('does not render the weekday picker for non-weekly recurrence', () => {
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          initialValues: {
+            title: 'Run',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+            recurrence: 'daily',
+          },
+        })}
+      />,
+    )
+    expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
+  })
+
+  it('renders the weekday picker when recurrence is weekly', () => {
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          initialValues: {
+            title: 'Run',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+            recurrence: 'weekly',
+          },
+        })}
+      />,
+    )
+    expect(screen.getByRole('group', { name: 'Recurrence days' })).toBeInTheDocument()
+  })
+
+  it('seeds recurrenceDays from initialValues, pre-selecting matching toggles', () => {
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          initialValues: {
+            title: 'Run',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+            recurrence: 'weekly',
+            recurrenceDays: ['Mon', 'Wed'],
+          },
+        })}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('includes selected recurrenceDays in the submit payload', async () => {
+    const onSubmit = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          onSubmit,
+          initialValues: {
+            title: 'Weekly run',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+            recurrence: 'weekly',
+            recurrenceCount: 3,
+          },
+        })}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await user.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
+    expect(payload.recurrenceDays).toEqual(['Mon', 'Wed'])
+  })
+
+  it('omits recurrenceDays (undefined) from the submit payload when no days are selected', async () => {
+    const onSubmit = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          onSubmit,
+          initialValues: {
+            title: 'Weekly run',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+            recurrence: 'weekly',
+            recurrenceCount: 3,
+          },
+        })}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
+    expect(payload.recurrenceDays).toBeUndefined()
+  })
+
+  it('omits recurrenceDays when seeded days exist but frequency is switched away from weekly', async () => {
+    const onSubmit = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          onSubmit,
+          initialValues: {
+            title: 'Run',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+            recurrence: 'weekly',
+            recurrenceDays: ['Mon'],
+          },
+        })}
+      />,
+    )
+    await selectOption(user, 'Recurrence', /^daily$/i)
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
+    expect(payload.recurrenceDays).toBeUndefined()
+  })
+
+  it('back-compat: submitting a non-weekly task with no days interaction omits recurrenceDays', async () => {
+    const onSubmit = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          onSubmit,
+          initialValues: {
+            title: 'Plain task',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+          },
+        })}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
+    expect(payload.recurrenceDays).toBeUndefined()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Save enable/disable + isPending + Cancel
 // ═══════════════════════════════════════════════════════════════════════════════
 
