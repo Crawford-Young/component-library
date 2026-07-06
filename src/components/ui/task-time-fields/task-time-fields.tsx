@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { type DayOfWeek } from '@/components/ui/calendar-event-chip'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { NumberInput } from '@/components/ui/number-input'
@@ -10,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -19,6 +21,10 @@ const RECURRENCE_OPTIONS = [
   { value: 'weekly', label: 'Weekly' },
   { value: 'monthly', label: 'Monthly' },
 ] as const
+
+const WEEKLY_RECURRENCE = 'weekly'
+
+const DAY_ABBR: readonly DayOfWeek[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +39,9 @@ export interface TaskTimeFieldsProps {
   readonly onRecurrenceChange: (r: string) => void
   readonly recurrenceCount: number
   readonly onRecurrenceCountChange: (n: number) => void
+  /** Days of week selected for weekly recurrence. Defaults to an empty selection. */
+  readonly recurrenceDays?: readonly DayOfWeek[]
+  readonly onRecurrenceDaysChange?: (days: readonly DayOfWeek[]) => void
   readonly showDate?: boolean
   readonly showRecurrence?: boolean
   /** Display times as 24-hour (HH:MM) instead of 12-hour with an AM/PM toggle. */
@@ -56,6 +65,8 @@ export function TaskTimeFields({
   onRecurrenceChange,
   recurrenceCount,
   onRecurrenceCountChange,
+  recurrenceDays = [],
+  onRecurrenceDaysChange,
   showDate = true,
   showRecurrence = true,
   use24h = false,
@@ -69,6 +80,7 @@ export function TaskTimeFields({
   const dateId = React.useId()
 
   const showRepeatCount = showRecurrence && recurrence !== 'none'
+  const showWeekdayPicker = showRecurrence && recurrence === WEEKLY_RECURRENCE
 
   return (
     <div className="flex flex-col gap-4">
@@ -120,6 +132,38 @@ export function TaskTimeFields({
               ))}
             </SelectContent>
           </Select>
+        </div>
+      )}
+
+      {showWeekdayPicker && (
+        <div className="flex flex-col gap-1.5">
+          <Label aria-hidden="true">Days</Label>
+          <div className="flex gap-1" role="group" aria-label="Recurrence days">
+            {DAY_ABBR.map((d) => {
+              const active = recurrenceDays.includes(d)
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  aria-label={`Day: ${d}`}
+                  aria-pressed={active}
+                  onClick={() =>
+                    onRecurrenceDaysChange?.(
+                      active ? recurrenceDays.filter((x) => x !== d) : [...recurrenceDays, d],
+                    )
+                  }
+                  className={cn(
+                    'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                  )}
+                >
+                  {d[0]}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 

@@ -66,6 +66,22 @@ export const GroupSocial: Story = {
   ),
 }
 
+export const WeeklyRecurrence: Story = {
+  render: () => (
+    <ControlledDialog
+      initialType="task"
+      initialValues={{
+        title: 'Weekly standup',
+        startAt: '2025-06-15T09:00:00.000Z',
+        endAt: '2025-06-15T09:30:00.000Z',
+        recurrence: 'weekly',
+        recurrenceCount: 8,
+        recurrenceDays: ['Mon', 'Wed', 'Fri'],
+      }}
+    />
+  ),
+}
+
 export const EditLockType: Story = {
   render: () => (
     <ControlledDialog
