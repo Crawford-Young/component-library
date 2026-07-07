@@ -140,12 +140,31 @@ interface DraftEvent {
   recurrenceFrequency: RecurrenceFrequency | 'none'
 }
 
+function fmt24h(d: Date): string {
+  const h = String(d.getHours()).padStart(2, '0')
+  const m = d.getMinutes().toString().padStart(2, '0')
+  return `${h}:${m}`
+}
+
+/** Parses a zero-padded "HH:MM" draft time (as produced by `TimeInput`) into `[hour, minute]`. */
+function parseHHMM(time: string): [hour: number, minute: number] {
+  const [h, m] = time.split(':')
+  return [Number(h), Number(m)]
+}
+
 /**
  * Builds the edit form's initial draft from an event. The Days picker seed prefers
  * `seriesDays` over `recurrenceDays` — `seriesDays` exists precisely to seed this picker
  * without also driving WeekCalendarView's display fan-out, so when present it wins outright
  * rather than merging with `recurrenceDays`. Saving still writes the resulting selection back
  * under `recurrenceDays` (see `handleSave`) — `seriesDays` on the source event is left untouched.
+ *
+ * Start/End are seeded from the LOCAL wall-clock of the event's instants — matching exactly
+ * what the chip and popover already display (`formatTimeRange`, both driven by local `Date`
+ * getters). Reading the ISO's own written clock digits (e.g. via `ev.start.substring(11, 16)`)
+ * is wrong whenever the ISO carries an explicit offset or "Z": that substring is the offset's
+ * own clock, not the viewer's local one, and seeding from it is the root cause of the
+ * post-save time jump this fixes.
  */
 function toDraft(ev: CalendarEvent): DraftEvent {
   return {
@@ -153,17 +172,11 @@ function toDraft(ev: CalendarEvent): DraftEvent {
     color: ev.color ?? 'default',
     location: ev.location ?? '',
     description: ev.description ?? '',
-    startTime: ev.start.substring(11, 16),
-    endTime: ev.end.substring(11, 16),
+    startTime: fmt24h(new Date(ev.start)),
+    endTime: fmt24h(new Date(ev.end)),
     recurrenceDays: ev.seriesDays ?? ev.recurrenceDays ?? [],
     recurrenceFrequency: ev.recurrenceFrequency ?? 'none',
   }
-}
-
-function fmt24h(d: Date): string {
-  const h = String(d.getHours()).padStart(2, '0')
-  const m = d.getMinutes().toString().padStart(2, '0')
-  return `${h}:${m}`
 }
 
 function formatTimeRange(start: string, end: string, use24h = false): string {
@@ -287,16 +300,6 @@ const labelCls = 'mb-0.5 block text-[11px] font-medium text-muted-foreground'
 const quickActionButtonCls =
   'flex h-3 w-3 items-center justify-center rounded-full opacity-0 pointer-events-none motion-safe:transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
-function nextDayISO(dateStr: string): string {
-  const d = new Date(`${dateStr}T00:00:00`)
-  d.setDate(d.getDate() + 1)
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-')
-}
-
 export function CalendarEventChip({
   event,
   style,
@@ -330,10 +333,28 @@ export function CalendarEventChip({
   }
 
   function handleSave(): void {
-    const startDate = event.start.substring(0, 10)
-    const endDate = draft.endTime < draft.startTime ? nextDayISO(startDate) : startDate
-    const start = `${startDate}T${draft.startTime}:00`
-    const end = `${endDate}T${draft.endTime}:00`
+    // Anchor the edit to the event's LOCAL calendar day (not the ISO's own written date —
+    // that's the UTC/local mismatch this fixes) and rebuild real instants from the drafted
+    // local HH:MM. `Date`'s constructor normalizes day overflow, so day + 1 on an overnight
+    // end just works.
+    const anchor = new Date(event.start)
+    const [startHour, startMinute] = parseHHMM(draft.startTime)
+    const [endHour, endMinute] = parseHHMM(draft.endTime)
+    const isOvernight = draft.endTime < draft.startTime
+    const start = new Date(
+      anchor.getFullYear(),
+      anchor.getMonth(),
+      anchor.getDate(),
+      startHour,
+      startMinute,
+    ).toISOString()
+    const end = new Date(
+      anchor.getFullYear(),
+      anchor.getMonth(),
+      anchor.getDate() + (isOvernight ? 1 : 0),
+      endHour,
+      endMinute,
+    ).toISOString()
     onEdit!({
       ...event,
       title: draft.title,

@@ -188,9 +188,17 @@ describe('CalendarEventChip', () => {
     fireEvent.change(endM, { target: { value: '0' } })
     fireEvent.blur(endM)
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ start: '2026-05-04T10:00:00', end: '2026-05-04T11:00:00' }),
-    )
+    const saved = onEdit.mock.calls[0][0]
+    // Behavior-flipped (was a literal zoneless-string match): handleSave now emits real
+    // instants via toISOString(), so the saved string always carries milliseconds + "Z" —
+    // the correctness check is that the LOCAL wall-clock the user typed round-trips, not
+    // that the raw string equals a hand-built zoneless template.
+    expect(new Date(saved.start).getHours()).toBe(10)
+    expect(new Date(saved.start).getMinutes()).toBe(0)
+    expect(new Date(saved.end).getHours()).toBe(11)
+    expect(new Date(saved.end).getMinutes()).toBe(0)
+    expect(new Date(saved.start).getDate()).toBe(new Date(event.start).getDate())
+    expect(new Date(saved.end).getDate()).toBe(new Date(event.start).getDate())
   })
 
   it('overnight edit: end < start advances end to next day', async () => {
@@ -210,8 +218,13 @@ describe('CalendarEventChip', () => {
     fireEvent.blur(screen.getByRole('spinbutton', { name: 'End hour' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     const saved = onEdit.mock.calls[0][0]
-    expect(saved.start.substring(0, 10)).toBe('2026-05-04')
-    expect(saved.end.substring(0, 10)).toBe('2026-05-05')
+    // Behavior-flipped (was `saved.start.substring(0, 10)` / `saved.end.substring(0, 10)`):
+    // those substrings read the ISO's UTC calendar date. handleSave now emits real instants
+    // via toISOString(), so a UTC-date substring on a local-midnight-crossing edit is no
+    // longer the correct assertion — the invariant is the LOCAL calendar date, checked via
+    // Date getters, which is exactly what a zoneless input's substring used to coincide with.
+    expect(new Date(saved.start).getDate()).toBe(4)
+    expect(new Date(saved.end).getDate()).toBe(5)
   })
 
   it('overnight edit: shows +1 day label when end < start', async () => {
@@ -224,6 +237,147 @@ describe('CalendarEventChip', () => {
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByText('+1 day')).toBeInTheDocument()
+  })
+
+  describe('UTC/local wall-clock invariant (offset-explicit inputs)', () => {
+    it('no-op edit round-trips start/end instants exactly (kills the post-save time jump)', async () => {
+      const onEdit = vi.fn()
+      const utcEvent: CalendarEvent = {
+        ...event,
+        id: 'tz-noop',
+        start: '2026-07-07T14:00:00.000Z',
+        end: '2026-07-07T14:30:00.000Z',
+      }
+      render(<CalendarEventChip event={utcEvent} style={style} onEdit={onEdit} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+      await userEvent.click(screen.getByRole('button', { name: /save/i }))
+      const saved = onEdit.mock.calls[0][0]
+      expect(new Date(saved.start).getTime()).toBe(new Date(utcEvent.start).getTime())
+      expect(new Date(saved.end).getTime()).toBe(new Date(utcEvent.end).getTime())
+    })
+
+    it('seeds draft start/end from the LOCAL wall-clock of an explicit-offset ISO event', async () => {
+      const offsetEvent: CalendarEvent = {
+        ...event,
+        id: 'tz-seed',
+        start: '2026-07-07T08:00:00+02:00',
+        end: '2026-07-07T09:15:00+02:00',
+      }
+      const to12h = (d: Date): { hourStr: string; minuteStr: string; ampm: 'AM' | 'PM' } => {
+        const h24 = d.getHours()
+        const hour12 = h24 % 12 === 0 ? 12 : h24 % 12
+        return {
+          hourStr: String(hour12),
+          minuteStr: String(d.getMinutes()).padStart(2, '0'),
+          ampm: h24 < 12 ? 'AM' : 'PM',
+        }
+      }
+      const expectedStart = to12h(new Date(offsetEvent.start))
+      const expectedEnd = to12h(new Date(offsetEvent.end))
+
+      render(<CalendarEventChip event={offsetEvent} style={style} onEdit={vi.fn()} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+
+      expect(screen.getByRole('spinbutton', { name: 'Start hour' })).toHaveValue(
+        expectedStart.hourStr,
+      )
+      expect(screen.getByRole('spinbutton', { name: 'Start minute' })).toHaveValue(
+        expectedStart.minuteStr,
+      )
+      expect(screen.getByRole('spinbutton', { name: 'End hour' })).toHaveValue(expectedEnd.hourStr)
+      expect(screen.getByRole('spinbutton', { name: 'End minute' })).toHaveValue(
+        expectedEnd.minuteStr,
+      )
+
+      // Each TimeInput (Start, then End) always renders both an AM and a PM button; DOM order
+      // is stable (Start block before End block), so index 0 = Start's button, 1 = End's.
+      const amButtons = screen.getAllByRole('button', { name: 'AM' })
+      const pmButtons = screen.getAllByRole('button', { name: 'PM' })
+      const startAmPmBtn = expectedStart.ampm === 'AM' ? amButtons[0] : pmButtons[0]
+      const endAmPmBtn = expectedEnd.ampm === 'AM' ? amButtons[1] : pmButtons[1]
+      expect(startAmPmBtn).toHaveAttribute('aria-pressed', 'true')
+      expect(endAmPmBtn).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('saves an edited time to the intended LOCAL wall-clock (verified via Date getters)', async () => {
+      const onEdit = vi.fn()
+      // +09:00 is far enough from any plausible runner zone that the calendar date WRITTEN in
+      // the ISO string diverges from the TRUE local calendar date of the instant — exactly the
+      // shape the UTC/local-date mismatch bug flips (anchor computed from the written date
+      // instead of `new Date(event.start)`'s local getters).
+      const offsetEvent: CalendarEvent = {
+        ...event,
+        id: 'tz-edit',
+        start: '2026-07-07T01:00:00+09:00',
+        end: '2026-07-07T02:00:00+09:00',
+      }
+      const trueLocalStart = new Date(offsetEvent.start)
+
+      render(<CalendarEventChip event={offsetEvent} style={style} onEdit={onEdit} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+      const startH = screen.getByRole('spinbutton', { name: 'Start hour' })
+      fireEvent.change(startH, { target: { value: '10' } })
+      fireEvent.blur(startH)
+      // Force AM explicitly so the final draft hour is fully deterministic regardless of the
+      // AM/PM the (possibly still-buggy) seed landed on.
+      await userEvent.click(screen.getAllByRole('button', { name: 'AM' })[0])
+      await userEvent.click(screen.getByRole('button', { name: /save/i }))
+      const saved = onEdit.mock.calls[0][0]
+      expect(new Date(saved.start).getHours()).toBe(10)
+      expect(new Date(saved.start).getFullYear()).toBe(trueLocalStart.getFullYear())
+      expect(new Date(saved.start).getMonth()).toBe(trueLocalStart.getMonth())
+      expect(new Date(saved.start).getDate()).toBe(trueLocalStart.getDate())
+    })
+
+    it('local-overnight end: +1 day lands on the LOCAL calendar day after start, not the UTC one', async () => {
+      const onEdit = vi.fn()
+      // Same divergent-offset shape as above: the written ISO date is one calendar day ahead
+      // of the TRUE local date of the instant in any zone west of +09:00.
+      const localOvernightEvent: CalendarEvent = {
+        ...event,
+        id: 'tz-overnight',
+        start: '2026-07-07T01:00:00+09:00',
+        end: '2026-07-07T02:00:00+09:00',
+      }
+      const trueLocalStart = new Date(localOvernightEvent.start)
+      const expectedEndLocalDay = new Date(
+        trueLocalStart.getFullYear(),
+        trueLocalStart.getMonth(),
+        trueLocalStart.getDate() + 1,
+      )
+
+      render(<CalendarEventChip event={localOvernightEvent} style={style} onEdit={onEdit} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+      // Force both Start and End to explicit, deterministic clock values (11:00 PM / 1:00 AM)
+      // so the overnight branch is guaranteed to trigger regardless of what the (possibly
+      // still-buggy) seed produced.
+      const startH = screen.getByRole('spinbutton', { name: 'Start hour' })
+      const startM = screen.getByRole('spinbutton', { name: 'Start minute' })
+      fireEvent.change(startH, { target: { value: '11' } })
+      fireEvent.blur(startH)
+      fireEvent.change(startM, { target: { value: '0' } })
+      fireEvent.blur(startM)
+      await userEvent.click(screen.getAllByRole('button', { name: 'PM' })[0])
+
+      const endH = screen.getByRole('spinbutton', { name: 'End hour' })
+      const endM = screen.getByRole('spinbutton', { name: 'End minute' })
+      fireEvent.change(endH, { target: { value: '1' } })
+      fireEvent.blur(endH)
+      fireEvent.change(endM, { target: { value: '0' } })
+      fireEvent.blur(endM)
+      await userEvent.click(screen.getAllByRole('button', { name: 'AM' })[1])
+
+      await userEvent.click(screen.getByRole('button', { name: /save/i }))
+      const saved = onEdit.mock.calls[0][0]
+      const savedEndLocal = new Date(saved.end)
+      expect(savedEndLocal.getFullYear()).toBe(expectedEndLocalDay.getFullYear())
+      expect(savedEndLocal.getMonth()).toBe(expectedEndLocalDay.getMonth())
+      expect(savedEndLocal.getDate()).toBe(expectedEndLocalDay.getDate())
+    })
   })
 
   it('delete button rendered when onDelete provided', async () => {
