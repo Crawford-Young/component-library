@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { CalendarEventChip } from './calendar-event-chip'
 import type { CalendarEvent, CalendarEventColor } from './calendar-event-chip'
+import type {
+  CalendarEvent as BarrelCalendarEvent,
+  CalendarEventChipProps as BarrelCalendarEventChipProps,
+} from '@/index'
 
 const event: CalendarEvent = {
   id: '1',
@@ -933,6 +937,204 @@ describe('inline complete circle', () => {
       // the trigger button (via PopoverTrigger asChild, which adds no wrapper element) is a
       // direct child of root — a sibling of the cluster wrapper, not its ancestor.
       expect(trigger.parentElement).toBe(root)
+    })
+  })
+
+  describe('lock', () => {
+    it('lock button absent when onToggleLock not provided', () => {
+      render(<CalendarEventChip event={event} style={style} />)
+      expect(screen.queryByRole('button', { name: 'Lock event' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Unlock event' })).not.toBeInTheDocument()
+    })
+
+    it('lock button rendered (idle-visible) when onToggleLock provided and event unlocked', () => {
+      render(<CalendarEventChip event={event} style={style} onToggleLock={vi.fn()} />)
+      expect(screen.getByRole('button', { name: 'Lock event' })).toBeInTheDocument()
+    })
+
+    it('lock button labeled Unlock event when event is already locked', () => {
+      const locked = { ...event, locked: true }
+      render(<CalendarEventChip event={locked} style={style} onToggleLock={vi.fn()} />)
+      expect(screen.getByRole('button', { name: 'Unlock event' })).toBeInTheDocument()
+    })
+
+    it('lock button has no hover-reveal classes (always visible like the checkbox)', () => {
+      render(<CalendarEventChip event={event} style={style} onToggleLock={vi.fn()} />)
+      const lockBtn = screen.getByRole('button', { name: 'Lock event' })
+      expect(lockBtn.className).not.toContain('opacity-0')
+      expect(lockBtn.className).not.toContain('pointer-events-none')
+    })
+
+    it('aria-pressed reflects locked state', () => {
+      const { rerender } = render(
+        <CalendarEventChip event={event} style={style} onToggleLock={vi.fn()} />,
+      )
+      expect(screen.getByRole('button', { name: 'Lock event' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      )
+      rerender(
+        <CalendarEventChip
+          event={{ ...event, locked: true }}
+          style={style}
+          onToggleLock={vi.fn()}
+        />,
+      )
+      expect(screen.getByRole('button', { name: 'Unlock event' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    })
+
+    it('clicking the lock button calls onToggleLock with the event and does not open the popover', async () => {
+      const onToggleLock = vi.fn()
+      render(<CalendarEventChip event={event} style={style} onToggleLock={onToggleLock} />)
+      await userEvent.click(screen.getByRole('button', { name: 'Lock event' }))
+      expect(onToggleLock).toHaveBeenCalledWith(event)
+      expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
+    })
+
+    it('lock button pointerdown never starts a move drag', () => {
+      const onMoveStart = vi.fn()
+      render(
+        <CalendarEventChip
+          event={event}
+          style={style}
+          onToggleLock={vi.fn()}
+          onMoveStart={onMoveStart}
+        />,
+      )
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Lock event' }))
+      expect(onMoveStart).not.toHaveBeenCalled()
+    })
+
+    it('cluster order left to right is quick-edit, quick-delete, checkbox, lock', () => {
+      const completable = { ...event, completable: true }
+      render(
+        <CalendarEventChip
+          event={completable}
+          style={style}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleComplete={vi.fn()}
+          onToggleLock={vi.fn()}
+        />,
+      )
+      const cluster = screen.getByRole('button', { name: 'Quick edit' })
+        .parentElement as HTMLElement
+      const buttons = Array.from(cluster.querySelectorAll('button'))
+      expect(buttons.map((b) => b.getAttribute('role') ?? b.getAttribute('aria-label'))).toEqual([
+        'Quick edit',
+        'Quick delete',
+        'checkbox',
+        'Lock event',
+      ])
+    })
+
+    describe('locked event gating (move/resize only — everything else still works)', () => {
+      const lockedEvent = { ...event, locked: true }
+
+      it('pointerdown on the trigger does not call onMoveStart when locked', () => {
+        const onMoveStart = vi.fn()
+        render(<CalendarEventChip event={lockedEvent} style={style} onMoveStart={onMoveStart} />)
+        const chip = screen.getByRole('button', { name: /team standup/i })
+        fireEvent.pointerDown(chip, { clientY: 250, clientX: 100 })
+        expect(onMoveStart).not.toHaveBeenCalled()
+      })
+
+      it('resize strips are not rendered when locked', () => {
+        const { container } = render(<CalendarEventChip event={lockedEvent} style={style} />)
+        expect(container.querySelector('[data-resize="start"]')).not.toBeInTheDocument()
+        expect(container.querySelector('[data-resize="end"]')).not.toBeInTheDocument()
+      })
+
+      it('resize strips are rendered when not locked', () => {
+        const { container } = render(<CalendarEventChip event={event} style={style} />)
+        expect(container.querySelector('[data-resize="start"]')).toBeInTheDocument()
+        expect(container.querySelector('[data-resize="end"]')).toBeInTheDocument()
+      })
+
+      it('cursor-grab class is absent when locked even though onMoveStart is provided', () => {
+        render(<CalendarEventChip event={lockedEvent} style={style} onMoveStart={vi.fn()} />)
+        const chip = screen.getByRole('button', { name: /team standup/i })
+        expect(chip.className).not.toContain('cursor-grab')
+      })
+
+      it('popover still opens on click when locked', async () => {
+        render(<CalendarEventChip event={lockedEvent} style={style} />)
+        await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+        expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
+      })
+
+      it('quick edit still opens edit mode when locked', async () => {
+        render(<CalendarEventChip event={lockedEvent} style={style} onEdit={vi.fn()} />)
+        await userEvent.click(screen.getByRole('button', { name: 'Quick edit' }))
+        expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      })
+
+      it('quick delete still calls onDelete when locked', async () => {
+        const onDelete = vi.fn()
+        render(<CalendarEventChip event={lockedEvent} style={style} onDelete={onDelete} />)
+        await userEvent.click(screen.getByRole('button', { name: 'Quick delete' }))
+        expect(onDelete).toHaveBeenCalledWith(lockedEvent)
+      })
+
+      it('complete toggle still works when locked', async () => {
+        const onToggleComplete = vi.fn()
+        render(
+          <CalendarEventChip
+            event={lockedEvent}
+            style={style}
+            onToggleComplete={onToggleComplete}
+          />,
+        )
+        await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+        await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+        expect(onToggleComplete).toHaveBeenCalledWith(lockedEvent)
+      })
+    })
+
+    describe('title reserve retune for lock', () => {
+      it('idle reserve is pr-8 / hover reserve is pr-14 when onToggleLock is wired', () => {
+        render(<CalendarEventChip event={event} style={style} onToggleLock={vi.fn()} />)
+        const title = screen.getByText('Team standup')
+        expect(title.className).toContain('pr-8')
+        expect(title.className).toContain('group-hover:pr-14')
+        expect(title.className).toContain('group-focus-within:pr-14')
+        expect(title.className).not.toContain('pr-4')
+        expect(title.className).not.toContain('pr-11')
+      })
+
+      it('idle reserve stays pr-4 / hover pr-11 when onToggleLock is not wired (C1 values unchanged)', () => {
+        render(<CalendarEventChip event={event} style={style} />)
+        const title = screen.getByText('Team standup')
+        expect(title.className).toContain('pr-4')
+        expect(title.className).toContain('group-hover:pr-11')
+        expect(title.className).toContain('group-focus-within:pr-11')
+        expect(title.className).not.toContain('pr-8')
+        expect(title.className).not.toContain('pr-14')
+      })
+    })
+
+    it('a typed onToggleLock handler can read event.locked with no cast (compile-time proof)', () => {
+      const seenLocked: (boolean | undefined)[] = []
+      const onToggleLock = (updated: CalendarEvent): void => {
+        seenLocked.push(updated.locked)
+      }
+      const lockableEvent: CalendarEvent = { ...event, locked: false }
+      render(<CalendarEventChip event={lockableEvent} style={style} onToggleLock={onToggleLock} />)
+      fireEvent.click(screen.getByRole('button', { name: 'Lock event' }))
+      expect(seenLocked).toEqual([false])
+    })
+  })
+
+  describe('barrel dist-reachability (locked + onToggleLock)', () => {
+    it('CalendarEvent.locked and CalendarEventChipProps.onToggleLock are usable via the package barrel with no cast', () => {
+      const barrelEvent: BarrelCalendarEvent = { ...event, locked: true }
+      const handler: NonNullable<BarrelCalendarEventChipProps['onToggleLock']> = (e) => {
+        expect(e.locked).toBe(true)
+      }
+      handler(barrelEvent)
     })
   })
 

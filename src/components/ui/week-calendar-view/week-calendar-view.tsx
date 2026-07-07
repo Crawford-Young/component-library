@@ -31,6 +31,7 @@ export interface WeekCalendarViewProps {
   readonly onEventEdit?: (event: CalendarEvent) => void
   readonly onEventDelete?: (event: CalendarEvent) => void
   readonly onEventToggleComplete?: (event: CalendarEvent) => void
+  readonly onEventToggleLock?: (event: CalendarEvent) => void
   readonly onEventCreate?: (event: Omit<CalendarEvent, 'id'>) => void
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
@@ -374,6 +375,7 @@ export function WeekCalendarView({
   onEventEdit,
   onEventDelete,
   onEventToggleComplete,
+  onEventToggleLock,
   onEventCreate,
   onEventMove,
   onEventResize,
@@ -461,6 +463,12 @@ export function WeekCalendarView({
     const toggled: CalendarEvent = { ...event, completed: !event.completed }
     setLocalEvents((prev) => prev.map((e) => (e.id === toggled.id ? toggled : e)))
     onEventToggleComplete?.(toggled)
+  }
+
+  function handleEventToggleLock(event: CalendarEvent): void {
+    const toggled: CalendarEvent = { ...event, locked: !event.locked }
+    setLocalEvents((prev) => prev.map((e) => (e.id === toggled.id ? toggled : e)))
+    onEventToggleLock?.(toggled)
   }
 
   const deletedHistoryRef = React.useRef<CalendarEvent[]>([])
@@ -817,6 +825,17 @@ export function WeekCalendarView({
                               return
                             }
                             handleEventToggleComplete(localEvents.find((e) => e.id === originalId)!)
+                          }
+                    }
+                    onToggleLock={
+                      isOverflow
+                        ? undefined
+                        : (toggledEvent) => {
+                            if (!isRecur) {
+                              handleEventToggleLock(toggledEvent)
+                              return
+                            }
+                            handleEventToggleLock(localEvents.find((e) => e.id === originalId)!)
                           }
                     }
                     renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cva } from 'class-variance-authority'
-import { CircleCheck, Flame, Pencil, X } from 'lucide-react'
+import { CircleCheck, Flame, Lock, LockOpen, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -59,6 +59,11 @@ export interface CalendarEvent {
   readonly completable?: boolean
   /** Current completion streak, computed by the app. Shown as flame+count on the time line when > 0. */
   readonly streak?: number
+  /**
+   * App-persisted lock flag. When `true`, the chip blocks drag/resize only — popover, quick
+   * edit/delete, and complete-toggle all keep working. Toggled via `onToggleLock`.
+   */
+  readonly locked?: boolean
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
@@ -93,6 +98,7 @@ export interface CalendarEventChipProps {
   readonly onEdit?: (event: CalendarEvent) => void
   readonly onDelete?: (event: CalendarEvent) => void
   readonly onToggleComplete?: (event: CalendarEvent) => void
+  readonly onToggleLock?: (event: CalendarEvent) => void
   readonly onMoveStart?: (
     event: CalendarEvent,
     clientY: number,
@@ -299,6 +305,7 @@ export function CalendarEventChip({
   onEdit,
   onDelete,
   onToggleComplete,
+  onToggleLock,
   onMoveStart,
   onResizeStart,
   renderPopover,
@@ -357,6 +364,8 @@ export function CalendarEventChip({
   const displayMin = startDate.getMinutes().toString().padStart(2, '0')
   const displayStartTime = use24h ? fmt24h(startDate) : `${displayHour}:${displayMin}`
   const showCheckbox = event.completable === true && onToggleComplete !== undefined
+  const showLock = onToggleLock !== undefined
+  const isLocked = event.locked === true
   const showStreak = event.streak !== undefined && event.streak > 0
 
   return (
@@ -370,7 +379,7 @@ export function CalendarEventChip({
             type="button"
             className={cn(
               'block h-full w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              onMoveStart !== undefined && 'cursor-grab',
+              onMoveStart !== undefined && !isLocked && 'cursor-grab',
             )}
             aria-label={`${event.title} ${timeRange}`}
             onClick={() => onClick?.(event)}
@@ -378,6 +387,7 @@ export function CalendarEventChip({
               if (e.key === 'Enter' || e.key === ' ') onClick?.(event)
             }}
             onPointerDown={(e) => {
+              if (isLocked) return
               const target = e.target as HTMLElement
               const resize = target.dataset.resize
               if (resize === 'start' || resize === 'end') {
@@ -391,12 +401,21 @@ export function CalendarEventChip({
             <div
               className={cn(
                 // Reserve room on the right for the cluster (sibling, absolutely positioned —
-                // see below), so truncated title text never runs under it. Idle: pr-4 (16px)
-                // clears the always-visible checkbox alone (rightmost cluster slot, 12px icon +
-                // right-1 4px inset). Hover/focus-within: pr-11 (44px) clears the full 3-icon
-                // cluster (3 * h-3/w-3 12px + 2 * gap-0.5 2px + right-1 4px = 44px) once quick
-                // edit/delete reveal.
-                'truncate pr-4 font-semibold motion-safe:transition-[padding] group-hover:pr-11 group-focus-within:pr-11',
+                // see below), so truncated title text never runs under it. Two pairs, chosen by
+                // whether the lock button is wired (it's idle-visible, unlike edit/delete which
+                // only reveal on hover):
+                //   - Lock NOT wired (C1 values, unchanged): idle pr-4 (16px) clears the
+                //     always-visible checkbox alone (12px icon + right-1 4px inset). Hover/
+                //     focus-within pr-11 (44px) clears the full 3-icon cluster
+                //     (3 * 12px + 2 * gap-0.5 2px + 4px = 44px) once quick edit/delete reveal.
+                //   - Lock wired: idle now has 2 always-visible icons (checkbox + lock):
+                //     2*12 + 1*2 + 4 = 30px — no exact Tailwind step (pr-7=28/pr-8=32), pr-8
+                //     picked for headroom. Hover has the full 4-icon cluster:
+                //     4*12 + 3*2 + 4 = 58px — pr-14 (56px) picked over the arbitrary pr-[58px];
+                //     the 2px shortfall is invisible at this chip's text-[10px] title size.
+                showLock
+                  ? 'truncate pr-8 font-semibold motion-safe:transition-[padding] group-hover:pr-14 group-focus-within:pr-14'
+                  : 'truncate pr-4 font-semibold motion-safe:transition-[padding] group-hover:pr-11 group-focus-within:pr-11',
                 event.completed && 'line-through',
               )}
             >
@@ -416,16 +435,20 @@ export function CalendarEventChip({
             )}
             {showLocation && <div className="truncate text-[9px]">{event.location}</div>}
             {showDescription && <div className="line-clamp-2 text-[9px]">{event.description}</div>}
-            <div
-              data-resize="start"
-              aria-hidden="true"
-              className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
-            />
-            <div
-              data-resize="end"
-              aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
-            />
+            {!isLocked && (
+              <>
+                <div
+                  data-resize="start"
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+                />
+                <div
+                  data-resize="end"
+                  aria-hidden="true"
+                  className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
+                />
+              </>
+            )}
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -669,7 +692,7 @@ export function CalendarEventChip({
           )}
         </PopoverContent>
       </Popover>
-      {(onEdit !== undefined || onDelete !== undefined || showCheckbox) && (
+      {(onEdit !== undefined || onDelete !== undefined || showCheckbox || showLock) && (
         // Sibling of the trigger button, NOT a descendant — an interactive control (button,
         // checkbox) must never nest inside another interactive control (axe nested-interactive).
         // Absolutely positioned to sit in the chip's top-right corner; the title's pr-4/pr-11
@@ -725,6 +748,25 @@ export function CalendarEventChip({
                   className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-current"
                   aria-hidden
                 />
+              )}
+            </button>
+          )}
+          {showLock && (
+            <button
+              type="button"
+              aria-pressed={isLocked}
+              aria-label={isLocked ? 'Unlock event' : 'Lock event'}
+              className="flex h-3 w-3 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleLock!(event)
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {isLocked ? (
+                <Lock className="h-3 w-3" aria-hidden />
+              ) : (
+                <LockOpen className="h-3 w-3 opacity-70" aria-hidden />
               )}
             </button>
           )}
