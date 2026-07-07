@@ -516,6 +516,26 @@ describe('WeekCalendarView lock', () => {
     expect(onEventToggleLock).toHaveBeenCalledWith({ ...lockedEvent, locked: false })
   })
 
+  it('toggling lock on one event leaves the other event in local state untouched', async () => {
+    const onEventToggleLock = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0], events[1]]}
+        onEventToggleLock={onEventToggleLock}
+      />,
+    )
+    const lockButtons = screen.getAllByRole('button', { name: 'Lock event' })
+    expect(lockButtons.length).toBe(2)
+    await userEvent.click(lockButtons[0])
+    expect(onEventToggleLock).toHaveBeenCalledWith({ ...events[0], locked: true })
+    // Reconciliation maps over ALL local events by id — the other event must fall through
+    // the `e.id !== toggled.id` branch untouched: still rendered, still unlocked.
+    expect(screen.getByRole('button', { name: 'Unlock event' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Lock event' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /design review/i })).toBeInTheDocument()
+  })
+
   it('toggling a recurrence instance lock resolves and toggles the original event', async () => {
     const onEventToggleLock = vi.fn()
     const recurringEvent: CalendarEvent = {
