@@ -166,7 +166,9 @@ export function ActivityFormDialog({
   const [taskDate, setTaskDate] = React.useState<Date | undefined>(() => {
     if (initialValues?.startAt) {
       const d = new Date(initialValues.startAt)
-      return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+      // Anchor on the instant's LOCAL calendar day (matching `toTimeSlot`'s local
+      // read below and `buildIso`'s local day-anchor on submit) — not its UTC day.
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate())
     }
     return undefined
   })

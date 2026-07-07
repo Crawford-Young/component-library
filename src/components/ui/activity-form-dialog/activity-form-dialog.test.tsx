@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ActivityFormDialog } from './activity-form-dialog'
 import type { ActivityFormDialogProps, ActivityFormValues } from './activity-form-dialog'
 
@@ -479,6 +479,54 @@ describe('submit — task', () => {
     render(<ActivityFormDialog {...makeProps({ onSubmit, initialValues: { title: 'Run' } })} />)
     fireEvent.submit(screen.getByTestId('activity-form-scroll'))
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Timezone correctness — local wall-clock round-trip
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// `taskDate` is seeded from `startAt` for edit mode by anchoring a UTC-midnight
+// Date on `startAt`'s UTC day. `buildIso` now reads that anchor's LOCAL day —
+// which lands one day earlier than the UTC day in any negative-offset zone,
+// regardless of how close `startAt`'s own wall-clock time is to midnight.
+// TZ is pinned so this fails deterministically regardless of the runner's
+// ambient zone.
+describe('timezone correctness — local wall-clock round-trip', () => {
+  const ORIGINAL_TZ = process.env['TZ']
+
+  afterEach(() => {
+    if (ORIGINAL_TZ === undefined) {
+      delete process.env['TZ']
+    } else {
+      process.env['TZ'] = ORIGINAL_TZ
+    }
+  })
+
+  it('resubmits an unmodified edit with the exact original startAt/endAt (TZ=America/New_York, UTC-4)', async () => {
+    process.env['TZ'] = 'America/New_York'
+    const onSubmit = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          onSubmit,
+          initialValues: {
+            title: 'Mid-morning run',
+            // 14:00 UTC = 10:00 local in America/New_York (UTC-4) — nowhere near a
+            // midnight boundary in local wall-clock terms, but a UTC-midnight taskDate
+            // anchor still reads back one LOCAL day earlier than the true local day.
+            startAt: '2025-06-15T14:00:00.000Z',
+            endAt: '2025-06-15T14:30:00.000Z',
+          },
+        })}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
+    expect(payload.startAt).toBe('2025-06-15T14:00:00.000Z')
+    expect(payload.endAt).toBe('2025-06-15T14:30:00.000Z')
   })
 })
 
