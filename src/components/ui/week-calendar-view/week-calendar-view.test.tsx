@@ -342,7 +342,7 @@ describe('event forwarding', () => {
       <WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} onEventEdit={onEdit} />,
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
   })
 
@@ -356,7 +356,7 @@ describe('event forwarding', () => {
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /delete/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(onDelete).toHaveBeenCalledWith(events[0])
   })
 
@@ -904,7 +904,7 @@ describe('WeekCalendarView sleep-region interactivity', () => {
     fireEvent.pointerDown(chip, { clientY: 400, clientX: 200 })
     fireEvent.pointerUp(chip, { clientY: 400, clientX: 200 })
     await userEvent.click(chip)
-    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
   })
 })
 
@@ -1455,7 +1455,7 @@ describe('internal CRUD state management', () => {
       <WeekCalendarView defaultWeekStart="2026-05-04" events={[event]} onEventEdit={vi.fn()} />,
     )
     await userEvent.click(screen.getByRole('button', { name: /original title/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const titleInput = screen.getByRole('textbox', { name: /title/i })
     await userEvent.clear(titleInput)
     await userEvent.type(titleInput, 'Updated title')
@@ -1535,7 +1535,7 @@ describe('internal CRUD state management', () => {
     ]
     render(<WeekCalendarView defaultWeekStart="2026-05-04" events={twoEvents} />)
     await userEvent.click(screen.getByRole('button', { name: /first event/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const titleInput = screen.getByRole('textbox', { name: /title/i })
     await userEvent.clear(titleInput)
     await userEvent.type(titleInput, 'Renamed')
