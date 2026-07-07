@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cva } from 'class-variance-authority'
-import { CircleCheck, Flame } from 'lucide-react'
+import { CircleCheck, Flame, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -275,6 +275,12 @@ const inputCls =
 
 const labelCls = 'mb-0.5 block text-[11px] font-medium text-muted-foreground'
 
+// Idle: invisible but still keyboard-reachable (opacity, not display:none). Revealed on chip
+// hover/focus-within, and independently on the button's own focus-visible so Tab lands on it
+// even if focus-within support/timing is inconsistent.
+const quickActionButtonCls =
+  'flex h-3 w-3 items-center justify-center rounded-full opacity-0 pointer-events-none motion-safe:transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
 function nextDayISO(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`)
   d.setDate(d.getDate() + 1)
@@ -355,7 +361,7 @@ export function CalendarEventChip({
 
   return (
     <div
-      className={cn('relative', eventColorVariants({ color: event.color }), className)}
+      className={cn('group relative', eventColorVariants({ color: event.color }), className)}
       style={style}
     >
       <Popover open={open} onOpenChange={handleOpenChange}>
@@ -382,14 +388,67 @@ export function CalendarEventChip({
               }
             }}
           >
-            <div
-              className={cn(
-                'truncate font-semibold',
-                event.completed && 'line-through',
-                showCheckbox && 'pl-3.5',
-              )}
-            >
-              {event.title}
+            <div className="flex items-start">
+              <div
+                className={cn('flex-1 truncate font-semibold', event.completed && 'line-through')}
+              >
+                {event.title}
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5">
+                {onEdit !== undefined && (
+                  <button
+                    type="button"
+                    aria-label="Quick edit"
+                    className={quickActionButtonCls}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setDraft(toDraft(event))
+                      setIsEditing(true)
+                      setOpen(true)
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <Pencil className="h-3 w-3" aria-hidden />
+                  </button>
+                )}
+                {onDelete !== undefined && (
+                  <button
+                    type="button"
+                    aria-label="Quick delete"
+                    className={quickActionButtonCls}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete(event)
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <X className="h-3 w-3" aria-hidden />
+                  </button>
+                )}
+                {showCheckbox && (
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={event.completed === true}
+                    aria-label={event.completed === true ? 'Mark incomplete' : 'Mark complete'}
+                    className="flex h-3 w-3 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onToggleComplete!(event)
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    {event.completed === true ? (
+                      <CircleCheck className="h-3 w-3" aria-hidden />
+                    ) : (
+                      <span
+                        className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-current"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
             {showTimeRange && (
               <div className="text-[9px]">
@@ -658,29 +717,6 @@ export function CalendarEventChip({
           )}
         </PopoverContent>
       </Popover>
-      {showCheckbox && (
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={event.completed === true}
-          aria-label={event.completed === true ? 'Mark incomplete' : 'Mark complete'}
-          className="absolute left-1 top-[3px] z-10 flex h-3 w-3 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleComplete!(event)
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          {event.completed === true ? (
-            <CircleCheck className="h-3 w-3" aria-hidden />
-          ) : (
-            <span
-              className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-current"
-              aria-hidden
-            />
-          )}
-        </button>
-      )}
     </div>
   )
 }
