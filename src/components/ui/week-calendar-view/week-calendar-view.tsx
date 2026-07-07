@@ -643,8 +643,12 @@ export function WeekCalendarView({
       const slotStart = dragMode.currentSlot - dragMode.slotOffset
       const durationMs =
         new Date(dragMode.event.end).getTime() - new Date(dragMode.event.start).getTime()
+      // dragMode.event is the ORIGINAL event (arbitrary consumer-supplied ISO) for a
+      // recurrence drag — its local calendar day must come from parsed-Date getters, never
+      // the ISO's own written date, which reflects the string's embedded offset (or UTC for
+      // "Z"), not the viewer's local day.
       const dateStr = dragMode.isRecurDrag
-        ? dragMode.event.start.substring(0, 10)
+        ? formatDateISO(new Date(dragMode.event.start))
         : formatDateISO(days[dragMode.dayIdx])
       const newStart = new Date(slotToTime(slotStart, dateStr))
       const newEnd = new Date(newStart.getTime() + durationMs)
@@ -655,18 +659,18 @@ export function WeekCalendarView({
       })
     } else if (dragMode.type === 'resizing-end') {
       const dateStr = dragMode.isRecurDrag
-        ? dragMode.event.start.substring(0, 10)
+        ? formatDateISO(new Date(dragMode.event.start))
         : formatDateISO(days[dragMode.dayIdx])
       handleEventResize({ ...dragMode.event, end: slotToTime(dragMode.currentSlot + 1, dateStr) })
     } else if (dragMode.type === 'resizing-start') {
       const dateStr = dragMode.isRecurDrag
-        ? dragMode.event.start.substring(0, 10)
+        ? formatDateISO(new Date(dragMode.event.start))
         : formatDateISO(days[dragMode.dayIdx])
       handleEventResize({ ...dragMode.event, start: slotToTime(dragMode.currentSlot, dateStr) })
     } else if (dragMode.type === 'recurrence-select') {
       const dragMin = Math.min(dragMode.startDayIdx, dragMode.currentDayIdx)
       const dragMax = Math.max(dragMode.startDayIdx, dragMode.currentDayIdx)
-      const origDateStr = dragMode.event.start.substring(0, 10)
+      const origDateStr = formatDateISO(new Date(dragMode.event.start))
       const origDayIdx = days.findIndex((d) => formatDateISO(d) === origDateStr)
       const effectiveMin = origDayIdx !== -1 ? Math.min(dragMin, origDayIdx) : dragMin
       const effectiveMax = origDayIdx !== -1 ? Math.max(dragMax, origDayIdx) : dragMax
@@ -827,13 +831,34 @@ export function WeekCalendarView({
                               handleEventEdit(editedEvent)
                               return
                             }
+                            // The chip's handleSave emits real toISOString() instants, so the
+                            // edited instance's intended wall-clock time must be read via
+                            // Date getters (never `.substring(10)`, which is the instant's
+                            // UTC-written clock, not the viewer's local one) and anchored to
+                            // the ORIGINAL event's local calendar day (via Date getters, not
+                            // `.substring(0, 10)` on its own possibly offset-bearing ISO).
                             const original = localEvents.find((e) => e.id === originalId)!
-                            const origDate = original.start.substring(0, 10)
+                            const origAnchor = new Date(original.start)
+                            const editedStart = new Date(editedEvent.start)
+                            const editedEnd = new Date(editedEvent.end)
+                            const endDayOffset = localDayDiff(editedStart, editedEnd)
                             handleEventEdit({
                               ...editedEvent,
                               id: originalId,
-                              start: `${origDate}${editedEvent.start.substring(10)}`,
-                              end: `${origDate}${editedEvent.end.substring(10)}`,
+                              start: new Date(
+                                origAnchor.getFullYear(),
+                                origAnchor.getMonth(),
+                                origAnchor.getDate(),
+                                editedStart.getHours(),
+                                editedStart.getMinutes(),
+                              ).toISOString(),
+                              end: new Date(
+                                origAnchor.getFullYear(),
+                                origAnchor.getMonth(),
+                                origAnchor.getDate() + endDayOffset,
+                                editedEnd.getHours(),
+                                editedEnd.getMinutes(),
+                              ).toISOString(),
                             })
                           }
                     }

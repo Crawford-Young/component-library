@@ -2366,6 +2366,25 @@ describe('recurrence day expansion', () => {
     expect(screen.getAllByRole('button', { name: /no dup/i }).length).toBe(1)
   })
 
+  it('does not render an overflow chip when the overnight continuation day falls outside the displayed week', () => {
+    const saturdayOvernight: CalendarEvent = {
+      id: 'sat-overnight',
+      title: 'Late Saturday',
+      start: '2026-05-09T23:00:00', // Saturday, last day of the displayed week
+      end: '2026-05-10T01:00:00', // Sunday of the NEXT week — outside daySet
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[saturdayOvernight]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={28}
+      />,
+    )
+    expect(screen.getAllByRole('button', { name: /late saturday/i }).length).toBe(1)
+  })
+
   it('event with seriesDays but no recurrenceDays renders on its own day only (no fan-out)', () => {
     const seriesSeedOnly: CalendarEvent = {
       id: 'seed1',
@@ -3045,5 +3064,106 @@ describe('timezone correctness — local view semantics', () => {
     expect(within(cols[3]).getAllByRole('button', { name: /true overflow/i }).length).toBe(1)
     const overflowChip = within(cols[4]).getByRole('button', { name: /true overflow/i })
     expect(overflowChip).toHaveAccessibleName(/00:00/)
+  })
+
+  // Audit-found violations sharing the same root cause: `dragMode.event` for a recurrence
+  // drag is the ORIGINAL event straight from the consumer's `events` prop, which may carry
+  // any ISO shape (including an explicit offset). Reading `.start.substring(0, 10)` to pin
+  // the drag's date to the original's day reads the offset's own written date, not the
+  // viewer's local calendar day.
+  it("moving a recurrence instance anchors the new time to the original event's correct local day, even when its ISO carries a diverging offset", () => {
+    process.env['TZ'] = 'UTC'
+    const onMove = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r-move',
+      title: 'Move Offset',
+      start: '2026-07-06T22:00:00-05:00', // literal Jul 6, real local (UTC) day Jul 7
+      end: '2026-07-06T22:30:00-05:00',
+      recurrenceDays: ['Tue', 'Thu'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[recurringEvent]}
+        hourStart={0}
+        hourCount={24}
+        hourHeight={56}
+        onEventMove={onMove}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /move offset/i })
+    // chips[0] = Tue (the event's own true local day); chips[1] = Thu recurrence instance.
+    fireEvent.pointerDown(chips[1], { clientY: 100, clientX: 100, shiftKey: false })
+    fireEvent.pointerMove(chips[1], { clientY: 120, clientX: 100, shiftKey: false })
+    fireEvent.pointerUp(chips[1])
+    expect(onMove).toHaveBeenCalledOnce()
+    const moved = onMove.mock.calls[0][0]
+    expect(moved.id).toBe('r-move')
+    const originalAnchor = new Date(recurringEvent.start)
+    const movedStart = new Date(moved.start)
+    expect(movedStart.getFullYear()).toBe(originalAnchor.getFullYear())
+    expect(movedStart.getMonth()).toBe(originalAnchor.getMonth())
+    expect(movedStart.getDate()).toBe(originalAnchor.getDate())
+  })
+
+  // The chip's own `handleSave` (calendar-event-chip.tsx) emits real toISOString() instants,
+  // so reconciling the edit back onto the recurrence's original event must read the edited
+  // instance's LOCAL wall-clock via Date getters, not slice the written ISO text — and must
+  // anchor to the original's LOCAL calendar day, not its literal written date.
+  it("editing a recurrence instance reconciles onto the original event's correct local day and time under a diverging offset", async () => {
+    process.env['TZ'] = 'Asia/Tokyo'
+    const onEdit = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r-edit',
+      title: 'Edit Offset',
+      // = 2026-07-07T03:30:00Z = 2026-07-07T12:30 in Tokyo. True local day is Jul 7 (Tue),
+      // not the literal Jul 6 the written offset shows.
+      start: '2026-07-06T23:30:00-04:00',
+      end: '2026-07-06T23:35:00-04:00',
+      recurrenceDays: ['Tue', 'Thu'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[recurringEvent]}
+        hourStart={0}
+        hourCount={24}
+        onEventEdit={onEdit}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /edit offset/i })
+    // chips[1] = Thu recurrence instance.
+    await userEvent.click(chips[1])
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
+    const startH = screen.getByRole('spinbutton', { name: 'Start hour' })
+    const startM = screen.getByRole('spinbutton', { name: 'Start minute' })
+    fireEvent.change(startH, { target: { value: '10' } })
+    fireEvent.blur(startH)
+    fireEvent.change(startM, { target: { value: '15' } })
+    fireEvent.blur(startM)
+    await userEvent.click(screen.getAllByRole('button', { name: 'AM' })[0])
+    const endH = screen.getByRole('spinbutton', { name: 'End hour' })
+    const endM = screen.getByRole('spinbutton', { name: 'End minute' })
+    fireEvent.change(endH, { target: { value: '11' } })
+    fireEvent.blur(endH)
+    fireEvent.change(endM, { target: { value: '0' } })
+    fireEvent.blur(endM)
+    await userEvent.click(screen.getAllByRole('button', { name: 'AM' })[1])
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+
+    expect(onEdit).toHaveBeenCalledOnce()
+    const saved = onEdit.mock.calls[0][0]
+    expect(saved.id).toBe('r-edit')
+    const originalAnchor = new Date(recurringEvent.start)
+    const savedStart = new Date(saved.start)
+    expect(savedStart.getFullYear()).toBe(originalAnchor.getFullYear())
+    expect(savedStart.getMonth()).toBe(originalAnchor.getMonth())
+    expect(savedStart.getDate()).toBe(originalAnchor.getDate())
+    expect(savedStart.getHours()).toBe(10)
+    expect(savedStart.getMinutes()).toBe(15)
+    const savedEnd = new Date(saved.end)
+    expect(savedEnd.getDate()).toBe(originalAnchor.getDate())
+    expect(savedEnd.getHours()).toBe(11)
+    expect(savedEnd.getMinutes()).toBe(0)
   })
 })
