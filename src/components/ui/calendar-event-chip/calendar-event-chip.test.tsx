@@ -86,19 +86,19 @@ describe('CalendarEventChip', () => {
   it('edit button rendered when onEdit provided', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
   })
 
   it('edit button absent when onEdit not provided', async () => {
     render(<CalendarEventChip event={event} style={style} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
   })
 
   it('clicking edit button opens inline edit form', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
     expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
@@ -108,7 +108,7 @@ describe('CalendarEventChip', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const titleInput = screen.getByRole('textbox', { name: /title/i })
     await userEvent.clear(titleInput)
     await userEvent.type(titleInput, 'Updated standup')
@@ -119,7 +119,7 @@ describe('CalendarEventChip', () => {
   it('canceling edit form returns to view mode', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument()
@@ -128,7 +128,7 @@ describe('CalendarEventChip', () => {
   it('edit form has color swatch buttons for all 15 colors', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const swatches = screen.getAllByRole('button', { name: /^color:/i })
     expect(swatches).toHaveLength(15)
   })
@@ -136,7 +136,7 @@ describe('CalendarEventChip', () => {
   it('selecting a color swatch marks it as pressed', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const blueBtn = screen.getByRole('button', { name: /color: blue/i })
     await userEvent.click(blueBtn)
     expect(blueBtn).toHaveAttribute('aria-pressed', 'true')
@@ -145,7 +145,7 @@ describe('CalendarEventChip', () => {
   it('closing popover resets edit state', async () => {
     render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
     await userEvent.keyboard('{Escape}')
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
@@ -157,7 +157,7 @@ describe('CalendarEventChip', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.type(screen.getByRole('textbox', { name: /location/i }), 'Zoom')
     await userEvent.type(screen.getByRole('textbox', { name: /description/i }), 'Daily sync')
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
@@ -170,7 +170,7 @@ describe('CalendarEventChip', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const startH = screen.getByRole('spinbutton', { name: 'Start hour' })
     const startM = screen.getByRole('spinbutton', { name: 'Start minute' })
     const endH = screen.getByRole('spinbutton', { name: 'End hour' })
@@ -198,7 +198,7 @@ describe('CalendarEventChip', () => {
     }
     render(<CalendarEventChip event={overnightEvent} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     // Set end to 01:00 (< start 23:00) → should go to next day
     fireEvent.change(screen.getByRole('spinbutton', { name: 'End hour' }), {
       target: { value: '1' },
@@ -218,27 +218,27 @@ describe('CalendarEventChip', () => {
     }
     render(<CalendarEventChip event={overnightEvent} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByText('+1 day')).toBeInTheDocument()
   })
 
   it('delete button rendered when onDelete provided', async () => {
     render(<CalendarEventChip event={event} style={style} onDelete={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
   })
 
   it('delete button absent when onDelete not provided', async () => {
     render(<CalendarEventChip event={event} style={style} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
   })
 
   it('onDelete called and popover closes when delete button clicked', async () => {
     const onDelete = vi.fn()
     render(<CalendarEventChip event={event} style={style} onDelete={onDelete} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /delete/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(onDelete).toHaveBeenCalledWith(event)
     expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
   })
@@ -452,14 +452,14 @@ describe('recurrence fields in edit form', () => {
   it('edit form shows day pill toggles', async () => {
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('group', { name: /recurrence days/i })).toBeInTheDocument()
   })
 
   it('day pills are pre-checked based on recurrenceDays', async () => {
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
       'aria-pressed',
@@ -470,7 +470,7 @@ describe('recurrence fields in edit form', () => {
   it('frequency select shows current recurrenceFrequency', async () => {
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
   })
 
@@ -478,7 +478,7 @@ describe('recurrence fields in edit form', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -492,7 +492,7 @@ describe('recurrence fields in edit form', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: 'Day: Tue' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(onEdit).toHaveBeenCalledWith(
@@ -504,7 +504,7 @@ describe('recurrence fields in edit form', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     const savedDays = (onEdit.mock.calls[0][0] as { recurrenceDays: string[] }).recurrenceDays
@@ -516,7 +516,7 @@ describe('recurrence fields in edit form', () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceFrequency: 'daily' }))
@@ -534,7 +534,7 @@ describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', (
     }
     render(<CalendarEventChip event={eventWithSeriesOnly} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /series only/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Day: Thu' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
@@ -554,7 +554,7 @@ describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', (
     }
     render(<CalendarEventChip event={eventWithBoth} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /series precedence/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Day: Fri' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
@@ -574,7 +574,7 @@ describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', (
     }
     render(<CalendarEventChip event={eventWithSeriesOnly} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /series persisted/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({ recurrenceDays: ['Tue', 'Thu'], seriesDays: ['Tue', 'Thu'] }),
@@ -598,7 +598,7 @@ describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', (
     }
     render(<CalendarEventChip event={eventWithBothFields} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /typed fields/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(seenSeriesDays).toEqual([['Mon']])
     expect(seenRecurrenceCount).toEqual([6])
@@ -705,8 +705,8 @@ describe('CalendarEventChip complete toggle', () => {
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /mark complete/i })).toBeInTheDocument()
   })
 
@@ -774,6 +774,125 @@ describe('inline complete circle', () => {
     )
     const box = screen.getByRole('checkbox', { name: 'Mark incomplete' })
     expect(box).toHaveAttribute('aria-checked', 'true')
+  })
+
+  describe('adornment cluster', () => {
+    it('title sits flush left with no legacy indent, inside a flex title row', () => {
+      const completable = { ...event, completable: true }
+      render(<CalendarEventChip event={completable} style={style} onToggleComplete={vi.fn()} />)
+      const title = screen.getByText('Team standup')
+      expect(title.className).not.toContain('pl-3.5')
+      expect(title.className).toContain('flex-1')
+      expect(title.parentElement?.className).toContain('flex')
+      expect(title.parentElement?.className).toContain('items-start')
+    })
+
+    it('root chip container carries the group class for hover-reveal', () => {
+      const { container } = render(<CalendarEventChip event={event} style={style} />)
+      expect(container.firstElementChild?.className).toContain('group')
+    })
+
+    it('cluster order left to right is quick-edit, quick-delete, checkbox', () => {
+      const completable = { ...event, completable: true }
+      render(
+        <CalendarEventChip
+          event={completable}
+          style={style}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleComplete={vi.fn()}
+        />,
+      )
+      const cluster = screen.getByRole('button', { name: 'Quick edit' })
+        .parentElement as HTMLElement
+      const buttons = Array.from(cluster.querySelectorAll('button'))
+      expect(buttons.map((b) => b.getAttribute('role') ?? b.getAttribute('aria-label'))).toEqual([
+        'Quick edit',
+        'Quick delete',
+        'checkbox',
+      ])
+    })
+
+    it('quick edit button absent when onEdit not provided', () => {
+      render(<CalendarEventChip event={event} style={style} />)
+      expect(screen.queryByRole('button', { name: 'Quick edit' })).not.toBeInTheDocument()
+    })
+
+    it('quick delete button absent when onDelete not provided', () => {
+      render(<CalendarEventChip event={event} style={style} />)
+      expect(screen.queryByRole('button', { name: 'Quick delete' })).not.toBeInTheDocument()
+    })
+
+    it('clicking quick edit opens the popover directly in edit mode', async () => {
+      render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+      await userEvent.click(screen.getByRole('button', { name: 'Quick edit' }))
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+      expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
+    })
+
+    it('clicking quick delete calls onDelete without opening the popover', async () => {
+      const onDelete = vi.fn()
+      render(<CalendarEventChip event={event} style={style} onDelete={onDelete} />)
+      await userEvent.click(screen.getByRole('button', { name: 'Quick delete' }))
+      expect(onDelete).toHaveBeenCalledWith(event)
+      expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
+    })
+
+    it('quick edit pointerdown never starts a move drag', () => {
+      const onMoveStart = vi.fn()
+      render(
+        <CalendarEventChip
+          event={event}
+          style={style}
+          onEdit={vi.fn()}
+          onMoveStart={onMoveStart}
+        />,
+      )
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Quick edit' }))
+      expect(onMoveStart).not.toHaveBeenCalled()
+    })
+
+    it('quick delete pointerdown never starts a move drag', () => {
+      const onMoveStart = vi.fn()
+      render(
+        <CalendarEventChip
+          event={event}
+          style={style}
+          onDelete={vi.fn()}
+          onMoveStart={onMoveStart}
+        />,
+      )
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Quick delete' }))
+      expect(onMoveStart).not.toHaveBeenCalled()
+    })
+
+    it('quick edit and quick delete carry hover/focus reveal classes rather than display:none', () => {
+      render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} onDelete={vi.fn()} />)
+      const editBtn = screen.getByRole('button', { name: 'Quick edit' })
+      const deleteBtn = screen.getByRole('button', { name: 'Quick delete' })
+      for (const btn of [editBtn, deleteBtn]) {
+        expect(btn.className).toContain('opacity-0')
+        expect(btn.className).toContain('pointer-events-none')
+        expect(btn.className).toContain('group-hover:opacity-100')
+        expect(btn.className).toContain('group-hover:pointer-events-auto')
+        expect(btn.className).toContain('focus-visible:opacity-100')
+        expect(btn.className).not.toContain('hidden')
+      }
+    })
+
+    it('checkbox has no hover-reveal or absolute-positioning classes (always visible, inline)', () => {
+      render(
+        <CalendarEventChip
+          event={{ ...event, completable: true }}
+          style={style}
+          onToggleComplete={vi.fn()}
+        />,
+      )
+      const box = screen.getByRole('checkbox', { name: 'Mark complete' })
+      expect(box.className).not.toContain('opacity-0')
+      expect(box.className).not.toContain('absolute')
+    })
   })
 
   describe('inline streak', () => {
