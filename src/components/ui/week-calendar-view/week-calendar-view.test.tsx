@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { renderToString } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
+import type { WeekCalendarViewProps as BarrelWeekCalendarViewProps } from '@/index'
 import { WeekCalendarView } from './week-calendar-view'
 import { SleepBand } from './sleep-band'
 import { GhostEvent } from './ghost-event'
@@ -484,6 +485,149 @@ describe('WeekCalendarView complete toggle', () => {
     const circles = screen.getAllByRole('checkbox', { name: 'Mark complete' })
     await userEvent.click(circles[circles.length - 1]) // an expanded instance, not the base chip
     expect(onEventToggleComplete).toHaveBeenCalledWith({ ...recurringEvent, completed: true })
+  })
+})
+
+describe('WeekCalendarView lock', () => {
+  it('lock button on the chip calls onEventToggleLock with the toggled event', async () => {
+    const onEventToggleLock = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventToggleLock={onEventToggleLock}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Lock event' }))
+    expect(onEventToggleLock).toHaveBeenCalledWith({ ...events[0], locked: true })
+  })
+
+  it('toggling an already-locked event calls onEventToggleLock with locked: false', async () => {
+    const onEventToggleLock = vi.fn()
+    const lockedEvent: CalendarEvent = { ...events[0], id: 'locked-1', locked: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[lockedEvent]}
+        onEventToggleLock={onEventToggleLock}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock event' }))
+    expect(onEventToggleLock).toHaveBeenCalledWith({ ...lockedEvent, locked: false })
+  })
+
+  it('toggling a recurrence instance lock resolves and toggles the original event', async () => {
+    const onEventToggleLock = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur lock',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventToggleLock={onEventToggleLock}
+      />,
+    )
+    const lockButtons = screen.getAllByRole('button', { name: 'Lock event' })
+    await userEvent.click(lockButtons[1])
+    expect(onEventToggleLock).toHaveBeenCalledWith({ ...recurringEvent, locked: true })
+  })
+
+  it('toggles locally without crashing when onEventToggleLock is not provided', async () => {
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Lock event' }) as HTMLElement)
+    expect(screen.getByRole('button', { name: 'Unlock event' })).toBeInTheDocument()
+  })
+
+  it('locked event: chip has no cursor-grab even when onEventMove is wired', () => {
+    const lockedEvent: CalendarEvent = { ...events[0], locked: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[lockedEvent]}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    expect(chip.className).not.toContain('cursor-grab')
+  })
+
+  it('locked event: resize strips are absent even when onEventResize is wired', () => {
+    const lockedEvent: CalendarEvent = { ...events[0], locked: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[lockedEvent]}
+        onEventResize={vi.fn()}
+      />,
+    )
+    expect(document.querySelector('[data-resize="start"]')).not.toBeInTheDocument()
+    expect(document.querySelector('[data-resize="end"]')).not.toBeInTheDocument()
+  })
+
+  it('unlocked event still renders resize strips and cursor-grab when drag handlers are wired', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventMove={vi.fn()}
+        onEventResize={vi.fn()}
+      />,
+    )
+    expect(document.querySelector('[data-resize="start"]')).toBeInTheDocument()
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    expect(chip.className).toContain('cursor-grab')
+  })
+
+  it('locked survives recurrence expansion — fanned instances stay locked (no cursor-grab)', () => {
+    const recurringLocked: CalendarEvent = {
+      id: 'rl1',
+      title: 'Recur locked',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+      locked: true,
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringLocked]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventMove={vi.fn()}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur locked/i })
+    expect(chips).toHaveLength(2)
+    for (const chip of chips) {
+      expect(chip.className).not.toContain('cursor-grab')
+    }
+  })
+
+  it('a typed onEventToggleLock handler can read event.locked via the barrel WeekCalendarViewProps type with no cast (compile-time proof)', async () => {
+    const seenLocked: (boolean | undefined)[] = []
+    const onEventToggleLock: NonNullable<BarrelWeekCalendarViewProps['onEventToggleLock']> = (
+      e,
+    ) => {
+      seenLocked.push(e.locked)
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventToggleLock={onEventToggleLock}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Lock event' }))
+    expect(seenLocked).toEqual([true])
   })
 })
 
