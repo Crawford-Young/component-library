@@ -1,7 +1,7 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderToString } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import type { WeekCalendarViewProps as BarrelWeekCalendarViewProps } from '@/index'
 import { WeekCalendarView } from './week-calendar-view'
@@ -2878,5 +2878,172 @@ describe('dayWindows (per-day wake/sleep windows)', () => {
     fireEvent.pointerDown(monRow0, { pointerId: 1, clientY: 0, offsetY: 28 })
     fireEvent.pointerUp(monRow0, { pointerId: 1 })
     expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+  })
+})
+
+// Timezone correctness: `expandRecurringEvents`/`splitOvernightEvents` must derive day
+// membership, overnight detection, and generated timestamps from parsed `Date`s in
+// view-local terms — never from ISO substrings. Every test below pins `process.env.TZ`
+// explicitly (rather than trusting the runner's ambient zone) and uses explicit-offset ISO
+// inputs whose literal date component diverges from the real local calendar date, so a
+// regression back to substring reads fails deterministically under CI's UTC runner too.
+describe('timezone correctness — local view semantics', () => {
+  const ORIGINAL_TZ = process.env['TZ']
+
+  afterEach(() => {
+    if (ORIGINAL_TZ === undefined) {
+      delete process.env['TZ']
+    } else {
+      process.env['TZ'] = ORIGINAL_TZ
+    }
+  })
+
+  function dayColumns(): HTMLElement[] {
+    const seen = new Set<HTMLElement>()
+    const cols: HTMLElement[] = []
+    document.querySelectorAll('[data-drag-cell]').forEach((cell) => {
+      const parent = cell.parentElement as HTMLElement
+      if (!seen.has(parent)) {
+        seen.add(parent)
+        cols.push(parent)
+      }
+    })
+    return cols
+  }
+
+  it('does not split a chip whose ISO literal rolls to the next day but whose real instants share one local calendar day', () => {
+    process.env['TZ'] = 'UTC'
+    const event: CalendarEvent = {
+      id: 'phantom1',
+      title: 'Phantom Check',
+      // Literal date component rolls Jul 7 -> Jul 8, but both real instants land on the
+      // SAME UTC calendar day (Jul 8): 03:30Z and 04:15Z respectively.
+      start: '2026-07-07T23:30:00-04:00', // = 2026-07-08T03:30:00Z
+      end: '2026-07-08T00:15:00-04:00', // = 2026-07-08T04:15:00Z
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[event]}
+        hourStart={0}
+        hourCount={24}
+      />,
+    )
+    // A substring reader sees startDate='2026-07-07' < endDate='2026-07-08' and wrongly
+    // splits this into two chips (the phantom-chip bug). Date-based local extraction sees
+    // both instants on Jul 8 and renders exactly one.
+    expect(screen.getAllByRole('button', { name: /phantom check/i }).length).toBe(1)
+  })
+
+  it('splits a genuinely local overnight event into two chips with correct local time labels', () => {
+    process.env['TZ'] = 'UTC'
+    const event: CalendarEvent = {
+      id: 'real-overnight',
+      title: 'Real Overnight',
+      start: '2026-07-07T23:30:00Z',
+      end: '2026-07-08T00:15:00Z',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[event]}
+        hourStart={0}
+        hourCount={24}
+        use24h
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /real overnight/i })
+    expect(chips.length).toBe(2)
+    // chips[0] = original, full un-clipped range; chips[1] = overflow continuation, whose
+    // displayed start is local midnight of the continuation day, not the original start.
+    expect(chips[0]).toHaveAccessibleName(/23:30.*00:15/)
+    expect(chips[1]).toHaveAccessibleName(/00:00.*00:15/)
+  })
+
+  it('deleting the original chip of a real overnight split resolves to the shared base event id', async () => {
+    process.env['TZ'] = 'UTC'
+    const onDelete = vi.fn()
+    const event: CalendarEvent = {
+      id: 'real-overnight-2',
+      title: 'Overnight Delete',
+      start: '2026-07-07T23:30:00Z',
+      end: '2026-07-08T00:15:00Z',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[event]}
+        hourStart={0}
+        hourCount={24}
+        onEventDelete={onDelete}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /overnight delete/i })
+    expect(chips.length).toBe(2)
+    // Overflow continuation (chips[1]) carries no independent identity.
+    await userEvent.click(chips[1])
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    // Original (chips[0]) resolves delete to the base event id, removing both chips.
+    await userEvent.click(chips[0])
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'real-overnight-2' }))
+    expect(screen.queryByRole('button', { name: /overnight delete/i })).not.toBeInTheDocument()
+  })
+
+  it('recurrence instance lands on the intended local day and time under an explicit-offset input', () => {
+    process.env['TZ'] = 'Asia/Tokyo'
+    const event: CalendarEvent = {
+      id: 'recur-offset',
+      title: 'Instance Test',
+      // 2026-07-06T23:30:00-04:00 = 2026-07-07T03:30:00Z = 2026-07-07T12:30 in Tokyo (+09:00).
+      // The TRUE local day is Tuesday Jul 7, not the literal Monday Jul 6 a substring reads.
+      start: '2026-07-06T23:30:00-04:00',
+      end: '2026-07-06T23:35:00-04:00', // 5 minutes later, same local day (non-overnight)
+      recurrenceDays: ['Tue', 'Thu'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[event]}
+        hourStart={0}
+        hourCount={24}
+        use24h
+      />,
+    )
+    // A substring-derived originalStartDate would wrongly compute Monday, so the recurrence
+    // loop would fail to skip Tuesday (the event's own true local day) and fan out a
+    // duplicate there — 3 chips total instead of 2 (Tue original + Thu instance).
+    const chips = screen.getAllByRole('button', { name: /instance test/i })
+    expect(chips.length).toBe(2)
+    chips.forEach((chip) => {
+      expect(chip).toHaveAccessibleName(/12:30.*12:35/)
+    })
+  })
+
+  it('overflow chip start is local midnight of the true continuation day, not the literal offset date', () => {
+    process.env['TZ'] = 'UTC'
+    const event: CalendarEvent = {
+      id: 'true-overflow',
+      title: 'True Overflow',
+      start: '2026-07-08T02:00:00Z', // Wed Jul 8, 02:00 UTC
+      // Literal date reads Jul 8, but this instant is 2026-07-09T01:00:00Z — Thu Jul 9 UTC.
+      end: '2026-07-08T20:00:00-05:00',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-07-05"
+        events={[event]}
+        hourStart={0}
+        hourCount={24}
+        use24h
+      />,
+    )
+    const cols = dayColumns()
+    // Wed (idx 3) holds only the original chip; Thu (idx 4) holds the overflow continuation
+    // — the true local day of the end instant, not the literal "Jul 8" written in the string.
+    expect(within(cols[3]).getAllByRole('button', { name: /true overflow/i }).length).toBe(1)
+    const overflowChip = within(cols[4]).getByRole('button', { name: /true overflow/i })
+    expect(overflowChip).toHaveAccessibleName(/00:00/)
   })
 })
