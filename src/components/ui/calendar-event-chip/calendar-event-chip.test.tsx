@@ -777,14 +777,14 @@ describe('inline complete circle', () => {
   })
 
   describe('adornment cluster', () => {
-    it('title sits flush left with no legacy indent, inside a flex title row', () => {
+    it('title sits flush left with no legacy indent, reserving space for the cluster via padding', () => {
       const completable = { ...event, completable: true }
       render(<CalendarEventChip event={completable} style={style} onToggleComplete={vi.fn()} />)
       const title = screen.getByText('Team standup')
       expect(title.className).not.toContain('pl-3.5')
-      expect(title.className).toContain('flex-1')
-      expect(title.parentElement?.className).toContain('flex')
-      expect(title.parentElement?.className).toContain('items-start')
+      expect(title.className).toContain('pr-4')
+      expect(title.className).toContain('group-hover:pr-11')
+      expect(title.className).toContain('group-focus-within:pr-11')
     })
 
     it('root chip container carries the group class for hover-reveal', () => {
@@ -881,7 +881,7 @@ describe('inline complete circle', () => {
       }
     })
 
-    it('checkbox has no hover-reveal or absolute-positioning classes (always visible, inline)', () => {
+    it('checkbox has no hover-reveal or absolute-positioning classes of its own (always visible, inline within the cluster)', () => {
       render(
         <CalendarEventChip
           event={{ ...event, completable: true }}
@@ -892,6 +892,47 @@ describe('inline complete circle', () => {
       const box = screen.getByRole('checkbox', { name: 'Mark complete' })
       expect(box.className).not.toContain('opacity-0')
       expect(box.className).not.toContain('absolute')
+    })
+
+    it('cluster wrapper is absolutely positioned in the chip corner, not inline in the title flow', () => {
+      render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+      const cluster = screen.getByRole('button', { name: 'Quick edit' }).parentElement
+      expect(cluster?.className).toContain('absolute')
+      expect(cluster?.className).toContain('right-1')
+    })
+
+    it('no cluster button is a descendant of the trigger button (axe nested-interactive)', () => {
+      const completable = { ...event, completable: true }
+      render(
+        <CalendarEventChip
+          event={completable}
+          style={style}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleComplete={vi.fn()}
+        />,
+      )
+      const trigger = screen.getByRole('button', { name: /team standup/i })
+      const editBtn = screen.getByRole('button', { name: 'Quick edit' })
+      const deleteBtn = screen.getByRole('button', { name: 'Quick delete' })
+      const checkbox = screen.getByRole('checkbox', { name: 'Mark complete' })
+      expect(trigger.contains(editBtn)).toBe(false)
+      expect(trigger.contains(deleteBtn)).toBe(false)
+      expect(trigger.contains(checkbox)).toBe(false)
+    })
+
+    it('the trigger button and the cluster are siblings under the chip root', () => {
+      const { container } = render(
+        <CalendarEventChip event={event} style={style} onEdit={vi.fn()} />,
+      )
+      const trigger = screen.getByRole('button', { name: /team standup/i })
+      const editBtn = screen.getByRole('button', { name: 'Quick edit' })
+      const root = container.firstElementChild
+      // editBtn's direct parent is the cluster wrapper; the cluster wrapper's parent is root.
+      expect(editBtn.parentElement?.parentElement).toBe(root)
+      // the trigger button (via PopoverTrigger asChild, which adds no wrapper element) is a
+      // direct child of root — a sibling of the cluster wrapper, not its ancestor.
+      expect(trigger.parentElement).toBe(root)
     })
   })
 

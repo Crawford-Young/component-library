@@ -388,67 +388,19 @@ export function CalendarEventChip({
               }
             }}
           >
-            <div className="flex items-start">
-              <div
-                className={cn('flex-1 truncate font-semibold', event.completed && 'line-through')}
-              >
-                {event.title}
-              </div>
-              <div className="flex shrink-0 items-center gap-0.5">
-                {onEdit !== undefined && (
-                  <button
-                    type="button"
-                    aria-label="Quick edit"
-                    className={quickActionButtonCls}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setDraft(toDraft(event))
-                      setIsEditing(true)
-                      setOpen(true)
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <Pencil className="h-3 w-3" aria-hidden />
-                  </button>
-                )}
-                {onDelete !== undefined && (
-                  <button
-                    type="button"
-                    aria-label="Quick delete"
-                    className={quickActionButtonCls}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(event)
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <X className="h-3 w-3" aria-hidden />
-                  </button>
-                )}
-                {showCheckbox && (
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={event.completed === true}
-                    aria-label={event.completed === true ? 'Mark incomplete' : 'Mark complete'}
-                    className="flex h-3 w-3 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onToggleComplete!(event)
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    {event.completed === true ? (
-                      <CircleCheck className="h-3 w-3" aria-hidden />
-                    ) : (
-                      <span
-                        className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-current"
-                        aria-hidden
-                      />
-                    )}
-                  </button>
-                )}
-              </div>
+            <div
+              className={cn(
+                // Reserve room on the right for the cluster (sibling, absolutely positioned —
+                // see below), so truncated title text never runs under it. Idle: pr-4 (16px)
+                // clears the always-visible checkbox alone (rightmost cluster slot, 12px icon +
+                // right-1 4px inset). Hover/focus-within: pr-11 (44px) clears the full 3-icon
+                // cluster (3 * h-3/w-3 12px + 2 * gap-0.5 2px + right-1 4px = 44px) once quick
+                // edit/delete reveal.
+                'truncate pr-4 font-semibold motion-safe:transition-[padding] group-hover:pr-11 group-focus-within:pr-11',
+                event.completed && 'line-through',
+              )}
+            >
+              {event.title}
             </div>
             {showTimeRange && (
               <div className="text-[9px]">
@@ -717,6 +669,67 @@ export function CalendarEventChip({
           )}
         </PopoverContent>
       </Popover>
+      {(onEdit !== undefined || onDelete !== undefined || showCheckbox) && (
+        // Sibling of the trigger button, NOT a descendant — an interactive control (button,
+        // checkbox) must never nest inside another interactive control (axe nested-interactive).
+        // Absolutely positioned to sit in the chip's top-right corner; the title's pr-4/pr-11
+        // reserve above keeps truncated text from running under it.
+        <div className="absolute right-1 top-[3px] z-10 flex items-center gap-0.5">
+          {onEdit !== undefined && (
+            <button
+              type="button"
+              aria-label="Quick edit"
+              className={quickActionButtonCls}
+              onClick={(e) => {
+                e.stopPropagation()
+                setDraft(toDraft(event))
+                setIsEditing(true)
+                setOpen(true)
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <Pencil className="h-3 w-3" aria-hidden />
+            </button>
+          )}
+          {onDelete !== undefined && (
+            <button
+              type="button"
+              aria-label="Quick delete"
+              className={quickActionButtonCls}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(event)
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <X className="h-3 w-3" aria-hidden />
+            </button>
+          )}
+          {showCheckbox && (
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={event.completed === true}
+              aria-label={event.completed === true ? 'Mark incomplete' : 'Mark complete'}
+              className="flex h-3 w-3 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleComplete!(event)
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {event.completed === true ? (
+                <CircleCheck className="h-3 w-3" aria-hidden />
+              ) : (
+                <span
+                  className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-current"
+                  aria-hidden
+                />
+              )}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
