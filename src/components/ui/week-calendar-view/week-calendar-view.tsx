@@ -219,28 +219,58 @@ function getRecurDayIndices(event: CalendarEvent, days: Date[]): number[] {
   }, [])
 }
 
+const MS_PER_DAY = 86_400_000
+
+// Local-calendar midnight of `d`'s day, in the viewer's own timezone. Two instants compare
+// as "same day" / "N days apart" by diffing their `localMidnight`s — never by slicing the
+// ISO string's own written date, which reflects whatever offset the string carries (or UTC
+// for a bare "Z"), not the viewer's local calendar day.
+function localMidnight(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+// Whole local-calendar days between `from` and `to` (positive when `to` is later).
+function localDayDiff(from: Date, to: Date): number {
+  return Math.round((localMidnight(to).getTime() - localMidnight(from).getTime()) / MS_PER_DAY)
+}
+
 function expandRecurringEvents(events: readonly CalendarEvent[], days: Date[]): CalendarEvent[] {
   const result: CalendarEvent[] = []
   for (const event of events) {
     result.push(event)
     if (!event.recurrenceDays || event.recurrenceDays.length === 0 || event.allDay) continue
-    const originalStartDate = event.start.substring(0, 10)
-    const isOvernight = event.end.substring(0, 10) > originalStartDate
-    const timePart = event.start.substring(10)
-    const endTimePart = event.end.substring(10)
+    const start = new Date(event.start)
+    const end = new Date(event.end)
+    const originalStartDate = formatDateISO(start)
+    const endDayOffset = localDayDiff(start, end)
+    const startHour = start.getHours()
+    const startMinute = start.getMinutes()
+    const endHour = end.getHours()
+    const endMinute = end.getMinutes()
     for (const day of days) {
       const dayAbbr = DAY_ABBR[day.getDay()]
       if (!event.recurrenceDays.includes(dayAbbr)) continue
       const dateStr = formatDateISO(day)
       if (dateStr === originalStartDate) continue
-      const endDateStr = isOvernight
-        ? formatDateISO(new Date(new Date(day).setDate(day.getDate() + 1)))
-        : dateStr
+      const instanceStart = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        startHour,
+        startMinute,
+      )
+      const instanceEnd = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate() + endDayOffset,
+        endHour,
+        endMinute,
+      )
       result.push({
         ...event,
         id: `${event.id}:recur:${dateStr}`,
-        start: `${dateStr}${timePart}`,
-        end: `${endDateStr}${endTimePart}`,
+        start: instanceStart.toISOString(),
+        end: instanceEnd.toISOString(),
       })
     }
   }
@@ -252,15 +282,17 @@ function splitOvernightEvents(events: CalendarEvent[], days: Date[]): CalendarEv
   const result: CalendarEvent[] = []
   for (const event of events) {
     result.push(event)
-    const startDate = event.start.substring(0, 10)
-    const endDate = event.end.substring(0, 10)
-    if (endDate > startDate && daySet.has(endDate)) {
-      result.push({
-        ...event,
-        id: `${event.id}:overflow:${endDate}`,
-        start: `${endDate}T00:00:00`,
-      })
-    }
+    const start = new Date(event.start)
+    const end = new Date(event.end)
+    if (localDayDiff(start, end) <= 0) continue
+    const endDateStr = formatDateISO(end)
+    if (!daySet.has(endDateStr)) continue
+    const overflowStart = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0)
+    result.push({
+      ...event,
+      id: `${event.id}:overflow:${endDateStr}`,
+      start: overflowStart.toISOString(),
+    })
   }
   return result
 }
