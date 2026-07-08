@@ -3271,6 +3271,7 @@ describe('resyncToken', () => {
     end: '2026-05-04T10:00:00',
   }
   const updatedEvent: CalendarEvent = { ...resyncEvent, title: 'Updated title' }
+  const finalEvent: CalendarEvent = { ...resyncEvent, title: 'Final title' }
 
   it('re-seeds localEvents from the current events prop when resyncToken identity changes', () => {
     const { rerender } = render(
@@ -3296,7 +3297,7 @@ describe('resyncToken', () => {
     expect(screen.queryByRole('button', { name: /updated title/i })).not.toBeInTheDocument()
   })
 
-  it('defers resync while a drag is active and applies it against events as of apply time once the drag returns to idle', () => {
+  it('defers resync while a drag is active and applies it against events as of apply time (not capture-at-token-change time) once the drag returns to idle', () => {
     const onEventCreate = vi.fn()
     const { rerender } = render(
       <WeekCalendarView
@@ -3306,10 +3307,12 @@ describe('resyncToken', () => {
         onEventCreate={onEventCreate}
       />,
     )
+    // 1. Engage a drag.
     const cells = document.querySelectorAll('[data-drag-cell]')
     fireEvent.pointerDown(cells[0], { pointerId: 1, clientY: 0 })
     expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
 
+    // 2. Bump the token + move events to an intermediate value (X) in the same rerender.
     rerender(
       <WeekCalendarView
         defaultWeekStart={WEEK_START}
@@ -3322,9 +3325,29 @@ describe('resyncToken', () => {
     expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
     expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
 
+    // 3. While STILL mid-drag, events changes again to a final value (Y) — token unchanged.
+    // A capture-at-change-time implementation already snapshotted X in step 2 and would
+    // never observe this update.
+    rerender(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[finalEvent]}
+        resyncToken={2}
+        onEventCreate={onEventCreate}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
+    expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
+
+    // 4. End the drag.
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBe(0)
-    expect(screen.getByRole('button', { name: /updated title/i })).toBeInTheDocument()
+
+    // 5. The applied value is Y (the CURRENT events prop at apply time), not X (what would
+    // render under capture-at-change-time semantics) and not the original.
+    expect(screen.getByRole('button', { name: /final title/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /updated title/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /original title/i })).not.toBeInTheDocument()
   })
 
   it('does not change the displayed week when resyncToken changes', async () => {
