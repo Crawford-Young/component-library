@@ -36,6 +36,14 @@ export interface WeekCalendarViewProps {
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
   readonly onEventRestore?: (event: CalendarEvent) => void
+  /**
+   * Fires when navigation changes the displayed week — payload is the new
+   * week's Sunday local-ISO date string (`getSundayISO` output, same shape
+   * `defaultWeekStart` accepts). Does NOT fire on mount, and does NOT fire
+   * for a `select`-source date change that stays within the currently
+   * displayed week (e.g. day-column expand).
+   */
+  readonly onWeekChange?: (weekStart: string) => void
   readonly sleepEnabled?: boolean
   readonly sleepStart?: number
   readonly sleepEnd?: number
@@ -412,6 +420,7 @@ export function WeekCalendarView({
   onEventMove,
   onEventResize,
   onEventRestore,
+  onWeekChange,
   sleepEnabled,
   sleepStart,
   sleepEnd,
@@ -430,7 +439,9 @@ export function WeekCalendarView({
 
   function handleDateChange(date: Date, source?: CalendarNavSource): void {
     setNavDate(date)
-    setCurrentWeek(getSundayISO(date))
+    const nextWeek = getSundayISO(date)
+    if (nextWeek !== currentWeek) onWeekChange?.(nextWeek)
+    setCurrentWeek(nextWeek)
     if (source === 'select') {
       setExpandedDayIndex(date.getDay())
     } else {
