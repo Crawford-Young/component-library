@@ -44,6 +44,17 @@ export interface WeekCalendarViewProps {
    * displayed week (e.g. day-column expand).
    */
   readonly onWeekChange?: (weekStart: string) => void
+  /**
+   * Bump the identity of this value (e.g. a counter or timestamp) to force
+   * `localEvents` to re-seed from the current `events` prop — for a consumer
+   * that refetches server data and needs the calendar to pick it up without
+   * remounting. Deferred while a drag is in progress (`dragMode.type !==
+   * 'idle'`) and applied once the drag returns to idle, reading `events` as
+   * of that later moment (not the value captured when the token changed).
+   * Never affects the displayed week (`currentWeek`/`navDate`). Absent ⇒
+   * zero behavior change (current once-seeded-then-optimistic-only behavior).
+   */
+  readonly resyncToken?: string | number
   readonly sleepEnabled?: boolean
   readonly sleepStart?: number
   readonly sleepEnd?: number
@@ -421,6 +432,7 @@ export function WeekCalendarView({
   onEventResize,
   onEventRestore,
   onWeekChange,
+  resyncToken,
   sleepEnabled,
   sleepStart,
   sleepEnd,
@@ -487,6 +499,30 @@ export function WeekCalendarView({
   }, [expandedDayIndex])
 
   const [dragMode, dragActions] = useDragState()
+
+  // resyncToken: re-seed localEvents from the current `events` prop on identity change.
+  // Deferred while a drag is active so an in-flight drag's local optimistic state isn't
+  // clobbered mid-gesture; applied once the drag returns to idle, reading `events` as of
+  // that later moment via the second effect's own closure (not captured at token-change time).
+  const prevResyncTokenRef = React.useRef(resyncToken)
+  const [resyncPending, setResyncPending] = React.useState(false)
+  React.useEffect(() => {
+    if (resyncToken !== prevResyncTokenRef.current) {
+      prevResyncTokenRef.current = resyncToken
+      if (dragMode.type === 'idle') {
+        setLocalEvents(events)
+      } else {
+        setResyncPending(true)
+      }
+    }
+  }, [resyncToken, dragMode.type, events])
+  React.useEffect(() => {
+    if (resyncPending && dragMode.type === 'idle') {
+      setResyncPending(false)
+      setLocalEvents(events)
+    }
+  }, [dragMode.type, resyncPending, events])
+
   const gridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
   const pendingDragRef = React.useRef<PendingDrag | null>(null)

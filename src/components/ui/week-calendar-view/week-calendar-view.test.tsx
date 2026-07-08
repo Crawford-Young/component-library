@@ -3262,3 +3262,93 @@ describe('timezone correctness — local view semantics', () => {
     expect(savedEnd.getMinutes()).toBe(0)
   })
 })
+
+describe('resyncToken', () => {
+  const resyncEvent: CalendarEvent = {
+    id: 'rt-1',
+    title: 'Original title',
+    start: '2026-05-04T09:00:00',
+    end: '2026-05-04T10:00:00',
+  }
+  const updatedEvent: CalendarEvent = { ...resyncEvent, title: 'Updated title' }
+
+  it('re-seeds localEvents from the current events prop when resyncToken identity changes', () => {
+    const { rerender } = render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[resyncEvent]} resyncToken={1} />,
+    )
+    expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
+
+    rerender(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[updatedEvent]} resyncToken={2} />,
+    )
+    expect(screen.getByRole('button', { name: /updated title/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /original title/i })).not.toBeInTheDocument()
+  })
+
+  it('preserves local state across a re-render when resyncToken is unchanged', () => {
+    const { rerender } = render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[resyncEvent]} resyncToken={1} />,
+    )
+    rerender(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[updatedEvent]} resyncToken={1} />,
+    )
+    expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /updated title/i })).not.toBeInTheDocument()
+  })
+
+  it('defers resync while a drag is active and applies it against events as of apply time once the drag returns to idle', () => {
+    const onEventCreate = vi.fn()
+    const { rerender } = render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[resyncEvent]}
+        resyncToken={1}
+        onEventCreate={onEventCreate}
+      />,
+    )
+    const cells = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(cells[0], { pointerId: 1, clientY: 0 })
+    expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
+
+    rerender(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[updatedEvent]}
+        resyncToken={2}
+        onEventCreate={onEventCreate}
+      />,
+    )
+    // Still mid-drag — resync must be deferred, so the old title still renders.
+    expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
+    expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBe(0)
+    expect(screen.getByRole('button', { name: /updated title/i })).toBeInTheDocument()
+  })
+
+  it('does not change the displayed week when resyncToken changes', async () => {
+    const { rerender } = render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[resyncEvent]} resyncToken={1} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(screen.getByRole('button', { name: /Mon 18/i })).toBeInTheDocument()
+
+    rerender(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[updatedEvent]} resyncToken={2} />,
+    )
+    expect(screen.getByRole('button', { name: /Mon 18/i })).toBeInTheDocument()
+  })
+
+  it('is a zero behavior change across re-renders when resyncToken is undefined', () => {
+    const { rerender } = render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[resyncEvent]} />,
+    )
+    expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
+
+    rerender(<WeekCalendarView defaultWeekStart={WEEK_START} events={[updatedEvent]} />)
+    expect(screen.getByRole('button', { name: /original title/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /updated title/i })).not.toBeInTheDocument()
+  })
+})
