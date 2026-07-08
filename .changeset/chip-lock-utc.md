@@ -1,0 +1,9 @@
+---
+'@crawfordyoung/ui': minor
+---
+
+`CalendarEventChip`'s top-right adornment cluster is reworked into an absolutely-positioned sibling of the trigger button (never nested — an interactive control must never sit inside another interactive control): quick edit (pencil) and quick delete (x) reveal on hover/focus-within via `motion-safe:` opacity, the complete-toggle checkbox renders when `completable` + `onToggleComplete` are both set, and a new lock toggle renders whenever `onToggleLock` is wired (filled `Lock` when `locked`, `LockOpen` at reduced opacity when unlocked). The chip title is now flush left (the old fixed left indent is gone) with dynamic right padding that reserves space for whichever icons are idle-visible.
+
+`CalendarEvent` gains `locked?: boolean` and `CalendarEventChipProps`/`WeekCalendarView` gain `onToggleLock`. A locked event blocks `onMoveStart`/`onResizeStart` and hides the resize strips — the popover, quick edit/delete, and complete-toggle all keep working regardless of lock state.
+
+**Breaking, semantics-correcting:** all chip/popover time display, `buildIso`, and `toTimeSlot` now use LOCAL wall-clock semantics instead of the previous UTC-parts reading. `buildIso`/`toTimeSlot` (from `lib/time`) build/read the typed `HH:MM` against the LOCAL calendar day, not the ISO string's own written (UTC or offset) digits — consumers who relied on the old UTC-digit behavior will see different clock values for events whose stored instant carries a non-UTC offset. `WeekCalendarView`'s day-membership (recurrence fan-out, overnight-event splitting) now derives from parsed `Date` objects' local getters (`getFullYear`/`getMonth`/`getDate`), never from slicing the ISO string's own date substring — an event that only crosses midnight in UTC but not in the viewer's local timezone now correctly renders as a single chip instead of incorrectly splitting across days.
