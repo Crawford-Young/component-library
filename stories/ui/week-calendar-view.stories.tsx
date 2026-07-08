@@ -409,6 +409,42 @@ export const PerDayWindows: Story = {
   },
 }
 
+export const OvernightLocalVsUtc: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Proves day-membership now derives from the viewer's own LOCAL `Date` getters, never from slicing an ISO string's own written digits. Two events:\n\n" +
+          '1. **"Real local overnight"** — `2026-05-04T23:00:00` to `2026-05-05T01:00:00`, written with no offset (local wall-clock, same as every other story in this file). 23:00 to 01:00 always spans two LOCAL calendar days for any viewer, so `WeekCalendarView` splits it into two chips: one ending at midnight on Mon 5/4, one starting at midnight on Tue 5/5.\n\n' +
+          '2. **"UTC-overnight, not local"** — `2026-05-04T16:00:00-07:00` to `2026-05-04T18:00:00-07:00` (16:00–18:00 wall-clock in a fixed `-07:00` offset, e.g. `America/Phoenix`, which does not observe DST). As real instants those are `2026-05-04T23:00:00Z`–`2026-05-05T01:00:00Z` — the UTC representation crosses midnight (May 4 → May 5), which is exactly what the old ISO-substring logic keyed off and would have incorrectly split into two chips days apart. The fixed code parses each instant to a `Date` and reads `getFullYear/Month/Date()` in the viewer\'s own local timezone, so it renders as ONE chip whenever the interval does not also cross a local midnight for that viewer — true here for any offset within a few hours of `-07:00` (in particular for this Storybook build, evaluated in the browser\'s own local timezone).\n\n' +
+          "Event 1's color is `indigo` rather than the more intuitive `violet`/`green`: the split's overflow half renders with a pre-existing `opacity-70` treatment (`week-calendar-view.tsx`'s `isOverflow` branch) that dims the whole chip, including its white text, and most palette colors then fail axe `color-contrast` against the dark page background once dimmed — `indigo` is one of the few with enough margin to still clear 4.5:1. That the palette's contrast guarantee (\"verified ≥4.5:1 with white text\", see `calendar-event-chip.tsx`) only holds at full opacity is a pre-existing gap unrelated to this wave's fixes, surfaced here because no previously axe-tested story ever rendered a split/overflow chip.",
+      },
+    },
+  },
+  args: {
+    defaultWeekStart: WEEK,
+    hourStart: 0,
+    hourCount: 24,
+    hourHeight: 32,
+    events: [
+      {
+        id: 'local-overnight',
+        title: 'Real local overnight (splits into 2)',
+        start: '2026-05-04T23:00:00',
+        end: '2026-05-05T01:00:00',
+        color: 'indigo',
+      },
+      {
+        id: 'utc-overnight',
+        title: 'UTC-overnight only (stays 1 chip)',
+        start: '2026-05-04T16:00:00-07:00',
+        end: '2026-05-04T18:00:00-07:00',
+        color: 'teal',
+      },
+    ],
+  },
+}
+
 export const PerDayWindowsFullDay: Story = {
   args: {
     defaultWeekStart: WEEK,

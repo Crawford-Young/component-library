@@ -104,6 +104,16 @@ const stories = [
   { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
   { name: 'SplitText', id: 'display-splittext--default' },
   { name: 'MagneticButton', id: 'inputs-magneticbutton--default' },
+  { name: 'CalendarEventChip AdornmentCluster', id: 'data-calendareventchip--adornment-cluster' },
+  { name: 'CalendarEventChip LockedChip', id: 'data-calendareventchip--locked-chip' },
+  {
+    name: 'CalendarEventChip LockedNoCheckbox',
+    id: 'data-calendareventchip--locked-no-checkbox',
+  },
+  {
+    name: 'WeekCalendarView OvernightLocalVsUtc',
+    id: 'data-weekcalendarview--overnight-local-vs-utc',
+  },
 ]
 
 for (const { name, id } of stories) {
