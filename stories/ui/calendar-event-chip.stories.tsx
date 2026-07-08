@@ -41,6 +41,25 @@ function ToggleableChipDemo({ event: base }: { readonly event: CalendarEvent }):
   )
 }
 
+/** Wires every adornment handler (edit/delete/complete-toggle/lock-toggle) so all four
+ * cluster icons render, letting `completed`/`locked` toggle live via the chip's own controls. */
+function FullClusterDemo({ event: base }: { readonly event: CalendarEvent }): React.JSX.Element {
+  const [completed, setCompleted] = React.useState(base.completed ?? false)
+  const [locked, setLocked] = React.useState(base.locked ?? false)
+  return (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip
+        event={{ ...base, completed, locked }}
+        style={chipStyle}
+        onEdit={() => {}}
+        onDelete={() => {}}
+        onToggleComplete={() => setCompleted((c) => !c)}
+        onToggleLock={() => setLocked((l) => !l)}
+      />
+    </div>
+  )
+}
+
 export const Default: Story = {
   render: (args) => (
     <div className="relative h-48 w-56 rounded border">
@@ -190,6 +209,98 @@ export const GoogleCalendarStyle: Story = {
     style: tallChipStyle,
     onEdit: () => {},
     onDelete: () => {},
+  },
+}
+
+export const AdornmentCluster: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Full top-right adornment cluster, wired with every handler: quick edit (pencil) and quick delete (x) reveal on hover/focus-within via `motion-safe:` opacity, the checkbox is idle-visible because `completable` + `onToggleComplete` are both set, and the lock toggle is idle-visible because `onToggleLock` is wired. All four are DOM siblings of the trigger button, never nested inside it. Hover the chip (or focus it via Tab) to reveal quick edit/delete.',
+      },
+    },
+  },
+  render: (args) => <FullClusterDemo event={args.event} />,
+  args: {
+    event: {
+      id: '8',
+      title: 'Full cluster demo',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T09:45:00',
+      color: 'blue',
+      completable: true,
+      locked: false,
+    },
+    style: chipStyle,
+  },
+}
+
+function LockableChipDemo({ event: base }: { readonly event: CalendarEvent }): React.JSX.Element {
+  const [locked, setLocked] = React.useState(base.locked ?? false)
+  return (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip
+        event={{ ...base, locked }}
+        style={chipStyle}
+        onEdit={() => {}}
+        onDelete={() => {}}
+        onToggleLock={() => setLocked((l) => !l)}
+      />
+    </div>
+  )
+}
+
+export const LockedChip: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Locked event: the lock icon renders filled (`Lock`, not `LockOpen`) and the chip has no resize strips — `onMoveStart`/`onResizeStart` are never invoked while `locked` is `true`. The popover and quick edit/delete keep working regardless of lock state. Click the lock icon to unlock and see the resize strips return.',
+      },
+    },
+  },
+  render: (args) => <LockableChipDemo event={args.event} />,
+  args: {
+    event: {
+      id: '9',
+      title: 'Locked event',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T10:00:00',
+      color: 'red',
+      locked: true,
+    },
+    style: chipStyle,
+  },
+}
+
+export const LockedNoCheckbox: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Lock wired without `completable`/`onToggleComplete` — only the lock icon renders idle-visible, not a checkbox. The title's idle `pr-8` reserve assumes two always-visible icons (checkbox + lock) so it stays correct once a caller opts into completability later; with only the lock present this over-reserves a few pixels to the left of the icon. Cosmetic only — flagged here for eyeball review, not treated as a bug in this wave.",
+      },
+    },
+  },
+  render: (args) => (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '10',
+      title: 'Lock only, no checkbox',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T09:30:00',
+      color: 'amber',
+      locked: false,
+    },
+    style: chipStyle,
+    onEdit: () => {},
+    onDelete: () => {},
+    onToggleLock: () => {},
   },
 }
 
