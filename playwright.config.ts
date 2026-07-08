@@ -15,6 +15,10 @@ export default defineConfig({
     trace: 'on-first-retry',
     // Settle motion-safe transitions instantly so axe never samples a mid-fade blended color.
     contextOptions: { reducedMotion: 'reduce' },
+    // Pinned so TZ-sensitive stories (e.g. calendar day-membership around midnight) render
+    // deterministically in CI (ubuntu-latest defaults to UTC) and locally regardless of host
+    // TZ — never rely on the host/CI machine's timezone for a story's rendered output.
+    timezoneId: 'America/New_York',
   },
   projects: [
     {
