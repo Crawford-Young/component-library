@@ -311,6 +311,81 @@ describe('nav bar', () => {
   })
 })
 
+describe('onWeekChange', () => {
+  it('does not fire on mount', () => {
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} onWeekChange={onWeekChange} />,
+    )
+    expect(onWeekChange).not.toHaveBeenCalled()
+  })
+
+  it('fires with the new week Sunday ISO when Previous week is clicked', async () => {
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} onWeekChange={onWeekChange} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    expect(onWeekChange).toHaveBeenCalledExactlyOnceWith('2026-04-26')
+  })
+
+  it('fires with the new week Sunday ISO when Next week is clicked', async () => {
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} onWeekChange={onWeekChange} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(onWeekChange).toHaveBeenCalledExactlyOnceWith('2026-05-10')
+  })
+
+  it('fires with the new week Sunday ISO when Today is clicked', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-20T10:00:00'))
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart="2026-05-03" events={[]} onWeekChange={onWeekChange} />,
+    )
+    const todayBtn = screen.getByRole('button', { name: 'Today' })
+    await userEvent.click(todayBtn)
+    expect(onWeekChange).toHaveBeenCalledExactlyOnceWith('2026-05-17')
+    vi.useRealTimers()
+  })
+
+  it('fires with the new week Sunday ISO when the Month select changes to a different week', () => {
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} onWeekChange={onWeekChange} />,
+    )
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '5' } })
+    expect(onWeekChange).toHaveBeenCalledExactlyOnceWith('2026-05-31')
+  })
+
+  it('fires with the new week Sunday ISO when the Year select changes to a different week', () => {
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} onWeekChange={onWeekChange} />,
+    )
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
+    expect(onWeekChange).toHaveBeenCalledExactlyOnceWith('2027-05-02')
+  })
+
+  it('does not fire when a select-source date stays within the displayed week', () => {
+    const onWeekChange = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[]} onWeekChange={onWeekChange} />,
+    )
+    // Day 6 = Wed May 6 2026 — still inside the displayed May 3-9 week
+    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '6' } })
+    expect(onWeekChange).not.toHaveBeenCalled()
+  })
+
+  it('does not crash when onWeekChange is absent and nav is used', async () => {
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[]} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(screen.getByRole('button', { name: /Mon 11/i })).toBeInTheDocument()
+  })
+})
+
 describe('internal state', () => {
   it('defaults to current week when no defaultWeekStart given', () => {
     vi.useFakeTimers()
