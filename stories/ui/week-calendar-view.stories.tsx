@@ -1,6 +1,7 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { WeekCalendarView, type DayWindow } from '@/components/ui/week-calendar-view'
+import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import { EventCreateForm } from '@/components/ui/week-calendar-view/event-create-form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
@@ -469,4 +470,89 @@ export const PerDayWindowsFullDay: Story = {
       },
     ],
   },
+}
+
+const RESYNC_DEMO_EVENTS: readonly CalendarEvent[] = [
+  {
+    id: '1',
+    title: 'Team standup',
+    start: '2026-05-04T09:00:00',
+    end: '2026-05-04T09:30:00',
+    color: 'blue',
+  },
+  {
+    id: '2',
+    title: 'Design review',
+    start: '2026-05-05T14:00:00',
+    end: '2026-05-05T15:30:00',
+    color: 'violet',
+  },
+]
+
+function ResyncTokenDemo(): React.JSX.Element {
+  const [events, setEvents] = React.useState<readonly CalendarEvent[]>(RESYNC_DEMO_EVENTS)
+  const [mutationCount, setMutationCount] = React.useState(0)
+  const [resyncToken, setResyncToken] = React.useState(0)
+  const [lastWeekChange, setLastWeekChange] = React.useState<string | null>(null)
+
+  function mutateServerData(): void {
+    const nextMutationCount = mutationCount + 1
+    setMutationCount(nextMutationCount)
+    setEvents((previous) =>
+      previous.map((event) =>
+        event.id === '1'
+          ? { ...event, title: `Team standup (server update #${nextMutationCount})` }
+          : event,
+      ),
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={mutateServerData}
+          className="rounded border border-border px-3 py-1.5 text-xs text-foreground"
+        >
+          Mutate server data
+        </button>
+        <button
+          type="button"
+          onClick={() => setResyncToken((token) => token + 1)}
+          className="rounded border border-border px-3 py-1.5 text-xs text-foreground"
+        >
+          Bump resyncToken
+        </button>
+        <span className="text-xs text-muted-foreground">
+          resyncToken: {resyncToken} · last onWeekChange:{' '}
+          {lastWeekChange ?? '(none yet — navigate a week)'}
+        </span>
+      </div>
+      <WeekCalendarView
+        defaultWeekStart={WEEK}
+        events={events}
+        resyncToken={resyncToken}
+        onWeekChange={setLastWeekChange}
+        onEventMove={() => {}}
+        onEventResize={() => {}}
+      />
+    </div>
+  )
+}
+
+export const ResyncToken: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates `onWeekChange` and `resyncToken` together. `events` and `resyncToken` live in this story's own state, standing in for a consumer that refetches server data.\n\n" +
+          '**"Mutate server data"** updates the "Team standup" event\'s title in story state — simulating server truth diverging from what the calendar is currently showing — but does NOT change the rendered chip: `WeekCalendarView` copies `events` into internal `localEvents` once and only re-seeds on a `resyncToken` identity change, so an `events` prop mutation alone is invisible until the token bumps.\n\n' +
+          '**"Bump resyncToken"** increments the token, which re-seeds `localEvents` from the current `events` prop — the chip title now picks up every mutation made since the last bump.\n\n' +
+          'If you start a drag (move or resize an event) and bump the token mid-drag, the re-seed is deferred until the drag returns to idle, reading `events` as of that later moment — a resync can never yank an event out from under an in-progress drag.\n\n' +
+          "`onWeekChange` fires with the new week's Sunday local-ISO date only when navigation actually changes the displayed week (never on mount, never for a same-week selection) — the chrome above echoes the last payload received; use the nav bar to see it update.",
+      },
+    },
+  },
+  render: () => <ResyncTokenDemo />,
 }
