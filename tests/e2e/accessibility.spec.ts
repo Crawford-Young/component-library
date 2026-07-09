@@ -114,6 +114,7 @@ const stories = [
     name: 'WeekCalendarView OvernightLocalVsUtc',
     id: 'data-weekcalendarview--overnight-local-vs-utc',
   },
+  { name: 'WeekCalendarView ResyncToken', id: 'data-weekcalendarview--resync-token' },
 ]
 
 for (const { name, id } of stories) {
