@@ -95,10 +95,10 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Calendar
 
-| Component           | Notes                                                                                                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `WeekCalendarView`  | Full week grid — recurring events, drag move/resize/create (slop threshold), undo, `use24h`, `dayWindows` per-day visible windows with sleep-zone shading, complete-toggle passthrough     |
-| `CalendarEventChip` | Event chip — edit/delete popover, drag handles, `use24h` time display, inline streak count (`streak`), one-click complete circle (`completable` + `onToggleComplete`), `completed` styling |
+| Component           | Notes                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WeekCalendarView`  | Full week grid — recurring events, drag move/resize/create (slop threshold), undo, `use24h`, `dayWindows` per-day visible windows with sleep-zone shading, complete-toggle passthrough, `onWeekChange` nav callback (fires on week change, Sunday local-ISO payload), `resyncToken` (re-seeds internal events from `events` prop on identity change, deferred mid-drag) |
+| `CalendarEventChip` | Event chip — edit/delete popover, drag handles, `use24h` time display, inline streak count (`streak`), one-click complete circle (`completable` + `onToggleComplete`), `completed` styling                                                                                                                                                                              |
 
 ### Layout
 
