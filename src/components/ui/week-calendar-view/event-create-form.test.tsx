@@ -293,13 +293,22 @@ describe('EventCreateForm', () => {
     expect(screen.queryByLabelText('Repeat count')).not.toBeInTheDocument()
   })
 
-  it('submit includes recurrenceCount when frequency is non-none', async () => {
+  it('submit omits recurrenceCount when frequency is non-none and count untouched', async () => {
     const onSubmit = vi.fn()
     render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    expect(onSubmit.mock.calls[0][0].recurrenceCount).toBe(2)
+    expect(onSubmit.mock.calls[0][0].recurrenceCount).toBeUndefined()
+    expect(JSON.stringify(onSubmit.mock.calls[0][0])).not.toContain('recurrenceCount')
+  })
+
+  it('count field renders blank with Forever placeholder when frequency is non-none', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    const input = screen.getByLabelText('Repeat count')
+    expect(input).toHaveValue(null)
+    expect(input).toHaveAttribute('placeholder', 'Forever')
   })
 
   it('submit uses the edited repeat count value', async () => {
@@ -307,7 +316,7 @@ describe('EventCreateForm', () => {
     render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
-    await userEvent.click(screen.getByRole('button', { name: 'Increment' }))
+    await userEvent.type(screen.getByLabelText('Repeat count'), '3')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(onSubmit.mock.calls[0][0].recurrenceCount).toBe(3)
   })
@@ -315,6 +324,7 @@ describe('EventCreateForm', () => {
   it('repeat count cannot go below the minimum of 2', async () => {
     render(<EventCreateForm {...baseProps} />)
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    await userEvent.type(screen.getByLabelText('Repeat count'), '2')
     expect(screen.getByRole('button', { name: 'Decrement' })).toBeDisabled()
   })
 
@@ -344,6 +354,6 @@ describe('EventCreateForm', () => {
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    expect(received).toEqual([2])
+    expect(received).toEqual([undefined])
   })
 })

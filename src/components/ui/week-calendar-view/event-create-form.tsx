@@ -31,7 +31,10 @@ const ALL_COLORS: readonly CalendarEventColor[] = [
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
-/** Minimum value for the repeat-count field — mirrors TaskTimeFields/ActivityFormDialog. */
+/**
+ * Minimum for a TYPED repeat-count value — mirrors TaskTimeFields/ActivityFormDialog. The field
+ * itself defaults to blank (open-ended, no count); blank is not clamped to this minimum.
+ */
 const REPEAT_MIN = 2
 
 const inputCls =
@@ -66,7 +69,7 @@ interface CreateDraft {
   allDay: boolean
   recurrenceDays: readonly DayOfWeek[]
   recurrenceFrequency: RecurrenceFrequency | 'none'
-  recurrenceCount: number
+  recurrenceCount: number | undefined
 }
 
 /**
@@ -116,7 +119,7 @@ export function EventCreateForm({
     recurrenceDays:
       dayCount > 1 ? (coveredDays.map((d) => DAY_ABBR[d.getDay()]) as readonly DayOfWeek[]) : [],
     recurrenceFrequency: 'none',
-    recurrenceCount: REPEAT_MIN,
+    recurrenceCount: undefined,
   })
 
   function handleSubmit(e: React.FormEvent): void {
@@ -283,6 +286,8 @@ export function EventCreateForm({
             id="create-event-repeat-count"
             aria-label="Repeat count"
             className="mt-1"
+            allowEmpty
+            placeholder="Forever"
             value={draft.recurrenceCount}
             onChange={(n) => setDraft((d) => ({ ...d, recurrenceCount: n }))}
             min={REPEAT_MIN}
