@@ -129,6 +129,9 @@ const ALL_COLORS: readonly CalendarEventColor[] = [
   'fuchsia',
 ]
 
+/** Day-of-week abbreviations in `Date.prototype.getDay()` index order (0 = Sunday). */
+const DAY_ABBR: readonly DayOfWeek[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 interface DraftEvent {
   title: string
   color: CalendarEventColor
@@ -159,6 +162,12 @@ function parseHHMM(time: string): [hour: number, minute: number] {
  * rather than merging with `recurrenceDays`. Saving still writes the resulting selection back
  * under `recurrenceDays` (see `handleSave`) — `seriesDays` on the source event is left untouched.
  *
+ * When neither `seriesDays` nor `recurrenceDays` resolves to a non-empty set (a day-less
+ * event), the picker instead seeds from the event's own LOCAL calendar day — otherwise the
+ * event's own day renders unpressed even though the event demonstrably occurs on it. `handleSave`
+ * mirrors this with a symmetric trivial-strip so an untouched save on a day-less event still
+ * round-trips `recurrenceDays: undefined` rather than minting a 1-day series.
+ *
  * Start/End are seeded from the LOCAL wall-clock of the event's instants — matching exactly
  * what the chip and popover already display (`formatTimeRange`, both driven by local `Date`
  * getters). Reading the ISO's own written clock digits (e.g. via `ev.start.substring(11, 16)`)
@@ -167,6 +176,7 @@ function parseHHMM(time: string): [hour: number, minute: number] {
  * post-save time jump this fixes.
  */
 function toDraft(ev: CalendarEvent): DraftEvent {
+  const storedDays = ev.seriesDays ?? ev.recurrenceDays ?? []
   return {
     title: ev.title,
     color: ev.color ?? 'default',
@@ -174,7 +184,7 @@ function toDraft(ev: CalendarEvent): DraftEvent {
     description: ev.description ?? '',
     startTime: fmt24h(new Date(ev.start)),
     endTime: fmt24h(new Date(ev.end)),
-    recurrenceDays: ev.seriesDays ?? ev.recurrenceDays ?? [],
+    recurrenceDays: storedDays.length > 0 ? storedDays : [DAY_ABBR[new Date(ev.start).getDay()]],
     recurrenceFrequency: ev.recurrenceFrequency ?? 'none',
   }
 }
@@ -355,13 +365,24 @@ export function CalendarEventChip({
       endHour,
       endMinute,
     ).toISOString()
+    // Symmetric trivial-strip for toDraft's own-day fallback: only strip when the source event
+    // had NO stored days (the fallback-seeded case) — an event that already stores `[day]` with
+    // frequency none must round-trip unchanged on an untouched save, never silently normalized.
+    const ownDay = DAY_ABBR[new Date(event.start).getDay()]
+    const hadStoredDays = ((event.seriesDays ?? event.recurrenceDays)?.length ?? 0) > 0
+    const trivialDays =
+      !hadStoredDays &&
+      draft.recurrenceDays.length === 1 &&
+      draft.recurrenceDays[0] === ownDay &&
+      draft.recurrenceFrequency === 'none'
     onEdit!({
       ...event,
       title: draft.title,
       color: draft.color,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
-      recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays : undefined,
+      recurrenceDays:
+        draft.recurrenceDays.length > 0 && !trivialDays ? draft.recurrenceDays : undefined,
       recurrenceFrequency:
         draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
       start,
@@ -551,7 +572,7 @@ export function CalendarEventChip({
                     Days
                   </p>
                   <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
-                    {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as DayOfWeek[]).map((d) => {
+                    {DAY_ABBR.map((d) => {
                       const active = draft.recurrenceDays.includes(d)
                       return (
                         <button
