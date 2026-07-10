@@ -1,12 +1,10 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-export interface NumberInputProps extends Omit<
+interface NumberInputBaseProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  'onChange' | 'type'
+  'onChange' | 'type' | 'value'
 > {
-  value: number
-  onChange: (value: number) => void
   min?: number
   max?: number
   step?: number
@@ -14,25 +12,47 @@ export interface NumberInputProps extends Omit<
   className?: string
 }
 
+export type NumberInputProps = NumberInputBaseProps &
+  (
+    | { allowEmpty?: false; value: number; onChange: (value: number) => void }
+    | { allowEmpty: true; value: number | undefined; onChange: (value: number | undefined) => void }
+  )
+
 export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ value, onChange, min, max, step = 1, disabled, className, ...props }, ref) => {
+  ({ value, onChange, min, max, step = 1, disabled, allowEmpty, className, ...props }, ref) => {
+    // `undefined` is only emitted on the allowEmpty arm (guarded at each call);
+    // the cast reconciles the union's two onChange signatures for internal calls.
+    const emit = onChange as (value: number | undefined) => void
+
     const decrement = () => {
+      if (value === undefined) {
+        emit(min ?? 0)
+        return
+      }
       const next = value - step
-      onChange(min !== undefined ? Math.max(next, min) : next)
+      emit(min !== undefined ? Math.max(next, min) : next)
     }
 
     const increment = () => {
+      if (value === undefined) {
+        emit(min ?? 0)
+        return
+      }
       const next = value + step
-      onChange(max !== undefined ? Math.min(next, max) : next)
+      emit(max !== undefined ? Math.min(next, max) : next)
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (allowEmpty && e.target.value === '') {
+        emit(undefined)
+        return
+      }
       const parsed = parseFloat(e.target.value)
-      if (!isNaN(parsed)) onChange(parsed)
+      if (!isNaN(parsed)) emit(parsed)
     }
 
-    const atMin = min !== undefined && value <= min
-    const atMax = max !== undefined && value >= max
+    const atMin = min !== undefined && value !== undefined && value <= min
+    const atMax = max !== undefined && value !== undefined && value >= max
 
     return (
       <div
@@ -54,7 +74,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         <input
           ref={ref}
           type="number"
-          value={value}
+          value={value ?? ''}
           onChange={handleChange}
           min={min}
           max={max}

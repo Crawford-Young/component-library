@@ -43,3 +43,21 @@ export const CustomStep: Story = {
 export const Disabled: Story = {
   render: () => <NumberInput value={7} onChange={() => {}} disabled aria-label="Quantity" />,
 }
+
+function AllowEmptyDemo() {
+  const [value, setValue] = useState<number | undefined>(undefined)
+  return (
+    <NumberInput
+      allowEmpty
+      value={value}
+      onChange={setValue}
+      min={2}
+      placeholder="Forever"
+      aria-label="Repeat count"
+    />
+  )
+}
+
+export const AllowEmpty: Story = {
+  render: () => <AllowEmptyDemo />,
+}

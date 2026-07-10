@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -102,5 +102,87 @@ describe('NumberInput', () => {
   it('merges custom className on the wrapper', () => {
     const { container } = render(<NumberInput value={0} onChange={vi.fn()} className="w-32" />)
     expect((container.firstChild as HTMLElement).className).toContain('w-32')
+  })
+})
+
+describe('allowEmpty', () => {
+  it('renders an empty input with placeholder when value is undefined', () => {
+    render(
+      <NumberInput
+        allowEmpty
+        aria-label="Repeat count"
+        placeholder="Forever"
+        value={undefined}
+        onChange={vi.fn()}
+        min={2}
+      />,
+    )
+    const input = screen.getByLabelText('Repeat count')
+    expect(input).toHaveValue(null)
+    expect(input).toHaveAttribute('placeholder', 'Forever')
+  })
+
+  it('clearing the field emits undefined', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput allowEmpty aria-label="n" value={5} onChange={onChange} min={2} />)
+    await userEvent.clear(screen.getByLabelText('n'))
+    expect(onChange).toHaveBeenLastCalledWith(undefined)
+  })
+
+  it('typing into a blank field emits the parsed number', () => {
+    const onChange = vi.fn()
+    render(<NumberInput allowEmpty aria-label="n" value={undefined} onChange={onChange} min={2} />)
+    fireEvent.change(screen.getByLabelText('n'), { target: { value: '7' } })
+    expect(onChange).toHaveBeenLastCalledWith(7)
+  })
+
+  it('increment from blank emits min', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput allowEmpty aria-label="n" value={undefined} onChange={onChange} min={2} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Increment' }))
+    expect(onChange).toHaveBeenLastCalledWith(2)
+  })
+
+  it('decrement from blank emits min', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput allowEmpty aria-label="n" value={undefined} onChange={onChange} min={2} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Decrement' }))
+    expect(onChange).toHaveBeenLastCalledWith(2)
+  })
+
+  it('stepper from blank with no min emits 0', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput allowEmpty aria-label="n" value={undefined} onChange={onChange} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Increment' }))
+    expect(onChange).toHaveBeenLastCalledWith(0)
+  })
+
+  it('decrement from blank with no min emits 0', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput allowEmpty aria-label="n" value={undefined} onChange={onChange} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Decrement' }))
+    expect(onChange).toHaveBeenLastCalledWith(0)
+  })
+
+  it('steppers are enabled at blank even with min/max set', () => {
+    render(
+      <NumberInput
+        allowEmpty
+        aria-label="n"
+        value={undefined}
+        onChange={vi.fn()}
+        min={2}
+        max={9}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Decrement' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Increment' })).toBeEnabled()
+  })
+
+  it('without allowEmpty, clearing does not emit (existing behavior preserved)', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput aria-label="n" value={5} onChange={onChange} min={2} />)
+    await userEvent.clear(screen.getByLabelText('n'))
+    expect(onChange).not.toHaveBeenCalledWith(undefined)
   })
 })
