@@ -37,8 +37,8 @@ export interface TaskTimeFieldsProps {
   readonly onEndTimeChange: (t: string) => void
   readonly recurrence: string
   readonly onRecurrenceChange: (r: string) => void
-  readonly recurrenceCount: number
-  readonly onRecurrenceCountChange: (n: number) => void
+  readonly recurrenceCount: number | undefined
+  readonly onRecurrenceCountChange: (n: number | undefined) => void
   /** Days of week selected for weekly recurrence. Defaults to an empty selection. */
   readonly recurrenceDays?: readonly DayOfWeek[]
   readonly onRecurrenceDaysChange?: (days: readonly DayOfWeek[]) => void
@@ -173,6 +173,8 @@ export function TaskTimeFields({
           <NumberInput
             id={repeatCountId}
             aria-label="Repeat count"
+            allowEmpty
+            placeholder="Forever"
             value={recurrenceCount}
             onChange={onRecurrenceCountChange}
             min={repeatMin}

@@ -142,6 +142,27 @@ describe('TaskTimeFields', () => {
       expect(screen.getByLabelText(/repeat count/i)).toHaveAttribute('max', '52')
       expect(screen.getByRole('button', { name: 'Increment' })).toBeDisabled()
     })
+
+    it('renders blank count with Forever placeholder when recurrenceCount is undefined', () => {
+      render(
+        <TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceCount: undefined })} />,
+      )
+      const repeat = screen.getByLabelText(/repeat count/i)
+      expect(repeat).toHaveValue(null)
+      expect(repeat).toHaveAttribute('placeholder', 'Forever')
+    })
+
+    it('clearing the count field calls onRecurrenceCountChange with undefined', async () => {
+      const user = userEvent.setup()
+      const onRecurrenceCountChange = vi.fn()
+      render(
+        <TaskTimeFields
+          {...makeProps({ recurrence: 'weekly', recurrenceCount: 3, onRecurrenceCountChange })}
+        />,
+      )
+      await user.clear(screen.getByLabelText(/repeat count/i))
+      expect(onRecurrenceCountChange).toHaveBeenLastCalledWith(undefined)
+    })
   })
 
   describe('showDate prop', () => {

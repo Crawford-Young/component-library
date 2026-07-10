@@ -20,7 +20,7 @@ function ControlledTaskTimeFields(
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
   const [recurrence, setRecurrence] = useState('none')
-  const [recurrenceCount, setRecurrenceCount] = useState(1)
+  const [recurrenceCount, setRecurrenceCount] = useState<number | undefined>(1)
 
   return (
     <div className="w-80">

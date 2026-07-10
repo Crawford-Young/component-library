@@ -425,11 +425,35 @@ describe('submit — task', () => {
         })}
       />,
     )
+    expect(screen.getByLabelText(/repeat count/i)).toHaveValue(3)
     await user.click(screen.getByRole('button', { name: /save/i }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
     const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
     expect(payload.recurrence).toBe('weekly')
     expect(payload.recurrenceCount).toBe(3)
+  })
+
+  it('recurring submit with untouched count emits recurrenceCount undefined', async () => {
+    const onSubmit = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ActivityFormDialog
+        {...makeProps({
+          onSubmit,
+          initialValues: {
+            title: 'Plain task',
+            startAt: '2025-06-15T09:00:00.000Z',
+            endAt: '2025-06-15T10:00:00.000Z',
+          },
+        })}
+      />,
+    )
+    await selectOption(user, 'Recurrence', /^daily$/i)
+    await user.click(screen.getByRole('button', { name: /save/i }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0][0] as ActivityFormValues
+    expect(payload.recurrence).toBe('daily')
+    expect(payload.recurrenceCount).toBeUndefined()
   })
 
   it('carries a chosen color, trimmed location and description into the payload', async () => {

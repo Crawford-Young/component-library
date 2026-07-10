@@ -181,8 +181,8 @@ export function ActivityFormDialog({
   const [recurrence, setRecurrence] = React.useState(
     initialValues?.recurrence ?? DEFAULT_RECURRENCE,
   )
-  const [recurrenceCount, setRecurrenceCount] = React.useState(
-    initialValues?.recurrenceCount ?? REPEAT_MIN,
+  const [recurrenceCount, setRecurrenceCount] = React.useState<number | undefined>(
+    initialValues?.recurrenceCount,
   )
   const [recurrenceDays, setRecurrenceDays] = React.useState<readonly DayOfWeek[]>(
     initialValues?.recurrenceDays ?? [],
