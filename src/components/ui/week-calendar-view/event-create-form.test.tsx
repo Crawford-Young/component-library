@@ -89,6 +89,20 @@ describe('EventCreateForm', () => {
     expect(screen.getByRole('group', { name: 'Recurrence days' })).toBeInTheDocument()
   })
 
+  it('seeds the creation day as selected by default for a single-day create', () => {
+    // baseProps: date='2026-05-04' is a Monday (days[minDayIdx=1] === DAYS[1])
+    render(<EventCreateForm {...baseProps} />)
+    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: 'Day: Sun' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
   it('renders Create and Cancel buttons', () => {
     render(<EventCreateForm {...baseProps} />)
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
@@ -184,20 +198,37 @@ describe('EventCreateForm', () => {
     expect(onSubmit.mock.calls[0][0].recurrenceFrequency).toBeUndefined()
   })
 
-  it('submit includes recurrenceDays when at least one day toggled', async () => {
+  it('submit with untouched default selection (creation day only, frequency none) omits recurrenceDays', async () => {
     const onSubmit = vi.fn()
     render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceDays).toBeUndefined()
+    expect(JSON.stringify(onSubmit.mock.calls[0][0])).not.toContain('recurrenceDays')
+  })
+
+  it('submit includes both days when an additional day is toggled alongside the seeded creation day', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Fri' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceDays).toEqual(['Mon', 'Fri'])
+  })
+
+  it('submit emits recurrenceDays for creation-day-only selection when frequency is non-none', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(onSubmit.mock.calls[0][0].recurrenceDays).toEqual(['Mon'])
   })
 
-  it('toggling a day off removes it from recurrenceDays', async () => {
+  it('deselecting the creation day empties the selection and omits recurrenceDays on submit', async () => {
     const onSubmit = vi.fn()
     render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
     await userEvent.type(screen.getByLabelText('Event title'), 'Test')
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
     await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(onSubmit.mock.calls[0][0].recurrenceDays).toBeUndefined()

@@ -117,7 +117,9 @@ export function EventCreateForm({
     endTime: slotToTimeString(endSlot),
     allDay: false,
     recurrenceDays:
-      dayCount > 1 ? (coveredDays.map((d) => DAY_ABBR[d.getDay()]) as readonly DayOfWeek[]) : [],
+      dayCount > 1
+        ? (coveredDays.map((d) => DAY_ABBR[d.getDay()]) as readonly DayOfWeek[])
+        : [DAY_ABBR[days[minDayIdx].getDay()] as DayOfWeek],
     recurrenceFrequency: 'none',
     recurrenceCount: undefined,
   })
@@ -126,6 +128,11 @@ export function EventCreateForm({
     e.preventDefault()
     const isOvernight = !draft.allDay && draft.endTime < draft.startTime
     const endDate = isOvernight ? nextDayISO(date) : date
+    const creationDay = DAY_ABBR[days[minDayIdx].getDay()]
+    const trivialDays =
+      draft.recurrenceDays.length === 1 &&
+      draft.recurrenceDays[0] === creationDay &&
+      draft.recurrenceFrequency === 'none'
     const payload: EventCreateSubmitPayload = {
       title: draft.title,
       start: `${date}T${draft.startTime}:00`,
@@ -134,7 +141,8 @@ export function EventCreateForm({
       color: draft.color !== 'default' ? draft.color : undefined,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
-      recurrenceDays: draft.recurrenceDays.length > 0 ? draft.recurrenceDays : undefined,
+      recurrenceDays:
+        draft.recurrenceDays.length > 0 && !trivialDays ? draft.recurrenceDays : undefined,
       recurrenceFrequency:
         draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
       recurrenceCount: draft.recurrenceFrequency !== 'none' ? draft.recurrenceCount : undefined,
