@@ -449,7 +449,57 @@ describe('event forwarding', () => {
 })
 
 describe('chip-popover edit fan-out preserve', () => {
-  it('chip-popover edit emitting recurrenceDays does not fan out a row that had none', async () => {
+  it('chip-popover edit emitting recurrenceDays does not fan out a row that had none (recurrenceEditMode="server")', async () => {
+    const onEdit = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventEdit={onEdit}
+        recurrenceEditMode="server"
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+
+    expect(onEdit).toHaveBeenCalledOnce()
+    const saved = onEdit.mock.calls[0][0]
+    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
+
+    // The stored row had no recurrenceDays before the edit — with recurrenceEditMode="server"
+    // the popover's edited recurrenceDays must not fan the chip out onto extra grid days locally.
+    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(1)
+  })
+
+  it('chip-popover edit of an event with prior recurrenceDays applies the new day set (recurrenceEditMode="server")', async () => {
+    const onEdit = vi.fn()
+    const seeded: CalendarEvent = { ...events[0], id: 'seeded-1', recurrenceDays: ['Mon'] }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[seeded]}
+        onEventEdit={onEdit}
+        recurrenceEditMode="server"
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+
+    expect(onEdit).toHaveBeenCalledOnce()
+    const saved = onEdit.mock.calls[0][0]
+    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
+
+    // The stored row already had recurrenceDays — the new day set applies, fanning
+    // the chip out onto both selected days.
+    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(2)
+  })
+
+  it('chip-popover edit day-add on an event with no prior days fans out under default recurrenceEditMode="local"', async () => {
     const onEdit = vi.fn()
     render(
       <WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} onEventEdit={onEdit} />,
@@ -464,28 +514,8 @@ describe('chip-popover edit fan-out preserve', () => {
     const saved = onEdit.mock.calls[0][0]
     expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
 
-    // The stored row had no recurrenceDays before the edit — the popover's edited
-    // recurrenceDays must not fan the chip out onto extra grid days locally.
-    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(1)
-  })
-
-  it('chip-popover edit of an event with prior recurrenceDays applies the new day set', async () => {
-    const onEdit = vi.fn()
-    const seeded: CalendarEvent = { ...events[0], id: 'seeded-1', recurrenceDays: ['Mon'] }
-    render(
-      <WeekCalendarView defaultWeekStart={WEEK_START} events={[seeded]} onEventEdit={onEdit} />,
-    )
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-
-    expect(onEdit).toHaveBeenCalledOnce()
-    const saved = onEdit.mock.calls[0][0]
-    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
-
-    // The stored row already had recurrenceDays — the new day set applies, fanning
-    // the chip out onto both selected days.
+    // Default mode is 'local' — the lib owns fan-out truth, so a first-time day-add
+    // on a row with no prior recurrenceDays adopts the emitted days unconditionally.
     expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(2)
   })
 })

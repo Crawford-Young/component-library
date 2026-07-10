@@ -69,6 +69,14 @@ export interface WeekCalendarViewProps {
   readonly dayWindows?: readonly DayWindow[]
   readonly renderEventPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
+  /**
+   * Gates the chip-popover edit fan-out preserve. `'server'` = the consumer
+   * materializes sibling rows and owns fan-out truth via resync; chip-popover
+   * edits then preserve a row's empty `recurrenceDays` instead of transiently
+   * fanning out. Default `'local'` = the lib owns fan-out; chip-popover edits
+   * adopt the emitted `recurrenceDays` unconditionally.
+   */
+  readonly recurrenceEditMode?: 'local' | 'server'
 }
 
 function getSundayISO(date: Date): string {
@@ -439,6 +447,7 @@ export function WeekCalendarView({
   dayWindows,
   renderEventPopover,
   className,
+  recurrenceEditMode = 'local',
 }: WeekCalendarViewProps): React.JSX.Element {
   const [currentWeek, setCurrentWeek] = React.useState<string>(() =>
     defaultWeekStart
@@ -543,17 +552,22 @@ export function WeekCalendarView({
    * `seriesDays ?? recurrenceDays`, so consumers whose rows are server-materialized
    * (rows never carry `recurrenceDays`) would transiently fan the edited chip out
    * across every selected weekday on top of their materialized sibling rows.
-   * Preserve the stored row's fan-out driver unless it was already fanning out.
+   * Gated by `recurrenceEditMode`: `'server'` preserves the stored row's fan-out
+   * driver unless it was already fanning out; default `'local'` adopts the emitted
+   * event unconditionally (the lib owns fan-out truth, so a first-time day-add on a
+   * row with no prior days must fan out, not be silently discarded).
    * Drag-paint paths keep `handleEventEdit` — painting days from zero IS fan-out.
    */
   function handleEventEditFromChip(event: CalendarEvent): void {
     setLocalEvents((prev) =>
       prev.map((e) =>
         e.id === event.id
-          ? {
-              ...event,
-              recurrenceDays: e.recurrenceDays?.length ? event.recurrenceDays : e.recurrenceDays,
-            }
+          ? recurrenceEditMode === 'server'
+            ? {
+                ...event,
+                recurrenceDays: e.recurrenceDays?.length ? event.recurrenceDays : e.recurrenceDays,
+              }
+            : event
           : e,
       ),
     )
