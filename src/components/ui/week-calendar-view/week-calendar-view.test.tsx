@@ -461,7 +461,9 @@ describe('chip-popover edit fan-out preserve', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    // events[0] is a Monday event with no stored days — the chip's own-day fallback seed
+    // (calendar-event-chip.tsx toDraft) pre-selects "Day: Mon" already, so only Wed needs
+    // toggling to reach the intended Mon+Wed selection.
     await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
 
@@ -506,7 +508,9 @@ describe('chip-popover edit fan-out preserve', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    // events[0] is a Monday event with no stored days — the chip's own-day fallback seed
+    // (calendar-event-chip.tsx toDraft) pre-selects "Day: Mon" already, so only Wed needs
+    // toggling to reach the intended Mon+Wed selection.
     await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
 
