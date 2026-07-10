@@ -538,6 +538,28 @@ export function WeekCalendarView({
     onEventEdit?.(event)
   }
 
+  /**
+   * Chip-popover edits only: the popover seeds its emitted `recurrenceDays` from
+   * `seriesDays ?? recurrenceDays`, so consumers whose rows are server-materialized
+   * (rows never carry `recurrenceDays`) would transiently fan the edited chip out
+   * across every selected weekday on top of their materialized sibling rows.
+   * Preserve the stored row's fan-out driver unless it was already fanning out.
+   * Drag-paint paths keep `handleEventEdit` — painting days from zero IS fan-out.
+   */
+  function handleEventEditFromChip(event: CalendarEvent): void {
+    setLocalEvents((prev) =>
+      prev.map((e) =>
+        e.id === event.id
+          ? {
+              ...event,
+              recurrenceDays: e.recurrenceDays?.length ? event.recurrenceDays : e.recurrenceDays,
+            }
+          : e,
+      ),
+    )
+    onEventEdit?.(event)
+  }
+
   function handleEventToggleComplete(event: CalendarEvent): void {
     const toggled: CalendarEvent = { ...event, completed: !event.completed }
     setLocalEvents((prev) => prev.map((e) => (e.id === toggled.id ? toggled : e)))
@@ -875,7 +897,7 @@ export function WeekCalendarView({
                         ? undefined
                         : (editedEvent) => {
                             if (!isRecur) {
-                              handleEventEdit(editedEvent)
+                              handleEventEditFromChip(editedEvent)
                               return
                             }
                             // The chip's handleSave emits real toISOString() instants, so the
@@ -889,7 +911,7 @@ export function WeekCalendarView({
                             const editedStart = new Date(editedEvent.start)
                             const editedEnd = new Date(editedEvent.end)
                             const endDayOffset = localDayDiff(editedStart, editedEnd)
-                            handleEventEdit({
+                            handleEventEditFromChip({
                               ...editedEvent,
                               id: originalId,
                               start: new Date(

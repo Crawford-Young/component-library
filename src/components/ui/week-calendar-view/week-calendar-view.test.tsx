@@ -448,6 +448,48 @@ describe('event forwarding', () => {
   })
 })
 
+describe('chip-popover edit fan-out preserve', () => {
+  it('chip-popover edit emitting recurrenceDays does not fan out a row that had none', async () => {
+    const onEdit = vi.fn()
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} onEventEdit={onEdit} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+
+    expect(onEdit).toHaveBeenCalledOnce()
+    const saved = onEdit.mock.calls[0][0]
+    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
+
+    // The stored row had no recurrenceDays before the edit — the popover's edited
+    // recurrenceDays must not fan the chip out onto extra grid days locally.
+    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(1)
+  })
+
+  it('chip-popover edit of an event with prior recurrenceDays applies the new day set', async () => {
+    const onEdit = vi.fn()
+    const seeded: CalendarEvent = { ...events[0], id: 'seeded-1', recurrenceDays: ['Mon'] }
+    render(
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[seeded]} onEventEdit={onEdit} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+
+    expect(onEdit).toHaveBeenCalledOnce()
+    const saved = onEdit.mock.calls[0][0]
+    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
+
+    // The stored row already had recurrenceDays — the new day set applies, fanning
+    // the chip out onto both selected days.
+    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(2)
+  })
+})
+
 describe('WeekCalendarView complete toggle', () => {
   it('clicking "Mark complete" calls onEventToggleComplete with the toggled event', async () => {
     const onEventToggleComplete = vi.fn()
@@ -1945,6 +1987,29 @@ describe('shift+drag recurrence-select', () => {
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({ recurrenceDays: expect.any(Array) }),
     )
+  })
+
+  it('shift+drag recurrence-select with multiple events only updates the target locally', () => {
+    const onEdit = vi.fn()
+    const twoEvents: CalendarEvent[] = [
+      { id: 'e1', title: 'Recur target', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
+      {
+        id: 'e2',
+        title: 'Untouched event',
+        start: '2026-05-05T09:00:00',
+        end: '2026-05-05T10:00:00',
+      },
+    ]
+    render(
+      <WeekCalendarView defaultWeekStart="2026-05-03" events={twoEvents} onEventEdit={onEdit} />,
+    )
+    const chip = screen.getByRole('button', { name: /recur target/i })
+    fireEvent.pointerDown(chip, { clientY: 100, clientX: 100, shiftKey: true })
+    fireEvent.pointerUp(chip)
+    expect(onEdit).toHaveBeenCalledOnce()
+    // The untouched sibling event's own chip stays exactly as it was — the shift-drag
+    // path (handleEventEdit) maps over localEvents, leaving non-matching ids untouched.
+    expect(screen.getByRole('button', { name: /untouched event/i })).toBeInTheDocument()
   })
 })
 
