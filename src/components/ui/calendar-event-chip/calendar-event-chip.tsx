@@ -473,7 +473,7 @@ export function CalendarEventChip({
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-72 p-0"
+          className="w-72 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto p-0"
           side="right"
           align="start"
           sideOffset={0}

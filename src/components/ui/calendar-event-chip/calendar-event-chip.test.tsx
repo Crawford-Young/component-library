@@ -40,6 +40,14 @@ describe('CalendarEventChip', () => {
     expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
   })
 
+  it('popover content is capped to available height and scrolls', async () => {
+    render(<CalendarEventChip event={event} style={style} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    const popover = screen.getByRole('dialog')
+    expect(popover.className).toContain('max-h-[var(--radix-popover-content-available-height)]')
+    expect(popover.className).toContain('overflow-y-auto')
+  })
+
   it('popover shows title in semibold', async () => {
     render(<CalendarEventChip event={event} style={style} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
