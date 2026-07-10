@@ -689,6 +689,120 @@ describe('recurrence fields in edit form', () => {
   })
 })
 
+describe('daily frequency selects all seven days', () => {
+  const ALL_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+  const eventWithRecurrence: CalendarEvent = {
+    id: 'r1',
+    title: 'Morning run',
+    start: '2026-05-04T07:00:00',
+    end: '2026-05-04T07:30:00',
+    recurrenceDays: ['Mon', 'Wed', 'Fri'],
+    recurrenceFrequency: 'weekly',
+  }
+
+  it('selecting daily selects all 7 day buttons', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
+    for (const day of ALL_DAYS) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('selecting daily when a subset was already pressed overwrites the selection to all 7 days', async () => {
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
+    for (const day of ALL_DAYS) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('toggling a day while daily is selected switches frequency to weekly and applies the toggle', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
+    for (const day of ALL_DAYS.filter((d) => d !== 'Wed')) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('switching from daily to weekly via the select leaves all 7 days selected (no reset)', async () => {
+    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'weekly')
+    for (const day of ALL_DAYS) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('opening the popover for a stored daily event with a legacy subset of days does not force-sync days to all 7', async () => {
+    const eventWithLegacyDailySubset: CalendarEvent = {
+      id: 'r2',
+      title: 'Legacy daily',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T07:30:00',
+      recurrenceDays: ['Mon', 'Wed'],
+      recurrenceFrequency: 'daily',
+    }
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={eventWithLegacyDailySubset} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /legacy daily/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Fri' }))
+    expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recurrenceDays: expect.arrayContaining(['Mon', 'Wed', 'Fri']),
+        recurrenceFrequency: 'weekly',
+      }),
+    )
+  })
+
+  it('saving with daily selected emits all 7 recurrenceDays and frequency daily', async () => {
+    const onEdit = vi.fn()
+    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: ALL_DAYS, recurrenceFrequency: 'daily' }),
+    )
+  })
+})
+
 describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', () => {
   it('seeds the edit popover Days picker from seriesDays when recurrenceDays is absent', async () => {
     const eventWithSeriesOnly: CalendarEvent = {

@@ -270,12 +270,15 @@ export function EventCreateForm({
           aria-label="Repeat"
           className={cn(inputCls, 'mt-1')}
           value={draft.recurrenceFrequency}
-          onChange={(e) =>
+          onChange={(e) => {
+            const next = e.target.value as RecurrenceFrequency | 'none'
             setDraft((d) => ({
               ...d,
-              recurrenceFrequency: e.target.value as RecurrenceFrequency | 'none',
+              recurrenceFrequency: next,
+              recurrenceDays:
+                next === 'daily' ? ([...DAY_ABBR] as readonly DayOfWeek[]) : d.recurrenceDays,
             }))
-          }
+          }}
         >
           <option value="none">None</option>
           <option value="daily">Daily</option>
@@ -319,6 +322,8 @@ export function EventCreateForm({
                 onClick={() =>
                   setDraft((prev) => ({
                     ...prev,
+                    recurrenceFrequency:
+                      prev.recurrenceFrequency === 'daily' ? 'weekly' : prev.recurrenceFrequency,
                     recurrenceDays: active
                       ? prev.recurrenceDays.filter((x) => x !== d)
                       : [...prev.recurrenceDays, d],
