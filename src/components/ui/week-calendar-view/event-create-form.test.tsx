@@ -388,3 +388,71 @@ describe('EventCreateForm', () => {
     expect(received).toEqual([undefined])
   })
 })
+
+describe('daily frequency selects all seven days', () => {
+  const ALL_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+  it('selecting daily selects all 7 day buttons', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'daily')
+    for (const day of ALL_DAYS) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('selecting daily when a subset was already pressed overwrites the selection to all 7 days', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Fri' }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'daily')
+    for (const day of ALL_DAYS) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('toggling a day while daily is selected switches frequency to weekly and applies the toggle', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'daily')
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect((screen.getByRole('combobox', { name: 'Repeat' }) as HTMLSelectElement).value).toBe(
+      'weekly',
+    )
+    for (const day of ALL_DAYS.filter((d) => d !== 'Wed')) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('switching from daily to weekly via the select leaves all 7 days selected (no reset)', async () => {
+    render(<EventCreateForm {...baseProps} />)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'daily')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly')
+    for (const day of ALL_DAYS) {
+      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('submit with daily selected emits all 7 recurrenceDays and frequency daily', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Test')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'daily')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].recurrenceDays).toEqual(ALL_DAYS)
+    expect(onSubmit.mock.calls[0][0].recurrenceFrequency).toBe('daily')
+  })
+})
