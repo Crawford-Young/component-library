@@ -2619,6 +2619,220 @@ describe('recurrence day expansion', () => {
     expect(screen.getAllByRole('button', { name: /series seed only/i }).length).toBe(1)
   })
 
+  it('hides the base chip on its own day when recurrenceDays excludes that day (deselected)', () => {
+    const deselected: CalendarEvent = {
+      id: 'deselect1',
+      title: 'Deselect me',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Wed', 'Fri'], // own day (Mon) NOT selected
+    }
+    const { container } = render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[deselected]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    // Only Wed + Fri instances — the base (Mon) must not render at all.
+    expect(screen.getAllByRole('button', { name: /deselect me/i }).length).toBe(2)
+    const grid = container.querySelector('.grid.relative') as HTMLElement
+    const mondayCol = grid.children[2] as HTMLElement
+    const wedCol = grid.children[4] as HTMLElement
+    const friCol = grid.children[6] as HTMLElement
+    expect(
+      within(mondayCol).queryByRole('button', { name: /deselect me/i }),
+    ).not.toBeInTheDocument()
+    expect(within(wedCol).getByRole('button', { name: /deselect me/i })).toBeInTheDocument()
+    expect(within(friCol).getByRole('button', { name: /deselect me/i })).toBeInTheDocument()
+  })
+
+  it('renders the base chip on its own day plus other selected days without duplication when own day is included', () => {
+    const included: CalendarEvent = {
+      id: 'included1',
+      title: 'Included day',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Wed'],
+    }
+    const { container } = render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[included]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    expect(screen.getAllByRole('button', { name: /included day/i }).length).toBe(2)
+    const grid = container.querySelector('.grid.relative') as HTMLElement
+    const mondayCol = grid.children[2] as HTMLElement
+    const wedCol = grid.children[4] as HTMLElement
+    expect(within(mondayCol).getAllByRole('button', { name: /included day/i }).length).toBe(1)
+    expect(within(wedCol).getAllByRole('button', { name: /included day/i }).length).toBe(1)
+  })
+
+  it('renders a day-less event on its own day unchanged', () => {
+    const dayless: CalendarEvent = {
+      id: 'dayless1',
+      title: 'Dayless event',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[dayless]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    expect(screen.getAllByRole('button', { name: /dayless event/i }).length).toBe(1)
+  })
+
+  it('still renders an allDay event whose recurrenceDays excludes its own day (allDay unaffected)', () => {
+    const allDayExcluded: CalendarEvent = {
+      id: 'allday-excluded',
+      title: 'AllDay excluded',
+      start: '2026-05-04T00:00:00', // Monday
+      end: '2026-05-04T23:59:59',
+      allDay: true,
+      recurrenceDays: ['Wed', 'Fri'], // own day (Mon) not selected — must not hide allDay events
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[allDayExcluded]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    expect(screen.getByText('AllDay excluded')).toBeInTheDocument()
+  })
+
+  it('editing from a virtual chip with the base hidden saves through the base id anchored to the original day', async () => {
+    const onEdit = vi.fn()
+    const hiddenBase: CalendarEvent = {
+      id: 'hidden-base-edit',
+      title: 'Hidden base edit',
+      start: '2026-05-04T09:00:00', // Monday — own day NOT selected
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Wed'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[hiddenBase]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventEdit={onEdit}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /hidden base edit/i })
+    expect(chips.length).toBe(1) // only the Wed virtual chip — Mon base is hidden
+    await userEvent.click(chips[0])
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.type(screen.getByLabelText('Title'), 'Renamed via Wed')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(onEdit).toHaveBeenCalledOnce()
+    const saved = onEdit.mock.calls[0][0]
+    // ID must be the base id, not the synthetic recur id, and start stays anchored
+    // to the original (Monday) local calendar day even though the base never rendered.
+    expect(saved.id).toBe('hidden-base-edit')
+    expect(saved.title).toBe('Renamed via Wed')
+    expect(new Date(saved.start).getDate()).toBe(4)
+    expect(new Date(saved.start).getMonth()).toBe(4) // May (0-indexed)
+  })
+
+  it('deleting from a virtual chip with the base hidden removes the entire event', async () => {
+    const hiddenBase: CalendarEvent = {
+      id: 'hidden-base-delete',
+      title: 'Hidden base delete',
+      start: '2026-05-04T09:00:00', // Monday — own day NOT selected
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Wed'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[hiddenBase]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /hidden base delete/i })
+    expect(chips.length).toBe(1)
+    await userEvent.click(chips[0])
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(screen.queryByRole('button', { name: /hidden base delete/i })).not.toBeInTheDocument()
+  })
+
+  it('deselecting a non-own day from the own-day popover removes only that day chip', async () => {
+    const deselectFlow: CalendarEvent = {
+      id: 'deselect-flow-1',
+      title: 'Deselect flow',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Wed'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[deselectFlow]}
+        onEventEdit={vi.fn()}
+      />,
+    )
+    // Open the Monday chip's edit popover and deselect Wed.
+    const chips = screen.getAllByRole('button', { name: /deselect flow/i })
+    expect(chips.length).toBe(2)
+    await userEvent.click(chips[0])
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    // Wed chip gone, Mon chip remains.
+    expect(screen.getAllByRole('button', { name: /deselect flow/i }).length).toBe(1)
+  })
+
+  it('deselecting the own day from its own popover hides the own-day chip and keeps the other', async () => {
+    const deselectOwnDay: CalendarEvent = {
+      id: 'deselect-flow-2',
+      title: 'Deselect own day',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Wed'],
+    }
+    const { container } = render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[deselectOwnDay]}
+        onEventEdit={vi.fn()}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /deselect own day/i })
+    expect(chips.length).toBe(2)
+    // chips[0] is the Monday (own-day) chip — open its popover and deselect Mon itself.
+    await userEvent.click(chips[0])
+    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    // Mon chip gone, Wed chip remains.
+    expect(screen.getAllByRole('button', { name: /deselect own day/i }).length).toBe(1)
+    const grid = container.querySelector('.grid.relative') as HTMLElement
+    const mondayCol = grid.children[2] as HTMLElement
+    const wedCol = grid.children[4] as HTMLElement
+    expect(
+      within(mondayCol).queryByRole('button', { name: /deselect own day/i }),
+    ).not.toBeInTheDocument()
+    expect(within(wedCol).getByRole('button', { name: /deselect own day/i })).toBeInTheDocument()
+  })
+
   it('move on recurrence instance calls onEventMove with original event id and preserved date', () => {
     const onMove = vi.fn()
     const recurringEvent: CalendarEvent = {
