@@ -1188,6 +1188,25 @@ describe('drag to create', () => {
     expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ title: 'New event' }))
   })
 
+  it('create popover content is capped to available height and scrolls', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    const popover = screen.getByRole('dialog')
+    expect(popover.className).toContain('max-h-[var(--radix-popover-content-available-height)]')
+    expect(popover.className).toContain('overflow-y-auto')
+  })
+
   it('dismisses create popover when Escape is pressed', async () => {
     render(
       <WeekCalendarView

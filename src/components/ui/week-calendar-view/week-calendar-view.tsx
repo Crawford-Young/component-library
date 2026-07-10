@@ -1136,7 +1136,11 @@ export function WeekCalendarView({
                       }}
                     />
                   </PopoverTrigger>
-                  <PopoverContent className="w-72 p-0" side="bottom">
+                  <PopoverContent
+                    className="w-72 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto p-0"
+                    side="bottom"
+                    collisionPadding={8}
+                  >
                     <EventCreateForm
                       startSlot={pendingCreate.startSlot}
                       endSlot={pendingCreate.endSlot}
