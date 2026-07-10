@@ -264,8 +264,14 @@ function localDayDiff(from: Date, to: Date): number {
 function expandRecurringEvents(events: readonly CalendarEvent[], days: Date[]): CalendarEvent[] {
   const result: CalendarEvent[] = []
   for (const event of events) {
-    result.push(event)
-    if (!event.recurrenceDays || event.recurrenceDays.length === 0 || event.allDay) continue
+    const hasSeriesDays = !event.allDay && !!event.recurrenceDays && event.recurrenceDays.length > 0
+    if (
+      !hasSeriesDays ||
+      event.recurrenceDays!.includes(DAY_ABBR[new Date(event.start).getDay()])
+    ) {
+      result.push(event)
+    }
+    if (!hasSeriesDays) continue
     const start = new Date(event.start)
     const end = new Date(event.end)
     const originalStartDate = formatDateISO(start)
