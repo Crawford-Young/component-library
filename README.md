@@ -119,10 +119,13 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Feedback
 
-| Component  | Notes                                                             |
-| ---------- | ----------------------------------------------------------------- |
-| `Alert`    | `Alert`, `AlertTitle`, `AlertDescription` — default / destructive |
-| `Progress` | Animated progress bar                                             |
+| Component            | Notes                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Alert`              | `Alert`, `AlertTitle`, `AlertDescription` — default / destructive                                         |
+| `ErrorBoundary`      | Class boundary for render errors — `fallback` node or render-prop, `onError` callback                     |
+| `ErrorPage`          | Full-page error state — 404/500 defaults, custom title/description, `action` slot                         |
+| `Progress`           | Animated progress bar                                                                                     |
+| `RouteErrorFallback` | Next.js `error.tsx` fallback — `ErrorPage` + retry `Button` wired to `reset`, optional `digest` reference |
 
 ### AI / Tokens
 
