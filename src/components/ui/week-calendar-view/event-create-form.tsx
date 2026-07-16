@@ -3,6 +3,13 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { eventColorVariants, type CalendarEventColor } from '@/components/ui/calendar-event-chip'
 import { TimeInput } from '@/components/ui/time-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const ALL_COLORS: readonly CalendarEventColor[] = [
   'default',
@@ -23,6 +30,32 @@ const ALL_COLORS: readonly CalendarEventColor[] = [
 ]
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+/** Sentinel `Select` item value for the "No activity" default choice. Radix `Select.Item`
+ * forbids an empty-string value (reserved to mean "clear the selection"), so a distinct
+ * sentinel stands in for it; the submit payload still maps this to `activityId: null`. */
+const NO_ACTIVITY_VALUE = '__none__'
+
+/** Sentinel `Select` item value for the "New activity…" escape hatch. */
+const NEW_ACTIVITY_VALUE = '__new__'
+
+const MINUTES_PER_HOUR = 60
+const HOURS_PER_DAY = 24
+
+/**
+ * Adds `minutes` to a local `HH:MM` wall-clock time string, wrapping past midnight.
+ * Pure string/number arithmetic — no `Date`/ISO parsing, so there is no UTC-offset
+ * conversion to get wrong (per the repo's local-wall-clock invariant).
+ */
+function addMinutesToTimeString(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const minutesPerDay = HOURS_PER_DAY * MINUTES_PER_HOUR
+  const total = ((h * MINUTES_PER_HOUR + m + minutes) % minutesPerDay) + minutesPerDay
+  const wrapped = total % minutesPerDay
+  const hh = String(Math.floor(wrapped / MINUTES_PER_HOUR)).padStart(2, '0')
+  const mm = String(wrapped % MINUTES_PER_HOUR).padStart(2, '0')
+  return `${hh}:${mm}`
+}
 
 const inputCls =
   'w-full rounded border border-input bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -70,6 +103,20 @@ export interface EventCreateSubmitPayload {
   readonly color?: CalendarEventColor
   readonly location?: string
   readonly description?: string
+  /**
+   * Present only when the create form rendered an activity picker
+   * (`createActivityOptions` was provided): `null` for "No activity",
+   * otherwise the selected `CreateActivityOption.id`.
+   */
+  readonly activityId?: string | null
+}
+
+/** One selectable activity in the create form's activity picker. */
+export interface CreateActivityOption {
+  readonly id: string
+  readonly label: string
+  readonly color?: CalendarEventColor
+  readonly defaultDurationMin?: number
 }
 
 export interface EventCreateFormProps {
@@ -81,6 +128,21 @@ export interface EventCreateFormProps {
   readonly startDayIdx: number
   readonly currentDayIdx: number
   readonly use24h?: boolean
+  /**
+   * When provided, renders an activity picker at the top of the form:
+   * "No activity" (default) · one item per option · "New activity…".
+   * Selecting an option seeds `title`/`color` once per selection change;
+   * user edits made after seeding are never overwritten by a re-render.
+   */
+  readonly createActivityOptions?: readonly CreateActivityOption[]
+  /**
+   * Fires when "New activity…" is selected, with the drawn slot's ISO
+   * bounds. The caller is expected to close this popover in response.
+   */
+  readonly onCreateActivityRequest?: (slot: {
+    readonly start: string
+    readonly end: string
+  }) => void
   readonly onSubmit: (draft: EventCreateSubmitPayload) => void
   readonly onCancel: () => void
 }
@@ -94,6 +156,8 @@ export function EventCreateForm({
   startDayIdx,
   currentDayIdx,
   use24h = false,
+  createActivityOptions,
+  onCreateActivityRequest,
   onSubmit,
   onCancel,
 }: EventCreateFormProps): React.JSX.Element {
@@ -110,25 +174,95 @@ export function EventCreateForm({
     endTime: slotToTimeString(endSlot),
     allDay: false,
   })
+  const [activitySelection, setActivitySelection] = React.useState<string>(NO_ACTIVITY_VALUE)
+
+  const selectedActivity = createActivityOptions?.find((o) => o.id === activitySelection)
+  const snapMinutes = selectedActivity?.defaultDurationMin
+
+  function computeSlotIso(): { start: string; end: string } {
+    const isOvernight = !draft.allDay && draft.endTime < draft.startTime
+    const endDate = isOvernight ? nextDayISO(date) : date
+    return {
+      start: `${date}T${draft.startTime}:00`,
+      end: `${endDate}T${draft.endTime}:00`,
+    }
+  }
+
+  function handleActivitySelect(value: string): void {
+    if (value === NEW_ACTIVITY_VALUE) {
+      onCreateActivityRequest?.(computeSlotIso())
+      return
+    }
+    setActivitySelection(value)
+    const option = createActivityOptions?.find((o) => o.id === value)
+    if (option !== undefined) {
+      setDraft((d) => ({
+        ...d,
+        title: option.label,
+        color: option.color ?? d.color,
+      }))
+    }
+  }
+
+  function handleSnapDuration(minutes: number): void {
+    setDraft((d) => ({ ...d, endTime: addMinutesToTimeString(d.startTime, minutes) }))
+  }
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
-    const isOvernight = !draft.allDay && draft.endTime < draft.startTime
-    const endDate = isOvernight ? nextDayISO(date) : date
+    const { start, end } = computeSlotIso()
     const payload: EventCreateSubmitPayload = {
       title: draft.title,
-      start: `${date}T${draft.startTime}:00`,
-      end: `${endDate}T${draft.endTime}:00`,
+      start,
+      end,
       allDay: draft.allDay || undefined,
       color: draft.color !== 'default' ? draft.color : undefined,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
+      ...(createActivityOptions !== undefined
+        ? {
+            activityId: activitySelection === NO_ACTIVITY_VALUE ? null : activitySelection,
+          }
+        : {}),
     }
     onSubmit(payload)
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5 px-3 py-3">
+      {createActivityOptions !== undefined && (
+        <div>
+          <label htmlFor="create-event-activity" className={labelCls}>
+            Activity
+          </label>
+          <Select value={activitySelection} onValueChange={handleActivitySelect}>
+            <SelectTrigger id="create-event-activity" aria-label="Activity" className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_ACTIVITY_VALUE}>No activity</SelectItem>
+              {createActivityOptions.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.label}
+                </SelectItem>
+              ))}
+              <SelectItem value={NEW_ACTIVITY_VALUE}>New activity…</SelectItem>
+            </SelectContent>
+          </Select>
+          {snapMinutes !== undefined && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1.5 h-6 px-2 text-[11px]"
+              onClick={() => handleSnapDuration(snapMinutes)}
+            >
+              Use {snapMinutes} min
+            </Button>
+          )}
+        </div>
+      )}
+
       <div>
         <label htmlFor="create-event-title" className={labelCls}>
           Event title

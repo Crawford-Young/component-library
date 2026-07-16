@@ -1,6 +1,10 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { WeekCalendarView, type DayWindow } from '@/components/ui/week-calendar-view'
+import {
+  WeekCalendarView,
+  type DayWindow,
+  type CreateActivityOption,
+} from '@/components/ui/week-calendar-view'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import { EventCreateForm } from '@/components/ui/week-calendar-view/event-create-form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -251,6 +255,66 @@ export const CreateEventPopover: Story = {
     },
   },
   render: () => <EventCreatePopoverDemo />,
+}
+
+const CREATE_ACTIVITY_OPTIONS: readonly CreateActivityOption[] = [
+  { id: 'act-1', label: 'Deep work', color: 'blue', defaultDurationMin: 90 },
+  { id: 'act-2', label: 'Workout', color: 'green', defaultDurationMin: 45 },
+  { id: 'act-3', label: 'Reading' },
+]
+
+function EventCreatePopoverActivityPickerDemo(): React.JSX.Element {
+  const [newActivityRequest, setNewActivityRequest] = React.useState<string | null>(null)
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="relative inline-block">
+        <Popover open onOpenChange={() => {}}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="rounded border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground"
+            >
+              9:00 – 10:00 (drag anchor)
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-0" side="bottom" align="start">
+            <EventCreateForm
+              startSlot={36}
+              endSlot={40}
+              date="2026-05-04"
+              dayCount={1}
+              days={[new Date('2026-05-04T00:00:00')]}
+              startDayIdx={0}
+              currentDayIdx={0}
+              createActivityOptions={CREATE_ACTIVITY_OPTIONS}
+              onCreateActivityRequest={(slot) =>
+                setNewActivityRequest(`${slot.start} – ${slot.end}`)
+              }
+              onSubmit={() => {}}
+              onCancel={() => {}}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+      {newActivityRequest !== null && (
+        <p className="text-xs text-muted-foreground">
+          onCreateActivityRequest fired for slot: {newActivityRequest}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export const CreateEventPopoverActivityPicker: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The activity picker sits at the top of the create popover when `createActivityOptions` is provided: "No activity" (default) · one item per option · "New activity…". "Deep work" and "Workout" carry a `defaultDurationMin` — selecting either reveals a "Use N min" snap button that recomputes the end time as start + N minutes (local wall-clock arithmetic). "Reading" has no default duration, so no snap button appears for it. Selecting an option seeds the title and color once per selection change — further edits to the title survive. Selecting "New activity…" fires `onCreateActivityRequest` with the drawn slot\'s ISO bounds (shown below the popover in this standalone demo); inside `WeekCalendarView` itself, that same selection also closes the create popover.',
+      },
+    },
+  },
+  render: () => <EventCreatePopoverActivityPickerDemo />,
 }
 
 export const SleepMode: Story = {

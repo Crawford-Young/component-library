@@ -1,7 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { EventCreateForm, type EventCreateSubmitPayload } from './event-create-form'
+import {
+  EventCreateForm,
+  type EventCreateSubmitPayload,
+  type CreateActivityOption,
+} from './event-create-form'
 
 const DAYS = [
   new Date('2026-05-03T00:00:00'), // Sun
@@ -24,6 +28,11 @@ const baseProps = {
   onSubmit: vi.fn(),
   onCancel: vi.fn(),
 }
+
+const ACTIVITY_OPTIONS: readonly CreateActivityOption[] = [
+  { id: 'act-1', label: 'Deep work', color: 'blue', defaultDurationMin: 90 },
+  { id: 'act-2', label: 'Reading' },
+]
 
 describe('EventCreateForm', () => {
   it('renders title input with autofocus', () => {
@@ -266,5 +275,165 @@ describe('EventCreateForm', () => {
     await userEvent.type(screen.getByLabelText('Event title'), 'Typed')
     await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     expect(received).toEqual(['Typed'])
+  })
+})
+
+/**
+ * Radix `Select` also renders a visually-hidden native `<select>` with matching
+ * `<option>` text for form-autofill support, which collides with `getByText`
+ * queries against the visible listbox item. Scope selection to the open
+ * `listbox` (the native fallback does not carry that role) to disambiguate.
+ */
+async function selectActivityOption(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+): Promise<void> {
+  await user.click(screen.getByRole('combobox', { name: 'Activity' }))
+  const listbox = await screen.findByRole('listbox')
+  await waitFor(() => within(listbox).getByText(label))
+  await user.click(within(listbox).getByText(label))
+}
+
+describe('EventCreateForm activity picker', () => {
+  it('renders no activity picker when createActivityOptions is not provided', () => {
+    render(<EventCreateForm {...baseProps} />)
+    expect(screen.queryByRole('combobox', { name: 'Activity' })).not.toBeInTheDocument()
+  })
+
+  it('renders the activity picker when createActivityOptions is provided', () => {
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toBeInTheDocument()
+  })
+
+  it('selecting an activity seeds title and color', async () => {
+    const user = userEvent.setup()
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    await selectActivityOption(user, 'Deep work')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    })
+    expect(screen.getByRole('button', { name: 'Color: blue' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('user-edited title survives re-render after seed (seed happens only on selection change)', async () => {
+    const user = userEvent.setup()
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    await selectActivityOption(user, 'Deep work')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    })
+    const titleInput = screen.getByLabelText('Event title') as HTMLInputElement
+    await user.clear(titleInput)
+    await user.type(titleInput, 'My custom title')
+    // Force a re-render by toggling all-day and back — seed must not re-fire.
+    await user.click(screen.getByRole('checkbox', { name: /all day/i }))
+    await user.click(screen.getByRole('checkbox', { name: /all day/i }))
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('My custom title')
+  })
+
+  it('re-selecting a different activity re-seeds title and color', async () => {
+    const user = userEvent.setup()
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    await selectActivityOption(user, 'Deep work')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    })
+    const titleInput = screen.getByLabelText('Event title') as HTMLInputElement
+    await user.clear(titleInput)
+    await user.type(titleInput, 'Edited')
+    await selectActivityOption(user, 'Reading')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Reading')
+    })
+  })
+
+  it('shows a snap button for the selected activity default duration and recomputes end time', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        onSubmit={onSubmit}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /use \d+ min/i })).not.toBeInTheDocument()
+    await selectActivityOption(user, 'Deep work')
+    const snapButton = await screen.findByRole('button', { name: 'Use 90 min' })
+    await user.click(snapButton)
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].start).toBe('2026-05-04T09:00:00')
+    expect(onSubmit.mock.calls[0][0].end).toBe('2026-05-04T10:30:00')
+  })
+
+  it('no snap button when selected activity has no defaultDurationMin', async () => {
+    const user = userEvent.setup()
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    await selectActivityOption(user, 'Reading')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Reading')
+    })
+    expect(screen.queryByRole('button', { name: /use \d+ min/i })).not.toBeInTheDocument()
+  })
+
+  it('selecting "New activity…" fires onCreateActivityRequest with the drawn slot ISO bounds', async () => {
+    const user = userEvent.setup()
+    const onCreateActivityRequest = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        onCreateActivityRequest={onCreateActivityRequest}
+      />,
+    )
+    await selectActivityOption(user, 'New activity…')
+    expect(onCreateActivityRequest).toHaveBeenCalledOnce()
+    expect(onCreateActivityRequest).toHaveBeenCalledWith({
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T10:00:00',
+    })
+  })
+
+  it('submit payload carries activityId: null when "No activity" is selected (picker rendered)', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        onSubmit={onSubmit}
+      />,
+    )
+    await userEvent.type(screen.getByLabelText('Event title'), 'Plain event')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].activityId).toBeNull()
+  })
+
+  it('submit payload carries the selected activityId', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        onSubmit={onSubmit}
+      />,
+    )
+    await selectActivityOption(user, 'Reading')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Reading')
+    })
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].activityId).toBe('act-2')
+  })
+
+  it('submit payload omits activityId entirely when the picker is not rendered', async () => {
+    const onSubmit = vi.fn()
+    render(<EventCreateForm {...baseProps} onSubmit={onSubmit} />)
+    await userEvent.type(screen.getByLabelText('Event title'), 'Plain event')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect('activityId' in onSubmit.mock.calls[0][0]).toBe(false)
   })
 })

@@ -56,6 +56,10 @@ const stories = [
     name: 'WeekCalendarView CreateEventPopover',
     id: 'data-weekcalendarview--create-event-popover',
   },
+  {
+    name: 'WeekCalendarView CreateEventPopoverActivityPicker',
+    id: 'data-weekcalendarview--create-event-popover-activity-picker',
+  },
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
