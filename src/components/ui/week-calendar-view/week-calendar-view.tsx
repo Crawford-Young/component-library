@@ -34,6 +34,12 @@ export interface WeekCalendarViewProps {
   readonly onEventDelete?: (event: CalendarEvent) => void
   readonly onEventToggleComplete?: (event: CalendarEvent) => void
   readonly onEventToggleLock?: (event: CalendarEvent) => void
+  /**
+   * Threads to the chip's `onEditActivity` — fires the popover's "Edit activity" action. The
+   * action only renders on a chip whose event carries a non-null `activityId` when this is
+   * provided.
+   */
+  readonly onEventEditActivity?: (event: CalendarEvent) => void
   readonly onEventCreate?: (event: EventCreateSubmitPayload) => void
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
@@ -435,6 +441,7 @@ export function WeekCalendarView({
   onEventDelete,
   onEventToggleComplete,
   onEventToggleLock,
+  onEventEditActivity,
   onEventCreate,
   onEventMove,
   onEventResize,
@@ -950,6 +957,7 @@ export function WeekCalendarView({
                             handleEventToggleLock(localEvents.find((e) => e.id === originalId)!)
                           }
                     }
+                    onEditActivity={isOverflow ? undefined : onEventEditActivity}
                     renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}
                     onMoveStart={
                       isOverflow

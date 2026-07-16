@@ -75,6 +75,12 @@ export interface CalendarEvent {
    * edit/delete, and complete-toggle all keep working. Toggled via `onToggleLock`.
    */
   readonly locked?: boolean
+  /**
+   * Id of the activity this event was created from, if any. `null`/absent means the event has
+   * no backing activity. Drives the popover's "Edit activity" action (only shown when both this
+   * is non-null and `onEditActivity` is provided).
+   */
+  readonly activityId?: string | null
 }
 
 // All bg values verified ≥4.5:1 contrast with white text (WCAG AA)
@@ -110,6 +116,11 @@ export interface CalendarEventChipProps {
   readonly onDelete?: (event: CalendarEvent) => void
   readonly onToggleComplete?: (event: CalendarEvent) => void
   readonly onToggleLock?: (event: CalendarEvent) => void
+  /**
+   * Fires the popover's "Edit activity" action. The action only renders when this is provided
+   * AND `event.activityId` is non-null.
+   */
+  readonly onEditActivity?: (event: CalendarEvent) => void
   readonly onMoveStart?: (
     event: CalendarEvent,
     clientY: number,
@@ -315,6 +326,7 @@ export function CalendarEventChip({
   onDelete,
   onToggleComplete,
   onToggleLock,
+  onEditActivity,
   onMoveStart,
   onResizeStart,
   renderPopover,
@@ -394,6 +406,8 @@ export function CalendarEventChip({
   const showLock = onToggleLock !== undefined
   const isLocked = event.locked === true
   const showStreak = event.streak !== undefined && event.streak > 0
+  const showEditActivity =
+    event.activityId !== undefined && event.activityId !== null && onEditActivity !== undefined
 
   return (
     <div
@@ -625,7 +639,8 @@ export function CalendarEventChip({
               {renderPopover?.(event)}
               {(onEdit !== undefined ||
                 onDelete !== undefined ||
-                onToggleComplete !== undefined) && (
+                onToggleComplete !== undefined ||
+                showEditActivity) && (
                 <div className="flex flex-wrap gap-2 border-t border-border px-3 py-2">
                   {onToggleComplete !== undefined && (
                     <Button
@@ -641,6 +656,11 @@ export function CalendarEventChip({
                   {onEdit !== undefined && (
                     <Button variant="outline" size="sm" onClick={handleEditClick}>
                       Edit
+                    </Button>
+                  )}
+                  {showEditActivity && (
+                    <Button variant="outline" size="sm" onClick={() => onEditActivity!(event)}>
+                      Edit activity
                     </Button>
                   )}
                   {onDelete !== undefined && (

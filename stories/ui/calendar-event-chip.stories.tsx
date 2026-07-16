@@ -275,6 +275,36 @@ export const LockedNoCheckbox: Story = {
   },
 }
 
+export const EditActivityAction: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'When `event.activityId` is non-null AND `onEditActivity` is provided, the popover\'s action row gains an "Edit activity" button alongside Edit/Delete — click the chip to open the popover and see it. Absent either `activityId` or the handler, the action is omitted entirely.',
+      },
+    },
+  },
+  render: (args) => (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '11',
+      title: 'Morning run',
+      start: '2026-05-04T07:00:00',
+      end: '2026-05-04T08:00:00',
+      color: 'teal',
+      activityId: 'act-morning-run',
+    },
+    style: chipStyle,
+    onEdit: () => {},
+    onDelete: () => {},
+    onEditActivity: () => {},
+  },
+}
+
 export const ColorPalette: Story = {
   render: () => (
     <div className="relative h-[600px] w-72 rounded border p-2">
