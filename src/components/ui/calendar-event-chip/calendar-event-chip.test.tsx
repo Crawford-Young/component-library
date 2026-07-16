@@ -605,7 +605,7 @@ describe('CalendarEventChip', () => {
   })
 })
 
-describe('recurrence fields in edit form', () => {
+describe('recurrence controls removed from the chip edit popover', () => {
   const eventWithRecurrence: CalendarEvent = {
     id: 'r1',
     title: 'Morning run',
@@ -615,253 +615,41 @@ describe('recurrence fields in edit form', () => {
     recurrenceFrequency: 'weekly',
   }
 
-  it('edit form shows day pill toggles', async () => {
+  it('renders no Repeat select in the edit popover', async () => {
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('group', { name: /recurrence days/i })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Repeat' })).not.toBeInTheDocument()
   })
 
-  it('day pills are pre-checked based on recurrenceDays', async () => {
+  it('renders no recurrence days group / day pills in the edit popover', async () => {
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
+    expect(screen.queryByRole('group', { name: /recurrence days/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Day: Mon' })).not.toBeInTheDocument()
   })
 
-  it('frequency select shows current recurrenceFrequency', async () => {
-    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
-  })
-
-  it('saving edit form calls onEdit with recurrence fields', async () => {
+  it('editing a recurring event preserves its stored recurrence fields untouched (deprecated but functional)', async () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.type(screen.getByLabelText('Title'), 'Evening run')
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({
+        title: 'Evening run',
         recurrenceDays: ['Mon', 'Wed', 'Fri'],
         recurrenceFrequency: 'weekly',
       }),
     )
   })
-
-  it('toggling an inactive day pill adds it to recurrenceDays', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Tue' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ recurrenceDays: expect.arrayContaining(['Mon', 'Tue', 'Wed']) }),
-    )
-  })
-
-  it('toggling an active day pill removes it from recurrenceDays', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    const savedDays = (onEdit.mock.calls[0][0] as { recurrenceDays: string[] }).recurrenceDays
-    expect(savedDays).not.toContain('Mon')
-    expect(savedDays).toContain('Wed')
-  })
-
-  it('changing repeat select updates recurrenceFrequency in draft', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceFrequency: 'daily' }))
-  })
 })
 
-describe('daily frequency selects all seven days', () => {
-  const ALL_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-  const eventWithRecurrence: CalendarEvent = {
-    id: 'r1',
-    title: 'Morning run',
-    start: '2026-05-04T07:00:00',
-    end: '2026-05-04T07:30:00',
-    recurrenceDays: ['Mon', 'Wed', 'Fri'],
-    recurrenceFrequency: 'weekly',
-  }
-
-  it('selecting daily selects all 7 day buttons', async () => {
-    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
-    for (const day of ALL_DAYS) {
-      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-    }
-  })
-
-  it('selecting daily when a subset was already pressed overwrites the selection to all 7 days', async () => {
-    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
-    for (const day of ALL_DAYS) {
-      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-    }
-  })
-
-  it('toggling a day while daily is selected switches frequency to weekly and applies the toggle', async () => {
-    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
-    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
-    expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
-    for (const day of ALL_DAYS.filter((d) => d !== 'Wed')) {
-      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-    }
-  })
-
-  it('switching from daily to weekly via the select leaves all 7 days selected (no reset)', async () => {
-    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'weekly')
-    for (const day of ALL_DAYS) {
-      expect(screen.getByRole('button', { name: `Day: ${day}` })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-    }
-  })
-
-  it('opening the popover for a stored daily event with a legacy subset of days does not force-sync days to all 7', async () => {
-    const eventWithLegacyDailySubset: CalendarEvent = {
-      id: 'r2',
-      title: 'Legacy daily',
-      start: '2026-05-04T07:00:00',
-      end: '2026-05-04T07:30:00',
-      recurrenceDays: ['Mon', 'Wed'],
-      recurrenceFrequency: 'daily',
-    }
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={eventWithLegacyDailySubset} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /legacy daily/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Fri' }))
-    expect((screen.getByLabelText('Repeat') as HTMLSelectElement).value).toBe('weekly')
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        recurrenceDays: expect.arrayContaining(['Mon', 'Wed', 'Fri']),
-        recurrenceFrequency: 'weekly',
-      }),
-    )
-  })
-
-  it('saving with daily selected emits all 7 recurrenceDays and frequency daily', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={eventWithRecurrence} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /morning run/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'daily')
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ recurrenceDays: ALL_DAYS, recurrenceFrequency: 'daily' }),
-    )
-  })
-})
-
-describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', () => {
-  it('seeds the edit popover Days picker from seriesDays when recurrenceDays is absent', async () => {
-    const eventWithSeriesOnly: CalendarEvent = {
-      id: 's1',
-      title: 'Series only',
-      start: '2026-05-04T07:00:00',
-      end: '2026-05-04T07:30:00',
-      seriesDays: ['Tue', 'Thu'],
-    }
-    render(<CalendarEventChip event={eventWithSeriesOnly} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /series only/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Thu' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
-  })
-
-  it('seriesDays takes precedence over recurrenceDays when both are present', async () => {
-    const eventWithBoth: CalendarEvent = {
-      id: 's2',
-      title: 'Series precedence',
-      start: '2026-05-04T07:00:00',
-      end: '2026-05-04T07:30:00',
-      recurrenceDays: ['Mon'],
-      seriesDays: ['Wed', 'Fri'],
-    }
-    render(<CalendarEventChip event={eventWithBoth} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /series precedence/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Fri' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
-  })
-
-  it('saving with a seriesDays-seeded draft emits the picked days under recurrenceDays (handleSave shape unchanged)', async () => {
-    const onEdit = vi.fn()
-    const eventWithSeriesOnly: CalendarEvent = {
-      id: 's3',
-      title: 'Series persisted',
-      start: '2026-05-04T07:00:00',
-      end: '2026-05-04T07:30:00',
-      seriesDays: ['Tue', 'Thu'],
-    }
-    render(<CalendarEventChip event={eventWithSeriesOnly} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /series persisted/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ recurrenceDays: ['Tue', 'Thu'], seriesDays: ['Tue', 'Thu'] }),
-    )
-  })
-
-  it('a typed onEdit handler can read seriesDays and recurrenceCount with no cast (compile-time proof)', async () => {
+describe('deprecated recurrence/series fields round-trip through an edit', () => {
+  it('a typed onEdit handler still reads seriesDays and recurrenceCount, preserved by save', async () => {
     const seenSeriesDays: (readonly string[] | undefined)[] = []
     const seenRecurrenceCount: (number | undefined)[] = []
     const onEdit = (updated: CalendarEvent): void => {
@@ -883,102 +671,15 @@ describe('seriesDays edit-seed field (decoupled from recurrenceDays fan-out)', (
     expect(seenSeriesDays).toEqual([['Mon']])
     expect(seenRecurrenceCount).toEqual([6])
   })
-})
 
-describe('own-day fallback seed for day-less events (chip-edit Days picker)', () => {
-  // `event.start` is 2026-05-04T09:00:00 — a Monday — and carries no recurrenceDays/seriesDays.
-  const ownDay = 'Mon'
-
-  it("seeds the Days picker from the event's own LOCAL day when no stored days exist", async () => {
-    render(<CalendarEventChip event={event} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('button', { name: `Day: ${ownDay}` })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-    for (const other of ['Sun', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
-      expect(screen.getByRole('button', { name: `Day: ${other}` })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      )
-    }
-  })
-
-  it('does not apply the own-day fallback when stored days exist, even if they exclude the own day', async () => {
-    const eventWithOtherDays: CalendarEvent = {
-      ...event,
-      id: 'own-day-precedence',
-      recurrenceDays: ['Tue', 'Thu'],
-    }
-    render(<CalendarEventChip event={eventWithOtherDays} style={style} onEdit={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Day: Thu' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: `Day: ${ownDay}` })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
-  })
-
-  it('untouched save on a day-less event round-trips recurrenceDays as undefined (no silent 1-day series)', async () => {
+  it('an untouched save on a day-less event does not mint any recurrenceDays', async () => {
     const onEdit = vi.fn()
     render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceDays: undefined }))
-  })
-
-  it('own day plus an extra toggled day both emit on save', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ recurrenceDays: expect.arrayContaining([ownDay, 'Wed']) }),
-    )
-    const saved = onEdit.mock.calls[0][0] as { recurrenceDays: string[] }
-    expect(saved.recurrenceDays).toHaveLength(2)
-  })
-
-  it('own-day-only selection with a non-none frequency defeats the trivial strip', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: /repeat/i }), 'weekly')
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(
-      expect.objectContaining({ recurrenceDays: [ownDay], recurrenceFrequency: 'weekly' }),
-    )
-  })
-
-  it('a prior stored [day] with frequency none defeats the strip — untouched save still emits it (hadStoredDays guard)', async () => {
-    const onEdit = vi.fn()
-    const eventWithOwnDayStored: CalendarEvent = {
-      ...event,
-      id: 'own-day-stored',
-      recurrenceDays: [ownDay],
-    }
-    render(<CalendarEventChip event={eventWithOwnDayStored} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceDays: [ownDay] }))
-  })
-
-  it('deselecting all days (including the fallback-seeded own day) still emits undefined', async () => {
-    const onEdit = vi.fn()
-    render(<CalendarEventChip event={event} style={style} onEdit={onEdit} />)
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: `Day: ${ownDay}` }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ recurrenceDays: undefined }))
+    expect(onEdit).toHaveBeenCalledOnce()
+    expect((onEdit.mock.calls[0][0] as CalendarEvent).recurrenceDays).toBeUndefined()
   })
 })
 

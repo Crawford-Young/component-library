@@ -1,14 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  eventColorVariants,
-  type CalendarEvent,
-  type CalendarEventColor,
-  type DayOfWeek,
-  type RecurrenceFrequency,
-} from '@/components/ui/calendar-event-chip'
-import { NumberInput } from '@/components/ui/number-input'
+import { eventColorVariants, type CalendarEventColor } from '@/components/ui/calendar-event-chip'
 import { TimeInput } from '@/components/ui/time-input'
 
 const ALL_COLORS: readonly CalendarEventColor[] = [
@@ -30,12 +23,6 @@ const ALL_COLORS: readonly CalendarEventColor[] = [
 ]
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
-
-/**
- * Minimum for a TYPED repeat-count value — mirrors TaskTimeFields/ActivityFormDialog. The field
- * itself defaults to blank (open-ended, no count); blank is not clamped to this minimum.
- */
-const REPEAT_MIN = 2
 
 const inputCls =
   'w-full rounded border border-input bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -67,17 +54,23 @@ interface CreateDraft {
   startTime: string
   endTime: string
   allDay: boolean
-  recurrenceDays: readonly DayOfWeek[]
-  recurrenceFrequency: RecurrenceFrequency | 'none'
-  recurrenceCount: number | undefined
 }
 
 /**
- * Shape emitted to `onSubmit` — `CalendarEvent` fields minus `id`. `recurrenceCount` is inherited
- * from `CalendarEvent` (declared there for typed consumers of the chip's edit payload too), so no
- * separate declaration is needed here.
+ * Shape emitted to `onSubmit`. An explicit interface (no longer `Omit<CalendarEvent, 'id'>`):
+ * recurring creation moved app-side, so the create surface no longer emits any recurrence
+ * fields. Multi-day drag-create display fan-out is synthesized by `WeekCalendarView` from the
+ * drawn slot span, not carried on this payload.
  */
-export type EventCreateSubmitPayload = Omit<CalendarEvent, 'id'>
+export interface EventCreateSubmitPayload {
+  readonly title: string
+  readonly start: string
+  readonly end: string
+  readonly allDay?: boolean
+  readonly color?: CalendarEventColor
+  readonly location?: string
+  readonly description?: string
+}
 
 export interface EventCreateFormProps {
   readonly startSlot: number
@@ -116,23 +109,12 @@ export function EventCreateForm({
     startTime: slotToTimeString(startSlot),
     endTime: slotToTimeString(endSlot),
     allDay: false,
-    recurrenceDays:
-      dayCount > 1
-        ? (coveredDays.map((d) => DAY_ABBR[d.getDay()]) as readonly DayOfWeek[])
-        : [DAY_ABBR[days[minDayIdx].getDay()] as DayOfWeek],
-    recurrenceFrequency: 'none',
-    recurrenceCount: undefined,
   })
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
     const isOvernight = !draft.allDay && draft.endTime < draft.startTime
     const endDate = isOvernight ? nextDayISO(date) : date
-    const creationDay = DAY_ABBR[days[minDayIdx].getDay()]
-    const trivialDays =
-      draft.recurrenceDays.length === 1 &&
-      draft.recurrenceDays[0] === creationDay &&
-      draft.recurrenceFrequency === 'none'
     const payload: EventCreateSubmitPayload = {
       title: draft.title,
       start: `${date}T${draft.startTime}:00`,
@@ -141,11 +123,6 @@ export function EventCreateForm({
       color: draft.color !== 'default' ? draft.color : undefined,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
-      recurrenceDays:
-        draft.recurrenceDays.length > 0 && !trivialDays ? draft.recurrenceDays : undefined,
-      recurrenceFrequency:
-        draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
-      recurrenceCount: draft.recurrenceFrequency !== 'none' ? draft.recurrenceCount : undefined,
     }
     onSubmit(payload)
   }
@@ -260,87 +237,6 @@ export function EventCreateForm({
           value={draft.description}
           onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
         />
-      </div>
-
-      <div>
-        <p className={labelCls} aria-hidden="true">
-          Repeat
-        </p>
-        <select
-          aria-label="Repeat"
-          className={cn(inputCls, 'mt-1')}
-          value={draft.recurrenceFrequency}
-          onChange={(e) => {
-            const next = e.target.value as RecurrenceFrequency | 'none'
-            setDraft((d) => ({
-              ...d,
-              recurrenceFrequency: next,
-              recurrenceDays:
-                next === 'daily' ? ([...DAY_ABBR] as readonly DayOfWeek[]) : d.recurrenceDays,
-            }))
-          }}
-        >
-          <option value="none">None</option>
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-        </select>
-      </div>
-
-      {draft.recurrenceFrequency !== 'none' && (
-        <div>
-          <label htmlFor="create-event-repeat-count" className={labelCls}>
-            Repeat count
-          </label>
-          <NumberInput
-            id="create-event-repeat-count"
-            aria-label="Repeat count"
-            className="mt-1"
-            allowEmpty
-            placeholder="Forever"
-            value={draft.recurrenceCount}
-            onChange={(n) => setDraft((d) => ({ ...d, recurrenceCount: n }))}
-            min={REPEAT_MIN}
-          />
-        </div>
-      )}
-
-      <div>
-        <p className={labelCls} aria-hidden="true">
-          Days
-        </p>
-        <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
-          {(DAY_ABBR as readonly DayOfWeek[]).map((d) => {
-            const active = draft.recurrenceDays.includes(d)
-            return (
-              <button
-                key={d}
-                type="button"
-                aria-label={`Day: ${d}`}
-                aria-pressed={active}
-                onClick={() =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    recurrenceFrequency:
-                      prev.recurrenceFrequency === 'daily' ? 'weekly' : prev.recurrenceFrequency,
-                    recurrenceDays: active
-                      ? prev.recurrenceDays.filter((x) => x !== d)
-                      : [...prev.recurrenceDays, d],
-                  }))
-                }
-                className={cn(
-                  'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  active
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                )}
-              >
-                {d[0]}
-              </button>
-            )
-          })}
-        </div>
       </div>
 
       {dayCount > 1 && (

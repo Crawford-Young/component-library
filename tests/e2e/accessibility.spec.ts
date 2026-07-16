@@ -53,8 +53,8 @@ const stories = [
   { name: 'WeekCalendarView PerDayWindows', id: 'data-weekcalendarview--per-day-windows' },
   { name: 'WeekCalendarView EditAndDelete', id: 'data-weekcalendarview--edit-and-delete' },
   {
-    name: 'WeekCalendarView CreateWithRepeatCount',
-    id: 'data-weekcalendarview--create-with-repeat-count',
+    name: 'WeekCalendarView CreateEventPopover',
+    id: 'data-weekcalendarview--create-event-popover',
   },
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
@@ -64,10 +64,6 @@ const stories = [
   {
     name: 'CalendarEventChip CompletableWithStreak',
     id: 'data-calendareventchip--completable-with-streak',
-  },
-  {
-    name: 'CalendarEventChip SeriesDaysEditSeed',
-    id: 'data-calendareventchip--series-days-edit-seed',
   },
   { name: 'CalendarNavBar', id: 'data-calendarnavbar--default' },
   { name: 'AppShell', id: 'layout-appshell--default' },

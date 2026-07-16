@@ -11,7 +11,9 @@ import { useDragState } from './drag'
 import { GhostEvent } from './ghost-event'
 import { SleepBand, type DayWindow } from './sleep-band'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { EventCreateForm } from './event-create-form'
+import { EventCreateForm, type EventCreateSubmitPayload } from './event-create-form'
+
+export type { EventCreateSubmitPayload } from './event-create-form'
 
 export type {
   CalendarEvent,
@@ -32,7 +34,7 @@ export interface WeekCalendarViewProps {
   readonly onEventDelete?: (event: CalendarEvent) => void
   readonly onEventToggleComplete?: (event: CalendarEvent) => void
   readonly onEventToggleLock?: (event: CalendarEvent) => void
-  readonly onEventCreate?: (event: Omit<CalendarEvent, 'id'>) => void
+  readonly onEventCreate?: (event: EventCreateSubmitPayload) => void
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
   readonly onEventRestore?: (event: CalendarEvent) => void
@@ -69,14 +71,6 @@ export interface WeekCalendarViewProps {
   readonly dayWindows?: readonly DayWindow[]
   readonly renderEventPopover?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
-  /**
-   * Gates the chip-popover edit fan-out preserve. `'server'` = the consumer
-   * materializes sibling rows and owns fan-out truth via resync; chip-popover
-   * edits then preserve a row's empty `recurrenceDays` instead of transiently
-   * fanning out. Default `'local'` = the lib owns fan-out; chip-popover edits
-   * adopt the emitted `recurrenceDays` unconditionally.
-   */
-  readonly recurrenceEditMode?: 'local' | 'server'
 }
 
 function getSundayISO(date: Date): string {
@@ -453,7 +447,6 @@ export function WeekCalendarView({
   dayWindows,
   renderEventPopover,
   className,
-  recurrenceEditMode = 'local',
 }: WeekCalendarViewProps): React.JSX.Element {
   const [currentWeek, setCurrentWeek] = React.useState<string>(() =>
     defaultWeekStart
@@ -550,33 +543,6 @@ export function WeekCalendarView({
 
   function handleEventEdit(event: CalendarEvent): void {
     setLocalEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))
-    onEventEdit?.(event)
-  }
-
-  /**
-   * Chip-popover edits only: the popover seeds its emitted `recurrenceDays` from
-   * `seriesDays ?? recurrenceDays`, so consumers whose rows are server-materialized
-   * (rows never carry `recurrenceDays`) would transiently fan the edited chip out
-   * across every selected weekday on top of their materialized sibling rows.
-   * Gated by `recurrenceEditMode`: `'server'` preserves the stored row's fan-out
-   * driver unless it was already fanning out; default `'local'` adopts the emitted
-   * event unconditionally (the lib owns fan-out truth, so a first-time day-add on a
-   * row with no prior days must fan out, not be silently discarded).
-   * Drag-paint paths keep `handleEventEdit` — painting days from zero IS fan-out.
-   */
-  function handleEventEditFromChip(event: CalendarEvent): void {
-    setLocalEvents((prev) =>
-      prev.map((e) =>
-        e.id === event.id
-          ? recurrenceEditMode === 'server'
-            ? {
-                ...event,
-                recurrenceDays: e.recurrenceDays?.length ? event.recurrenceDays : e.recurrenceDays,
-              }
-            : event
-          : e,
-      ),
-    )
     onEventEdit?.(event)
   }
 
@@ -917,7 +883,7 @@ export function WeekCalendarView({
                         ? undefined
                         : (editedEvent) => {
                             if (!isRecur) {
-                              handleEventEditFromChip(editedEvent)
+                              handleEventEdit(editedEvent)
                               return
                             }
                             // The chip's handleSave emits real toISOString() instants, so the
@@ -931,7 +897,7 @@ export function WeekCalendarView({
                             const editedStart = new Date(editedEvent.start)
                             const editedEnd = new Date(editedEvent.end)
                             const endDayOffset = localDayDiff(editedStart, editedEnd)
-                            handleEventEditFromChip({
+                            handleEventEdit({
                               ...editedEvent,
                               id: originalId,
                               start: new Date(
@@ -1169,18 +1135,20 @@ export function WeekCalendarView({
                             end: `${dateStr}${endTimePart}`,
                           })
                         } else {
+                          // Multi-day drag-create: the create form no longer carries any
+                          // recurrence fields (recurring creation moved app-side), so the
+                          // fan-out days are synthesized here from the drawn slot span alone.
+                          // This drives WeekCalendarView's still-functional display fan-out.
                           const spanDays = Array.from(
                             { length: maxIdx - minIdx + 1 },
                             (_, i) => DAY_ABBR[days[minIdx + i].getDay()],
                           )
-                          /* istanbul ignore next */
-                          const priorDays = event.recurrenceDays ?? []
                           handleEventCreate({
                             ...event,
                             start: `${dateStr}${timePart}`,
                             end: `${dateStr}${endTimePart}`,
-                            recurrenceDays: [...new Set([...priorDays, ...spanDays])],
-                            recurrenceFrequency: event.recurrenceFrequency ?? 'weekly',
+                            recurrenceDays: [...new Set(spanDays)],
+                            recurrenceFrequency: 'weekly',
                           })
                         }
                         setPendingCreate(null)

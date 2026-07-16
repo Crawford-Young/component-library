@@ -139,35 +139,6 @@ export const CompletableWithStreak: Story = {
   },
 }
 
-export const SeriesDaysEditSeed: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story:
-          "This event has no `recurrenceDays` — WeekCalendarView fans it out on this single day only. Its `seriesDays` field (['Tue', 'Thu']) seeds the edit popover's Days picker so it opens with Tue/Thu already pre-checked, letting the picker reflect a wider recurring series without WeekCalendarView duplicating this chip across those days. Open the popover (click the chip, then Edit) to see it.",
-      },
-    },
-  },
-  render: (args) => (
-    <div className="relative h-48 w-56 rounded border">
-      <CalendarEventChip {...args} />
-    </div>
-  ),
-  args: {
-    event: {
-      id: '6',
-      title: 'Morning stretch',
-      start: '2026-05-04T07:00:00',
-      end: '2026-05-04T07:20:00',
-      color: 'teal',
-      seriesDays: ['Tue', 'Thu'],
-    },
-    style: chipStyle,
-    onEdit: () => {},
-    onDelete: () => {},
-  },
-}
-
 export const WithLocation: Story = {
   render: (args) => (
     <div className="relative h-64 w-56 rounded border">
