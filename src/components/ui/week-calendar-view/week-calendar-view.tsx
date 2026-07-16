@@ -11,9 +11,13 @@ import { useDragState } from './drag'
 import { GhostEvent } from './ghost-event'
 import { SleepBand, type DayWindow } from './sleep-band'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { EventCreateForm, type EventCreateSubmitPayload } from './event-create-form'
+import {
+  EventCreateForm,
+  type EventCreateSubmitPayload,
+  type CreateActivityOption,
+} from './event-create-form'
 
-export type { EventCreateSubmitPayload } from './event-create-form'
+export type { EventCreateSubmitPayload, CreateActivityOption } from './event-create-form'
 
 export type {
   CalendarEvent,
@@ -41,6 +45,19 @@ export interface WeekCalendarViewProps {
    */
   readonly onEventEditActivity?: (event: CalendarEvent) => void
   readonly onEventCreate?: (event: EventCreateSubmitPayload) => void
+  /**
+   * When provided, the drag-create popover renders an activity picker fed
+   * by these options ("No activity" · one per option · "New activity…").
+   */
+  readonly createActivityOptions?: readonly CreateActivityOption[]
+  /**
+   * Fires when "New activity…" is selected in the create popover's activity
+   * picker, with the drawn slot's ISO bounds. The create popover closes.
+   */
+  readonly onCreateActivityRequest?: (slot: {
+    readonly start: string
+    readonly end: string
+  }) => void
   readonly onEventMove?: (event: CalendarEvent) => void
   readonly onEventResize?: (event: CalendarEvent) => void
   readonly onEventRestore?: (event: CalendarEvent) => void
@@ -443,6 +460,8 @@ export function WeekCalendarView({
   onEventToggleLock,
   onEventEditActivity,
   onEventCreate,
+  createActivityOptions,
+  onCreateActivityRequest,
   onEventMove,
   onEventResize,
   onEventRestore,
@@ -1140,6 +1159,11 @@ export function WeekCalendarView({
                       startDayIdx={pendingCreate.startDayIdx}
                       currentDayIdx={pendingCreate.currentDayIdx}
                       use24h={use24h}
+                      createActivityOptions={createActivityOptions}
+                      onCreateActivityRequest={(slot) => {
+                        onCreateActivityRequest?.(slot)
+                        setPendingCreate(null)
+                      }}
                       onSubmit={(event) => {
                         const timePart = event.start.substring(10)
                         const endTimePart = event.end.substring(10)

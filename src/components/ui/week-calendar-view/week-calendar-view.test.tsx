@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -1377,6 +1377,65 @@ describe('drag to create', () => {
       expect.objectContaining({ recurrenceDays: expect.arrayContaining(['Sun', 'Mon']) }),
     )
     vi.restoreAllMocks()
+  })
+})
+
+describe('drag-create activity picker (threading)', () => {
+  const ACTIVITY_OPTIONS = [{ id: 'act-1', label: 'Deep work', color: 'blue' as const }]
+
+  function renderWithDrag(props: Partial<BarrelWeekCalendarViewProps> = {}): void {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+        {...props}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+  }
+
+  it('renders no activity picker in the create popover when createActivityOptions is absent', () => {
+    renderWithDrag()
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Activity' })).not.toBeInTheDocument()
+  })
+
+  it('renders the activity picker in the create popover when createActivityOptions is provided', () => {
+    renderWithDrag({ createActivityOptions: ACTIVITY_OPTIONS })
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toBeInTheDocument()
+  })
+
+  it('selecting "New activity…" fires onCreateActivityRequest with the drawn slot and closes the popover', async () => {
+    const onCreateActivityRequest = vi.fn()
+    renderWithDrag({ createActivityOptions: ACTIVITY_OPTIONS, onCreateActivityRequest })
+    await userEvent.click(screen.getByRole('combobox', { name: 'Activity' }))
+    const listbox = await screen.findByRole('listbox')
+    await userEvent.click(within(listbox).getByText('New activity…'))
+    expect(onCreateActivityRequest).toHaveBeenCalledOnce()
+    expect(onCreateActivityRequest).toHaveBeenCalledWith({
+      start: '2026-05-03T08:00:00',
+      end: '2026-05-03T08:15:00',
+    })
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('submit payload threads activityId through onEventCreate', async () => {
+    const onCreate = vi.fn()
+    renderWithDrag({ createActivityOptions: ACTIVITY_OPTIONS, onEventCreate: onCreate })
+    await userEvent.click(screen.getByRole('combobox', { name: 'Activity' }))
+    const listbox = await screen.findByRole('listbox')
+    await userEvent.click(within(listbox).getByText('Deep work'))
+    await waitFor(() => {
+      expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    })
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ activityId: 'act-1' }))
   })
 })
 
