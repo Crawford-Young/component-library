@@ -1,4 +1,5 @@
 export * from './components/ui/activity-form-dialog'
+export * from './components/ui/activity-template-dialog'
 export * from './components/ui/alert'
 export * from './components/ui/aspect-ratio'
 export * from './components/ui/avatar'

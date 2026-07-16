@@ -100,6 +100,8 @@ const stories = [
     name: 'ActivityFormDialog WeeklyRecurrence',
     id: 'dialogs-activityformdialog--weekly-recurrence',
   },
+  { name: 'ActivityTemplateDialog', id: 'dialogs-activitytemplatedialog--empty' },
+  { name: 'ActivityTemplateDialog Seeded', id: 'dialogs-activitytemplatedialog--seeded' },
   { name: 'BorderTrace', id: 'feedback-bordertrace--default' },
   { name: 'BorderTraceOnButton', id: 'feedback-bordertrace--on-button' },
   { name: 'BrandSplash', id: 'feedback-brandsplash--with-quote' },
