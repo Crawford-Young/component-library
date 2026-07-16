@@ -413,6 +413,9 @@ describe('CalendarEventChip', () => {
     it('hidden when onEditActivity is provided but event.activityId is absent', async () => {
       render(<CalendarEventChip event={event} style={style} onEditActivity={vi.fn()} />)
       await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      // Anchor: popover actually opened (guards against a vacuous pass if a refactor stops the
+      // click from opening it, which would make the "Edit activity" absence assertion trivial).
+      expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
     })
 
@@ -420,6 +423,7 @@ describe('CalendarEventChip', () => {
       const nullActivity: CalendarEvent = { ...event, activityId: null }
       render(<CalendarEventChip event={nullActivity} style={style} onEditActivity={vi.fn()} />)
       await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
     })
 
@@ -427,6 +431,7 @@ describe('CalendarEventChip', () => {
       const withActivity: CalendarEvent = { ...event, activityId: 'act-1' }
       render(<CalendarEventChip event={withActivity} style={style} />)
       await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
     })
 
