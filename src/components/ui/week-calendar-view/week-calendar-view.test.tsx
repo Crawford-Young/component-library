@@ -775,6 +775,9 @@ describe('WeekCalendarView edit activity', () => {
     const withActivity: CalendarEvent = { ...events[0], activityId: 'act-1' }
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[withActivity]} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    // Anchor: popover actually opened (guards against a vacuous pass if a refactor stops the
+    // click from opening it, which would make the "Edit activity" absence assertion trivial).
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
   })
 
@@ -787,7 +790,36 @@ describe('WeekCalendarView edit activity', () => {
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
+  })
+
+  it('recurrence-instance chip resolves onEventEditActivity to the ORIGINAL event, not the synthetic instance id', async () => {
+    const onEventEditActivity = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur activity',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+      activityId: 'act-1',
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventEditActivity={onEventEditActivity}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur activity/i })
+    expect(chips).toHaveLength(2)
+    await userEvent.click(chips[1]) // Tuesday instance — synthetic id, not 'r1'
+    await userEvent.click(screen.getByRole('button', { name: 'Edit activity' }))
+    expect(onEventEditActivity).toHaveBeenCalledWith(recurringEvent)
+    expect((onEventEditActivity.mock.calls[0][0] as CalendarEvent).id).toBe('r1')
   })
 })
 

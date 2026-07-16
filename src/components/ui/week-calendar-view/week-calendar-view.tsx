@@ -957,7 +957,17 @@ export function WeekCalendarView({
                             handleEventToggleLock(localEvents.find((e) => e.id === originalId)!)
                           }
                     }
-                    onEditActivity={isOverflow ? undefined : onEventEditActivity}
+                    onEditActivity={
+                      isOverflow || onEventEditActivity === undefined
+                        ? undefined
+                        : (editActivityEvent) => {
+                            if (!isRecur) {
+                              onEventEditActivity(editActivityEvent)
+                              return
+                            }
+                            onEventEditActivity(localEvents.find((e) => e.id === originalId)!)
+                          }
+                    }
                     renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}
                     onMoveStart={
                       isOverflow
