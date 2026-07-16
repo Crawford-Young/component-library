@@ -35,29 +35,40 @@ export interface CalendarEvent {
   readonly color?: CalendarEventColor
   readonly description?: string
   readonly location?: string
+  /**
+   * @deprecated Recurring creation/editing moved app-side (activity schedules). Still consumed by
+   * `WeekCalendarView`'s display fan-out — an event carrying `recurrenceDays` renders on each
+   * listed weekday in the current week — but no library UI edits it anymore. Removal is a later
+   * wave, if ever.
+   */
   readonly recurrenceDays?: readonly DayOfWeek[]
+  /**
+   * @deprecated Recurring creation/editing moved app-side. Retained as a display-only field on
+   * the public shape; no library UI writes it.
+   */
   readonly recurrenceFrequency?: RecurrenceFrequency
   /**
-   * Total occurrence count (e.g. weeks) for the event's recurrence, as emitted by
-   * `EventCreateForm`'s create-time submit payload (`EventCreateSubmitPayload.recurrenceCount`).
-   * Declared here so typed consumers can read/write it on the public `CalendarEvent` shape
-   * without a cast. `WeekCalendarView` does not read this field for display.
+   * @deprecated Recurring creation/editing moved app-side. Total occurrence count (e.g. weeks)
+   * for the event's recurrence. Retained as a display-only field on the public shape so typed
+   * consumers can read/write it without a cast; no library UI writes it. `WeekCalendarView` does
+   * not read this field for display.
    */
   readonly recurrenceCount?: number
   /**
-   * Edit-seed days for the chip's edit popover Days picker, decoupled from `recurrenceDays`'s
-   * WeekCalendarView display fan-out. When present, `seriesDays` takes precedence over
-   * `recurrenceDays` as the initial value shown in the picker (see `toDraft`); `recurrenceDays`
-   * alone continues to drive which days WeekCalendarView fans the chip across. Lets a consumer
-   * seed the picker from a wider recurring series (e.g. a streak group) without that series
-   * causing this chip instance to render on every series day.
+   * @deprecated Recurring creation/editing moved app-side. Previously seeded the chip's (now
+   * removed) edit-popover Days picker. Retained as a display-only field on the public shape; no
+   * library UI reads or writes it anymore. `WeekCalendarView`'s display fan-out is driven by
+   * `recurrenceDays`, not this field.
    */
   readonly seriesDays?: readonly DayOfWeek[]
   /** Whether the event has been marked complete. Toggled via `onToggleComplete`. */
   readonly completed?: boolean
   /** Opt-in for the chip's one-click complete circle (renders only when a toggle handler is also wired). */
   readonly completable?: boolean
-  /** Current completion streak, computed by the app. Shown as flame+count on the time line when > 0. */
+  /**
+   * @deprecated Streak computation moved app-side. Retained as a display-only field: when > 0 it
+   * still renders as flame+count on the chip's time line. No library UI writes it.
+   */
   readonly streak?: number
   /**
    * App-persisted lock flag. When `true`, the chip blocks drag/resize only — popover, quick
@@ -129,9 +140,6 @@ const ALL_COLORS: readonly CalendarEventColor[] = [
   'fuchsia',
 ]
 
-/** Day-of-week abbreviations in `Date.prototype.getDay()` index order (0 = Sunday). */
-const DAY_ABBR: readonly DayOfWeek[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 interface DraftEvent {
   title: string
   color: CalendarEventColor
@@ -139,8 +147,6 @@ interface DraftEvent {
   description: string
   startTime: string
   endTime: string
-  recurrenceDays: readonly DayOfWeek[]
-  recurrenceFrequency: RecurrenceFrequency | 'none'
 }
 
 function fmt24h(d: Date): string {
@@ -156,17 +162,10 @@ function parseHHMM(time: string): [hour: number, minute: number] {
 }
 
 /**
- * Builds the edit form's initial draft from an event. The Days picker seed prefers
- * `seriesDays` over `recurrenceDays` — `seriesDays` exists precisely to seed this picker
- * without also driving WeekCalendarView's display fan-out, so when present it wins outright
- * rather than merging with `recurrenceDays`. Saving still writes the resulting selection back
- * under `recurrenceDays` (see `handleSave`) — `seriesDays` on the source event is left untouched.
- *
- * When neither `seriesDays` nor `recurrenceDays` resolves to a non-empty set (a day-less
- * event), the picker instead seeds from the event's own LOCAL calendar day — otherwise the
- * event's own day renders unpressed even though the event demonstrably occurs on it. `handleSave`
- * mirrors this with a symmetric trivial-strip so an untouched save on a day-less event still
- * round-trips `recurrenceDays: undefined` rather than minting a 1-day series.
+ * Builds the edit form's initial draft from an event. Recurrence editing was removed from the
+ * chip popover (recurring creation/editing moved app-side), so the draft no longer seeds any
+ * recurrence day/frequency state — an edit preserves the event's stored recurrence fields
+ * untouched via the `...event` spread in `handleSave`.
  *
  * Start/End are seeded from the LOCAL wall-clock of the event's instants — matching exactly
  * what the chip and popover already display (`formatTimeRange`, both driven by local `Date`
@@ -176,7 +175,6 @@ function parseHHMM(time: string): [hour: number, minute: number] {
  * post-save time jump this fixes.
  */
 function toDraft(ev: CalendarEvent): DraftEvent {
-  const storedDays = ev.seriesDays ?? ev.recurrenceDays ?? []
   return {
     title: ev.title,
     color: ev.color ?? 'default',
@@ -184,8 +182,6 @@ function toDraft(ev: CalendarEvent): DraftEvent {
     description: ev.description ?? '',
     startTime: fmt24h(new Date(ev.start)),
     endTime: fmt24h(new Date(ev.end)),
-    recurrenceDays: storedDays.length > 0 ? storedDays : [DAY_ABBR[new Date(ev.start).getDay()]],
-    recurrenceFrequency: ev.recurrenceFrequency ?? 'none',
   }
 }
 
@@ -365,26 +361,15 @@ export function CalendarEventChip({
       endHour,
       endMinute,
     ).toISOString()
-    // Symmetric trivial-strip for toDraft's own-day fallback: only strip when the source event
-    // had NO stored days (the fallback-seeded case) — an event that already stores `[day]` with
-    // frequency none must round-trip unchanged on an untouched save, never silently normalized.
-    const ownDay = DAY_ABBR[new Date(event.start).getDay()]
-    const hadStoredDays = ((event.seriesDays ?? event.recurrenceDays)?.length ?? 0) > 0
-    const trivialDays =
-      !hadStoredDays &&
-      draft.recurrenceDays.length === 1 &&
-      draft.recurrenceDays[0] === ownDay &&
-      draft.recurrenceFrequency === 'none'
+    // Recurrence editing was removed from the popover: an edit preserves the event's stored
+    // recurrence fields (`recurrenceDays`/`recurrenceFrequency`/`recurrenceCount`/`seriesDays`)
+    // untouched via the `...event` spread, so a fanned event keeps fanning out after an edit.
     onEdit!({
       ...event,
       title: draft.title,
       color: draft.color,
       location: draft.location !== '' ? draft.location : undefined,
       description: draft.description !== '' ? draft.description : undefined,
-      recurrenceDays:
-        draft.recurrenceDays.length > 0 && !trivialDays ? draft.recurrenceDays : undefined,
-      recurrenceFrequency:
-        draft.recurrenceFrequency !== 'none' ? draft.recurrenceFrequency : undefined,
       start,
       end,
     })
@@ -541,70 +526,6 @@ export function CalendarEventChip({
                         )}
                       />
                     ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className={labelCls} aria-hidden="true">
-                    Repeat
-                  </p>
-                  <select
-                    aria-label="Repeat"
-                    className={cn(inputCls, 'mt-1')}
-                    value={draft.recurrenceFrequency}
-                    onChange={(e) => {
-                      const next = e.target.value as RecurrenceFrequency | 'none'
-                      setDraft((d) => ({
-                        ...d,
-                        recurrenceFrequency: next,
-                        recurrenceDays: next === 'daily' ? [...DAY_ABBR] : d.recurrenceDays,
-                      }))
-                    }}
-                  >
-                    <option value="none">None</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-
-                <div>
-                  <p className={labelCls} aria-hidden="true">
-                    Days
-                  </p>
-                  <div className="mt-1 flex gap-1" role="group" aria-label="Recurrence days">
-                    {DAY_ABBR.map((d) => {
-                      const active = draft.recurrenceDays.includes(d)
-                      return (
-                        <button
-                          key={d}
-                          type="button"
-                          aria-label={`Day: ${d}`}
-                          aria-pressed={active}
-                          onClick={() =>
-                            setDraft((prev) => ({
-                              ...prev,
-                              recurrenceFrequency:
-                                prev.recurrenceFrequency === 'daily'
-                                  ? 'weekly'
-                                  : prev.recurrenceFrequency,
-                              recurrenceDays: active
-                                ? prev.recurrenceDays.filter((x) => x !== d)
-                                : [...prev.recurrenceDays, d],
-                            }))
-                          }
-                          className={cn(
-                            'h-6 w-6 rounded-full text-[9px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                            active
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                          )}
-                        >
-                          {d[0]}
-                        </button>
-                      )
-                    })}
                   </div>
                 </div>
 

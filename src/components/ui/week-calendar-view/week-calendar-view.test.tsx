@@ -448,79 +448,32 @@ describe('event forwarding', () => {
   })
 })
 
-describe('chip-popover edit fan-out preserve', () => {
-  it('chip-popover edit emitting recurrenceDays does not fan out a row that had none (recurrenceEditMode="server")', async () => {
+describe('chip-popover edit preserves stored recurrence fan-out', () => {
+  it('editing an event with stored recurrenceDays keeps it fanned out (recurrence controls removed from popover)', async () => {
     const onEdit = vi.fn()
+    const seeded: CalendarEvent = { ...events[0], id: 'seeded-1', recurrenceDays: ['Mon', 'Wed'] }
     render(
-      <WeekCalendarView
-        defaultWeekStart={WEEK_START}
-        events={[events[0]]}
-        onEventEdit={onEdit}
-        recurrenceEditMode="server"
-      />,
+      <WeekCalendarView defaultWeekStart={WEEK_START} events={[seeded]} onEventEdit={onEdit} />,
     )
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    // events[0] is a Monday event with no stored days — the chip's own-day fallback seed
-    // (calendar-event-chip.tsx toDraft) pre-selects "Day: Mon" already, so only Wed needs
-    // toggling to reach the intended Mon+Wed selection.
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-
-    expect(onEdit).toHaveBeenCalledOnce()
-    const saved = onEdit.mock.calls[0][0]
-    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
-
-    // The stored row had no recurrenceDays before the edit — with recurrenceEditMode="server"
-    // the popover's edited recurrenceDays must not fan the chip out onto extra grid days locally.
-    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(1)
-  })
-
-  it('chip-popover edit of an event with prior recurrenceDays applies the new day set (recurrenceEditMode="server")', async () => {
-    const onEdit = vi.fn()
-    const seeded: CalendarEvent = { ...events[0], id: 'seeded-1', recurrenceDays: ['Mon'] }
-    render(
-      <WeekCalendarView
-        defaultWeekStart={WEEK_START}
-        events={[seeded]}
-        onEventEdit={onEdit}
-        recurrenceEditMode="server"
-      />,
-    )
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-
-    expect(onEdit).toHaveBeenCalledOnce()
-    const saved = onEdit.mock.calls[0][0]
-    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
-
-    // The stored row already had recurrenceDays — the new day set applies, fanning
-    // the chip out onto both selected days.
+    // Stored recurrenceDays fans the chip out onto Mon + Wed before any edit.
     expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(2)
-  })
 
-  it('chip-popover edit day-add on an event with no prior days fans out under default recurrenceEditMode="local"', async () => {
-    const onEdit = vi.fn()
-    render(
-      <WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} onEventEdit={onEdit} />,
-    )
-    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getAllByRole('button', { name: /team standup/i })[0])
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    // events[0] is a Monday event with no stored days — the chip's own-day fallback seed
-    // (calendar-event-chip.tsx toDraft) pre-selects "Day: Mon" already, so only Wed needs
-    // toggling to reach the intended Mon+Wed selection.
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
+    // No recurrence controls remain in the chip edit popover.
+    expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Repeat' })).not.toBeInTheDocument()
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.type(screen.getByLabelText('Title'), 'Renamed standup')
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
 
     expect(onEdit).toHaveBeenCalledOnce()
     const saved = onEdit.mock.calls[0][0]
-    expect(saved.recurrenceDays).toEqual(expect.arrayContaining(['Mon', 'Wed']))
-
-    // Default mode is 'local' — the lib owns fan-out truth, so a first-time day-add
-    // on a row with no prior recurrenceDays adopts the emitted days unconditionally.
-    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(2)
+    // The edit preserves the stored recurrenceDays untouched (via the `...event` spread).
+    expect(saved.recurrenceDays).toEqual(['Mon', 'Wed'])
+    expect(saved.title).toBe('Renamed standup')
+    // Still fanned out onto both days after the edit.
+    expect(screen.getAllByRole('button', { name: /renamed standup/i })).toHaveLength(2)
   })
 })
 
@@ -1300,7 +1253,7 @@ describe('drag to create', () => {
     vi.restoreAllMocks()
   })
 
-  it('multi-day drag covers recurrenceDays fallback in create handler', async () => {
+  it('multi-day drag synthesizes recurrenceDays from the drawn slot span in the create handler', async () => {
     const onCreate = vi.fn()
     render(
       <WeekCalendarView
@@ -1346,18 +1299,15 @@ describe('drag to create', () => {
     fireEvent.pointerMove(rows[0], { pointerId: 1, clientX: 150, clientY: 0 })
     fireEvent.pointerUp(rows[0], { pointerId: 1 })
     expect(screen.getByLabelText('Event title')).toBeInTheDocument()
-    // Uncheck all pre-selected recurrence day buttons so recurrenceDays becomes undefined
-    // This covers the ?? [] fallback branch in the create handler
-    const dayButtons = screen.queryAllByRole('button', { name: /^Day: / })
-    for (const btn of dayButtons) {
-      if (btn.getAttribute('aria-pressed') === 'true') {
-        await userEvent.click(btn)
-      }
-    }
+    // Create form has no recurrence controls to touch anymore.
+    expect(screen.queryAllByRole('button', { name: /^Day: / })).toHaveLength(0)
     await userEvent.type(screen.getByLabelText('Event title'), 'Multi-day event')
     await userEvent.click(screen.getByRole('button', { name: /create/i }))
-    // onCreate called via multi-day path with recurrenceDays=undefined → ?? [] fallback hit
+    // The span (Sun + Mon) is synthesized into recurrenceDays by the view.
     expect(onCreate).toHaveBeenCalledOnce()
+    expect(onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ recurrenceDays: expect.arrayContaining(['Sun', 'Mon']) }),
+    )
     vi.restoreAllMocks()
   })
 })
@@ -1897,35 +1847,6 @@ describe('drag-to-create multi-day', () => {
     // At minimum, one ghost should be visible
     expect(document.querySelectorAll('[data-testid="ghost-event"]').length).toBeGreaterThan(0)
     fireEvent.pointerUp(cells[0], { pointerId: 1 })
-  })
-
-  it('multi-day drag merges form recurrenceDays with drag span', async () => {
-    const onCreate = vi.fn()
-    render(
-      <WeekCalendarView
-        defaultWeekStart="2026-05-03"
-        events={[]}
-        hourStart={8}
-        hourCount={14}
-        hourHeight={56}
-        onEventCreate={onCreate}
-      />,
-    )
-    const cells = document.querySelectorAll('[data-drag-cell]')
-    fireEvent.pointerDown(cells[14], { pointerId: 1, clientY: 0 })
-    fireEvent.pointerMove(cells[14], { pointerId: 1, clientY: 0, clientX: 0 })
-    fireEvent.pointerUp(cells[14], { pointerId: 1 })
-    // Click Wed pill in the form to pre-select an additional day
-    await userEvent.click(screen.getByRole('button', { name: /day: wed/i }))
-    await userEvent.type(screen.getByLabelText('Event title'), 'Merged')
-    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
-    expect(onCreate).toHaveBeenCalledOnce()
-    // recurrenceDays should include Wed (from pill) + Sun+Mon (from drag span)
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        recurrenceDays: expect.arrayContaining(['Sun', 'Mon', 'Wed']),
-      }),
-    )
   })
 
   it('multi-day drag fires onEventCreate once with recurrenceDays (no duplicate callbacks)', async () => {
@@ -2772,65 +2693,6 @@ describe('recurrence day expansion', () => {
     await userEvent.click(chips[0])
     await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
     expect(screen.queryByRole('button', { name: /hidden base delete/i })).not.toBeInTheDocument()
-  })
-
-  it('deselecting a non-own day from the own-day popover removes only that day chip', async () => {
-    const deselectFlow: CalendarEvent = {
-      id: 'deselect-flow-1',
-      title: 'Deselect flow',
-      start: '2026-05-04T09:00:00', // Monday
-      end: '2026-05-04T09:30:00',
-      recurrenceDays: ['Mon', 'Wed'],
-    }
-    render(
-      <WeekCalendarView
-        defaultWeekStart="2026-05-03"
-        events={[deselectFlow]}
-        onEventEdit={vi.fn()}
-      />,
-    )
-    // Open the Monday chip's edit popover and deselect Wed.
-    const chips = screen.getAllByRole('button', { name: /deselect flow/i })
-    expect(chips.length).toBe(2)
-    await userEvent.click(chips[0])
-    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Wed' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    // Wed chip gone, Mon chip remains.
-    expect(screen.getAllByRole('button', { name: /deselect flow/i }).length).toBe(1)
-  })
-
-  it('deselecting the own day from its own popover hides the own-day chip and keeps the other', async () => {
-    const deselectOwnDay: CalendarEvent = {
-      id: 'deselect-flow-2',
-      title: 'Deselect own day',
-      start: '2026-05-04T09:00:00', // Monday
-      end: '2026-05-04T09:30:00',
-      recurrenceDays: ['Mon', 'Wed'],
-    }
-    const { container } = render(
-      <WeekCalendarView
-        defaultWeekStart="2026-05-03"
-        events={[deselectOwnDay]}
-        onEventEdit={vi.fn()}
-      />,
-    )
-    const chips = screen.getAllByRole('button', { name: /deselect own day/i })
-    expect(chips.length).toBe(2)
-    // chips[0] is the Monday (own-day) chip — open its popover and deselect Mon itself.
-    await userEvent.click(chips[0])
-    await userEvent.click(screen.getByRole('button', { name: /^edit$/i }))
-    await userEvent.click(screen.getByRole('button', { name: 'Day: Mon' }))
-    await userEvent.click(screen.getByRole('button', { name: /save/i }))
-    // Mon chip gone, Wed chip remains.
-    expect(screen.getAllByRole('button', { name: /deselect own day/i }).length).toBe(1)
-    const grid = container.querySelector('.grid.relative') as HTMLElement
-    const mondayCol = grid.children[2] as HTMLElement
-    const wedCol = grid.children[4] as HTMLElement
-    expect(
-      within(mondayCol).queryByRole('button', { name: /deselect own day/i }),
-    ).not.toBeInTheDocument()
-    expect(within(wedCol).getByRole('button', { name: /deselect own day/i })).toBeInTheDocument()
   })
 
   it('move on recurrence instance calls onEventMove with original event id and preserved date', () => {

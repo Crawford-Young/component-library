@@ -211,37 +211,7 @@ export const Interactive: Story = {
   },
 }
 
-const REPEAT_SELECT_LABEL = 'Repeat'
-
-function EventCreatePopoverWithRepeatDemo(): React.JSX.Element {
-  React.useEffect(() => {
-    function selectWeekly(select: HTMLSelectElement): void {
-      select.value = 'weekly'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
-    }
-
-    // The Radix Popover portals its content on a subsequent tick, so the Repeat
-    // select isn't in the DOM yet on this effect's first run — observe for it.
-    const existing = document.querySelector<HTMLSelectElement>(
-      `select[aria-label="${REPEAT_SELECT_LABEL}"]`,
-    )
-    if (existing) {
-      selectWeekly(existing)
-      return
-    }
-    const observer = new MutationObserver(() => {
-      const select = document.querySelector<HTMLSelectElement>(
-        `select[aria-label="${REPEAT_SELECT_LABEL}"]`,
-      )
-      if (select) {
-        selectWeekly(select)
-        observer.disconnect()
-      }
-    })
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [])
-
+function EventCreatePopoverDemo(): React.JSX.Element {
   return (
     <div className="relative inline-block">
       <Popover open onOpenChange={() => {}}>
@@ -271,16 +241,16 @@ function EventCreatePopoverWithRepeatDemo(): React.JSX.Element {
   )
 }
 
-export const CreateWithRepeatCount: Story = {
+export const CreateEventPopover: Story = {
   parameters: {
     docs: {
       description: {
         story:
-          'This is the same create popover WeekCalendarView opens after a drag-to-create gesture. Its Repeat select drives a repeat-count NumberInput that only renders once a non-None frequency is chosen. This demo pre-selects Weekly on mount so the count knob is visible without an extra click — in the real calendar it appears live as soon as you change Repeat yourself.',
+          'The create popover WeekCalendarView opens after a drag-to-create gesture. Recurring creation moved app-side, so this surface carries no Repeat / Days / repeat-count controls — just title, color, all-day, times, location, and description.',
       },
     },
   },
-  render: () => <EventCreatePopoverWithRepeatDemo />,
+  render: () => <EventCreatePopoverDemo />,
 }
 
 export const SleepMode: Story = {
