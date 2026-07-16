@@ -755,6 +755,42 @@ describe('WeekCalendarView lock', () => {
   })
 })
 
+describe('WeekCalendarView edit activity', () => {
+  it('threads onEventEditActivity to the chip as onEditActivity and fires with the event', async () => {
+    const onEventEditActivity = vi.fn()
+    const withActivity: CalendarEvent = { ...events[0], activityId: 'act-1' }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[withActivity]}
+        onEventEditActivity={onEventEditActivity}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit activity' }))
+    expect(onEventEditActivity).toHaveBeenCalledWith(withActivity)
+  })
+
+  it('edit activity action absent when onEventEditActivity is not provided, even with activityId', async () => {
+    const withActivity: CalendarEvent = { ...events[0], activityId: 'act-1' }
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[withActivity]} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
+  })
+
+  it('edit activity action absent when event.activityId is absent, even with the handler wired', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventEditActivity={vi.fn()}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
+  })
+})
+
 describe('time indicator', () => {
   it('renders time indicator in today column when time is within visible hours', () => {
     vi.useFakeTimers()

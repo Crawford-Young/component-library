@@ -409,6 +409,39 @@ describe('CalendarEventChip', () => {
     expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
   })
 
+  describe('edit activity action', () => {
+    it('hidden when onEditActivity is provided but event.activityId is absent', async () => {
+      render(<CalendarEventChip event={event} style={style} onEditActivity={vi.fn()} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
+    })
+
+    it('hidden when event.activityId is explicitly null', async () => {
+      const nullActivity: CalendarEvent = { ...event, activityId: null }
+      render(<CalendarEventChip event={nullActivity} style={style} onEditActivity={vi.fn()} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
+    })
+
+    it('hidden when event.activityId is present but no onEditActivity handler is provided', async () => {
+      const withActivity: CalendarEvent = { ...event, activityId: 'act-1' }
+      render(<CalendarEventChip event={withActivity} style={style} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.queryByRole('button', { name: 'Edit activity' })).not.toBeInTheDocument()
+    })
+
+    it('rendered and fires onEditActivity with the event when activityId and handler are both present', async () => {
+      const onEditActivity = vi.fn()
+      const withActivity: CalendarEvent = { ...event, activityId: 'act-1' }
+      render(
+        <CalendarEventChip event={withActivity} style={style} onEditActivity={onEditActivity} />,
+      )
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Edit activity' }))
+      expect(onEditActivity).toHaveBeenCalledWith(withActivity)
+    })
+  })
+
   it('renderPopover slot rendered when provided', async () => {
     render(
       <CalendarEventChip
