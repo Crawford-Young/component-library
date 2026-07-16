@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.22.0
+
+### Minor Changes
+
+- df736ba: Add `RouteErrorFallback` — shared fallback UI for Next.js `error.tsx` boundaries. Composes `ErrorPage` + retry `Button`, renders optional `error.digest` reference line. Framework-agnostic (`reset` callback only; no `next/*`/`@sentry/*` imports).
+
 ## 0.21.0
 
 ### Minor Changes
