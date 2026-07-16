@@ -13,14 +13,10 @@ const meta: Meta<typeof TaskTimeFields> = {
 export default meta
 type Story = StoryObj<typeof TaskTimeFields>
 
-function ControlledTaskTimeFields(
-  props: Partial<TaskTimeFieldsProps> & { showDate?: boolean; showRecurrence?: boolean },
-) {
+function ControlledTaskTimeFields(props: Partial<TaskTimeFieldsProps> & { showDate?: boolean }) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
-  const [recurrence, setRecurrence] = useState('none')
-  const [recurrenceCount, setRecurrenceCount] = useState<number | undefined>(1)
 
   return (
     <div className="w-80">
@@ -31,10 +27,6 @@ function ControlledTaskTimeFields(
         onStartTimeChange={setStartTime}
         endTime={endTime}
         onEndTimeChange={setEndTime}
-        recurrence={recurrence}
-        onRecurrenceChange={setRecurrence}
-        recurrenceCount={recurrenceCount}
-        onRecurrenceCountChange={setRecurrenceCount}
         {...props}
       />
     </div>
@@ -47,14 +39,6 @@ export const Default: Story = {
 
 export const NoDate: Story = {
   render: () => <ControlledTaskTimeFields showDate={false} />,
-}
-
-export const NoRecurrence: Story = {
-  render: () => <ControlledTaskTimeFields showRecurrence={false} />,
-}
-
-export const WithWeeklyRecurrence: Story = {
-  render: () => <ControlledTaskTimeFields showDate={true} showRecurrence={true} />,
 }
 
 export const TwentyFourHour: Story = {

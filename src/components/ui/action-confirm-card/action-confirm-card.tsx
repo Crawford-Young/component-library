@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 export interface ActionConfirmCardProps {
   readonly action: string
-  readonly entityType: 'habit' | 'goal' | 'event'
+  readonly entityType: 'habit' | 'goal' | 'event' | 'activity'
   readonly date?: string
   readonly time?: string
   readonly detail?: string
@@ -62,6 +62,7 @@ export function ActionConfirmCard({
                   entityType === 'habit' && 'bg-blue-500/10 text-blue-500',
                   entityType === 'goal' && 'bg-purple-500/10 text-purple-500',
                   entityType === 'event' && 'bg-green-500/10 text-green-500',
+                  entityType === 'activity' && 'bg-amber-500/10 text-amber-500',
                 )}
               >
                 {entityType}

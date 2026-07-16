@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { TaskTimeFields } from './task-time-fields'
@@ -12,10 +12,6 @@ function makeProps(overrides: Partial<TaskTimeFieldsProps> = {}): TaskTimeFields
     onStartTimeChange: vi.fn(),
     endTime: '10:00',
     onEndTimeChange: vi.fn(),
-    recurrence: 'none',
-    onRecurrenceChange: vi.fn(),
-    recurrenceCount: 1,
-    onRecurrenceCountChange: vi.fn(),
     ...overrides,
   }
 }
@@ -69,102 +65,6 @@ describe('TaskTimeFields', () => {
     })
   })
 
-  describe('recurrence field', () => {
-    it('hides repeat count when recurrence is "none"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'none' })} />)
-      expect(screen.queryByLabelText(/repeat count/i)).not.toBeInTheDocument()
-    })
-
-    it('shows repeat count when recurrence is "weekly"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceCount: 2 })} />)
-      expect(screen.getByLabelText(/repeat count/i)).toBeInTheDocument()
-    })
-
-    it('shows repeat count when recurrence is "daily"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'daily', recurrenceCount: 3 })} />)
-      expect(screen.getByLabelText(/repeat count/i)).toBeInTheDocument()
-    })
-
-    it('shows repeat count when recurrence is "monthly"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'monthly', recurrenceCount: 1 })} />)
-      expect(screen.getByLabelText(/repeat count/i)).toBeInTheDocument()
-    })
-
-    it('calls onRecurrenceChange when recurrence option is selected', async () => {
-      const user = userEvent.setup()
-      const onRecurrenceChange = vi.fn()
-      render(<TaskTimeFields {...makeProps({ recurrence: 'none', onRecurrenceChange })} />)
-      const recurrenceTrigger = screen
-        .getAllByRole('combobox')
-        .find((t) => t.getAttribute('aria-label') === 'Recurrence')!
-      await user.click(recurrenceTrigger)
-      await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument())
-      await user.click(screen.getByRole('option', { name: 'Weekly' }))
-      await waitFor(() => expect(onRecurrenceChange).toHaveBeenCalledWith('weekly'))
-    })
-
-    it('calls onRecurrenceCountChange when repeat count changes', async () => {
-      const user = userEvent.setup()
-      const onRecurrenceCountChange = vi.fn()
-      render(
-        <TaskTimeFields
-          {...makeProps({ recurrence: 'daily', recurrenceCount: 1, onRecurrenceCountChange })}
-        />,
-      )
-      const incrementBtn = screen.getByRole('button', { name: 'Increment' })
-      await user.click(incrementBtn)
-      expect(onRecurrenceCountChange).toHaveBeenCalledWith(2)
-    })
-
-    it('defaults the repeat count minimum to 1 with no maximum', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceCount: 1 })} />)
-      const repeat = screen.getByLabelText(/repeat count/i)
-      expect(repeat).toHaveAttribute('min', '1')
-      expect(repeat).not.toHaveAttribute('max')
-    })
-
-    it('applies repeatMin to the repeat count input', () => {
-      render(
-        <TaskTimeFields
-          {...makeProps({ recurrence: 'weekly', recurrenceCount: 2, repeatMin: 2 })}
-        />,
-      )
-      expect(screen.getByLabelText(/repeat count/i)).toHaveAttribute('min', '2')
-      expect(screen.getByRole('button', { name: 'Decrement' })).toBeDisabled()
-    })
-
-    it('applies repeatMax to the repeat count input', () => {
-      render(
-        <TaskTimeFields
-          {...makeProps({ recurrence: 'weekly', recurrenceCount: 52, repeatMax: 52 })}
-        />,
-      )
-      expect(screen.getByLabelText(/repeat count/i)).toHaveAttribute('max', '52')
-      expect(screen.getByRole('button', { name: 'Increment' })).toBeDisabled()
-    })
-
-    it('renders blank count with Forever placeholder when recurrenceCount is undefined', () => {
-      render(
-        <TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceCount: undefined })} />,
-      )
-      const repeat = screen.getByLabelText(/repeat count/i)
-      expect(repeat).toHaveValue(null)
-      expect(repeat).toHaveAttribute('placeholder', 'Forever')
-    })
-
-    it('clearing the count field calls onRecurrenceCountChange with undefined', async () => {
-      const user = userEvent.setup()
-      const onRecurrenceCountChange = vi.fn()
-      render(
-        <TaskTimeFields
-          {...makeProps({ recurrence: 'weekly', recurrenceCount: 3, onRecurrenceCountChange })}
-        />,
-      )
-      await user.clear(screen.getByLabelText(/repeat count/i))
-      expect(onRecurrenceCountChange).toHaveBeenLastCalledWith(undefined)
-    })
-  })
-
   describe('showDate prop', () => {
     it('shows DatePicker by default', () => {
       render(<TaskTimeFields {...makeProps()} />)
@@ -185,116 +85,6 @@ describe('TaskTimeFields', () => {
     })
   })
 
-  describe('showRecurrence prop', () => {
-    it('shows recurrence select by default', () => {
-      render(<TaskTimeFields {...makeProps()} />)
-      const recurrenceTrigger = screen
-        .getAllByRole('combobox')
-        .find((t) => t.getAttribute('aria-label') === 'Recurrence')
-      expect(recurrenceTrigger).toBeDefined()
-    })
-
-    it('hides recurrence select when showRecurrence={false}', () => {
-      render(<TaskTimeFields {...makeProps({ showRecurrence: false })} />)
-      const recurrenceTrigger = screen
-        .queryAllByRole('combobox')
-        .find((t) => t.getAttribute('aria-label') === 'Recurrence')
-      expect(recurrenceTrigger).toBeUndefined()
-    })
-
-    it('hides repeat count when showRecurrence={false} even if recurrence is "weekly"', () => {
-      render(<TaskTimeFields {...makeProps({ showRecurrence: false, recurrence: 'weekly' })} />)
-      expect(screen.queryByLabelText(/repeat count/i)).not.toBeInTheDocument()
-    })
-  })
-
-  describe('weekday picker', () => {
-    it('does not render when recurrence is "none"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'none' })} />)
-      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
-    })
-
-    it('does not render when recurrence is "daily"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'daily' })} />)
-      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
-    })
-
-    it('does not render when recurrence is "monthly"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'monthly' })} />)
-      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
-    })
-
-    it('renders a toggle group with the 3-letter day tokens when recurrence is "weekly"', () => {
-      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly' })} />)
-      expect(screen.getByRole('group', { name: 'Recurrence days' })).toBeInTheDocument()
-      for (const d of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
-        expect(screen.getByRole('button', { name: `Day: ${d}` })).toBeInTheDocument()
-      }
-    })
-
-    it('marks seeded recurrenceDays as pressed and the rest as not pressed', () => {
-      render(
-        <TaskTimeFields {...makeProps({ recurrence: 'weekly', recurrenceDays: ['Mon', 'Wed'] })} />,
-      )
-      expect(screen.getByRole('button', { name: 'Day: Mon' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-      expect(screen.getByRole('button', { name: 'Day: Wed' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-      expect(screen.getByRole('button', { name: 'Day: Tue' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      )
-    })
-
-    it('calls onRecurrenceDaysChange adding a day when an unselected day is clicked', async () => {
-      const user = userEvent.setup()
-      const onRecurrenceDaysChange = vi.fn()
-      render(
-        <TaskTimeFields
-          {...makeProps({
-            recurrence: 'weekly',
-            recurrenceDays: ['Mon'],
-            onRecurrenceDaysChange,
-          })}
-        />,
-      )
-      await user.click(screen.getByRole('button', { name: 'Day: Wed' }))
-      expect(onRecurrenceDaysChange).toHaveBeenCalledWith(['Mon', 'Wed'])
-    })
-
-    it('calls onRecurrenceDaysChange removing a day when a selected day is clicked', async () => {
-      const user = userEvent.setup()
-      const onRecurrenceDaysChange = vi.fn()
-      render(
-        <TaskTimeFields
-          {...makeProps({
-            recurrence: 'weekly',
-            recurrenceDays: ['Mon', 'Wed'],
-            onRecurrenceDaysChange,
-          })}
-        />,
-      )
-      await user.click(screen.getByRole('button', { name: 'Day: Mon' }))
-      expect(onRecurrenceDaysChange).toHaveBeenCalledWith(['Wed'])
-    })
-
-    it('does not throw when a day is clicked and no onRecurrenceDaysChange is provided', async () => {
-      const user = userEvent.setup()
-      render(<TaskTimeFields {...makeProps({ recurrence: 'weekly' })} />)
-      await user.click(screen.getByRole('button', { name: 'Day: Fri' }))
-      expect(screen.getByRole('button', { name: 'Day: Fri' })).toBeInTheDocument()
-    })
-
-    it('hides the weekday picker when showRecurrence is false even if recurrence is "weekly"', () => {
-      render(<TaskTimeFields {...makeProps({ showRecurrence: false, recurrence: 'weekly' })} />)
-      expect(screen.queryByRole('group', { name: 'Recurrence days' })).not.toBeInTheDocument()
-    })
-  })
-
   describe('labels', () => {
     it('renders Start time label', () => {
       render(<TaskTimeFields {...makeProps()} />)
@@ -304,11 +94,6 @@ describe('TaskTimeFields', () => {
     it('renders End time label', () => {
       render(<TaskTimeFields {...makeProps()} />)
       expect(screen.getByText('End time')).toBeInTheDocument()
-    })
-
-    it('renders Recurrence label when showRecurrence is true', () => {
-      render(<TaskTimeFields {...makeProps()} />)
-      expect(screen.getByText('Recurrence')).toBeInTheDocument()
     })
 
     it('renders Date label and DatePicker button when showDate is true', () => {
