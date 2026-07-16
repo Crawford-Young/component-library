@@ -69,7 +69,10 @@ jobs:
         run: just test
 
       - name: Security audit
-        run: pnpm audit --audit-level=high
+        # npm retired the classic audit endpoints 2026-07-14 (HTTP 410); pnpm 10's
+        # `pnpm audit` fails in CI regardless of diff. pnpm 11 uses the bulk advisory
+        # endpoint. Interim until the standalone pnpm-11 housekeeping PR lands.
+        run: pnpm dlx pnpm@11 audit --audit-level=high
 
   build:
     name: Build
