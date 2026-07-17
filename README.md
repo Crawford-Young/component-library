@@ -37,7 +37,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | `Select`         | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`                                                                                     |
 | `Slider`         | Single value, forwarded ref                                                                                                                                 |
 | `Switch`         | Controlled and uncontrolled                                                                                                                                 |
-| `TaskTimeFields` | Date + start/end time + recurrence group; `use24h` toggles 12h/24h display                                                                                  |
+| `TaskTimeFields` | Date + start/end time; `use24h` toggles 12h/24h display                                                                                                     |
 | `TimeInput`      | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle                                                                                     |
 | `Textarea`       | Forwarded ref, resizable                                                                                                                                    |
 | `Toggle`         | default / outline × sm / md / lg                                                                                                                            |
@@ -52,15 +52,16 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Overlays
 
-| Component            | Notes                                                                                         |
-| -------------------- | --------------------------------------------------------------------------------------------- |
-| `ActivityFormDialog` | Type-morphing create/edit dialog for tasks / goals / habits; forwards `use24h` to time fields |
-| `AlertDialog`        | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                 |
-| `Dialog`             | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` |
-| `Popover`            | `Popover`, `PopoverContent`, `PopoverTrigger`                                                 |
-| `Sheet`              | `Sheet`, `SheetContent` — side: top / right / bottom / left                                   |
-| `Toast`              | Sonner wrapper themed to design tokens                                                        |
-| `Tooltip`            | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                              |
+| Component                | Notes                                                                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ActivityTemplateDialog` | Create/edit dialog for activity templates — schedule builder (weekday toggles + start time/duration per slot), min/max duration, weekly target |
+| `AlertDialog`            | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                                                                  |
+| `Dialog`                 | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`                                                  |
+| `EventFormDialog`        | Create/edit dialog for calendar events — title, all-day, `TaskTimeFields`, color, location, description; forwards `use24h`                     |
+| `Popover`                | `Popover`, `PopoverContent`, `PopoverTrigger`                                                                                                  |
+| `Sheet`                  | `Sheet`, `SheetContent` — side: top / right / bottom / left                                                                                    |
+| `Toast`                  | Sonner wrapper themed to design tokens                                                                                                         |
+| `Tooltip`                | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                                                                               |
 
 ### Navigation
 
@@ -95,10 +96,10 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Calendar
 
-| Component           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WeekCalendarView`  | Full week grid — recurring events (exhaustive `recurrenceDays` rendering, `recurrenceEditMode` `'local'`/`'server'`), drag move/resize/create (slop threshold), undo, `use24h`, `dayWindows` per-day visible windows with sleep-zone shading, complete-toggle passthrough, `onWeekChange` nav callback (fires on week change, Sunday local-ISO payload), `resyncToken` (re-seeds internal events from `events` prop on identity change, deferred mid-drag) |
-| `CalendarEventChip` | Event chip — edit/delete popover, drag handles, `use24h` time display, inline streak count (`streak`), one-click complete circle (`completable` + `onToggleComplete`), `completed` styling                                                                                                                                                                                                                                                                 |
+| Component           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WeekCalendarView`  | Full week grid — drag move/resize/create (slop threshold), undo, `use24h`, `dayWindows` per-day visible windows with sleep-zone shading, complete-toggle passthrough, `onWeekChange` nav callback (fires on week change, Sunday local-ISO payload), `resyncToken` (re-seeds internal events from `events` prop on identity change, deferred mid-drag), `createActivityOptions` + `onCreateActivityRequest` activity picker in the drag-create popover, `onEventEditActivity` chip "Edit activity" bridge. `recurrenceDays`/`recurrenceFrequency`/`recurrenceCount`/`seriesDays`/`streak` display fan-out is `@deprecated` but still functional when present on `CalendarEvent`; recurrence creation/editing UI was removed in wave 3L |
+| `CalendarEventChip` | Event chip — edit/delete popover, drag handles, `use24h` time display, inline streak count (`streak`), one-click complete circle (`completable` + `onToggleComplete`), `completed` styling, `onEditActivity` "Edit activity" action (shown only when `event.activityId` is set)                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ### Layout
 
