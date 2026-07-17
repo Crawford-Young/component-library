@@ -57,4 +57,26 @@ describe('RouteErrorFallback', () => {
     )
     expect(container.firstChild).toHaveClass('custom-class')
   })
+
+  it('renders a home link when homeHref is provided', () => {
+    render(<RouteErrorFallback error={makeError()} reset={() => {}} homeHref="/" />)
+    expect(screen.getByRole('link', { name: 'Go home' })).toHaveAttribute('href', '/')
+  })
+
+  it('renders a custom home label', () => {
+    render(
+      <RouteErrorFallback
+        error={makeError()}
+        reset={() => {}}
+        homeHref="/"
+        homeLabel="Back to site"
+      />,
+    )
+    expect(screen.getByRole('link', { name: 'Back to site' })).toBeInTheDocument()
+  })
+
+  it('does not render a home link without homeHref', () => {
+    render(<RouteErrorFallback error={makeError()} reset={() => {}} />)
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
 })

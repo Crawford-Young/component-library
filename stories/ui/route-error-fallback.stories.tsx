@@ -34,3 +34,11 @@ export const CustomCopy: Story = {
     retryLabel: 'Reload calendar',
   },
 }
+
+export const WithHomeLink: Story = {
+  args: {
+    error: digestError,
+    reset: () => {},
+    homeHref: '/',
+  },
+}

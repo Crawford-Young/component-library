@@ -45,7 +45,7 @@ const stories = [
   { name: 'PaginationControl', id: 'data-paginationcontrol--few-pages' },
   { name: 'DataTable', id: 'data-datatable--default' },
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
-  { name: 'RouteErrorFallback', id: 'feedback-routeerrorfallback--with-digest' },
+  { name: 'RouteErrorFallback', id: 'feedback-routeerrorfallback--with-home-link' },
   { name: 'CountUp', id: 'display-countup--default' },
   { name: 'BentoGrid', id: 'layout-bentogrid--default' },
   { name: 'Timeline', id: 'display-timeline--default' },
