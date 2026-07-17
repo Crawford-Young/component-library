@@ -71,6 +71,7 @@ Every repo-doc edit lands in the wave branch BEFORE merge — reflect runs pre-P
 
 - **MDX GFM tables (2026-06-12):** Storybook 8's essentials passthrough does **not** apply `mdxPluginOptions` — pipe tables render as raw `| ... |` text. Register `@storybook/addon-docs` directly in `.storybook/main.ts` with `mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } }`. The essentials boolean-filter passthrough was verified broken.
 - **Scroll-triggered story demos need ≥100vh of scroll range (2026-06-12):** framer `whileInView` fires immediately if the target is already in the viewport. A `gap-[60vh]` spacer is shorter than the viewport → no visible reveal. Use `gap-[100vh]` so the element starts off-screen.
+- **Light-mode verification in the Storybook iframe (2026-07-16):** theme is driven by the backgrounds global — `.storybook/preview.tsx`'s decorator toggles `.dark` on `<html>` FROM `backgrounds.value`, and the backgrounds addon paints the body bg independently. Removing the `.dark` class directly flips foreground tokens but leaves the dark body bg → light-on-light, content invisible. Correct mechanism for scripted/headless light-mode checks: iframe URL param `&globals=backgrounds.value:!hex(ffffff)` (dark is `!hex(09090b)`).
 
 ## Time semantics (calendar components)
 
