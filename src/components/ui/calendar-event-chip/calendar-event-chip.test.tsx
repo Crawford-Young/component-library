@@ -447,6 +447,30 @@ describe('CalendarEventChip', () => {
     })
   })
 
+  describe('duplicate action', () => {
+    it('rendered whenever onDuplicate is provided (no activityId requirement)', async () => {
+      render(<CalendarEventChip event={event} style={style} onDuplicate={vi.fn()} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.getByRole('button', { name: 'Duplicate' })).toBeInTheDocument()
+    })
+
+    it('absent when onDuplicate not provided', async () => {
+      render(<CalendarEventChip event={event} style={style} onDelete={vi.fn()} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      expect(screen.getByText('9:00–9:30 AM')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Duplicate' })).not.toBeInTheDocument()
+    })
+
+    it('fires onDuplicate with the event and closes the popover', async () => {
+      const onDuplicate = vi.fn()
+      render(<CalendarEventChip event={event} style={style} onDuplicate={onDuplicate} />)
+      await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Duplicate' }))
+      expect(onDuplicate).toHaveBeenCalledWith(event)
+      expect(screen.queryByText('9:00–9:30 AM')).not.toBeInTheDocument()
+    })
+  })
+
   it('renderPopover slot rendered when provided', async () => {
     render(
       <CalendarEventChip
