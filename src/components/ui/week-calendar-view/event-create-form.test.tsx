@@ -437,3 +437,93 @@ describe('EventCreateForm activity picker', () => {
     expect('activityId' in onSubmit.mock.calls[0][0]).toBe(false)
   })
 })
+
+describe('EventCreateForm initial seeding (controlled createRequest reopen)', () => {
+  it('initialActivityId preselects the activity and submit carries it', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        initialActivityId="act-1"
+        onSubmit={onSubmit}
+      />,
+    )
+    // Picker shows the preselected option's label.
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toHaveTextContent('Deep work')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].activityId).toBe('act-1')
+  })
+
+  it('seeds title and color from the matching option when initialActivityId is provided', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        initialActivityId="act-1"
+        onSubmit={onSubmit}
+      />,
+    )
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    expect(screen.getByRole('button', { name: 'Color: blue' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].color).toBe('blue')
+  })
+
+  it('initialDraft overrides win over option seeding', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        initialActivityId="act-1"
+        initialDraft={{
+          title: 'Custom title',
+          color: 'red',
+          location: 'Home office',
+          description: 'Duplicated',
+        }}
+        onSubmit={onSubmit}
+      />,
+    )
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Custom title')
+    expect(screen.getByRole('button', { name: 'Color: red' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    const arg = onSubmit.mock.calls[0][0]
+    expect(arg.title).toBe('Custom title')
+    expect(arg.color).toBe('red')
+    expect(arg.location).toBe('Home office')
+    expect(arg.description).toBe('Duplicated')
+    expect(arg.activityId).toBe('act-1')
+  })
+
+  it('initialDraft seeds fields without an activity (activityId null)', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        initialDraft={{ title: 'No-activity draft' }}
+        onSubmit={onSubmit}
+      />,
+    )
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe(
+      'No-activity draft',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+    expect(onSubmit.mock.calls[0][0].activityId).toBeNull()
+  })
+
+  it('no seeding props leaves title empty and "No activity" selected (regression)', () => {
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('')
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toHaveTextContent('No activity')
+  })
+})

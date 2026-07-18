@@ -3696,3 +3696,245 @@ describe('resyncToken', () => {
     expect(screen.queryByRole('button', { name: /updated title/i })).not.toBeInTheDocument()
   })
 })
+
+describe('WeekCalendarView controlled createRequest reopen', () => {
+  const ACTIVITY_OPTIONS = [
+    { id: 'act-1', label: 'Deep work', color: 'blue' as const },
+    { id: 'act-2', label: 'Reading' },
+  ]
+  // 2026-05-04 is Monday (day index 1 of the 2026-05-03 Sunday-start week); 09:00–10:00.
+  const SLOT = { start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' }
+
+  function build(props: Partial<BarrelWeekCalendarViewProps>): React.JSX.Element {
+    return (
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        {...props}
+      />
+    )
+  }
+
+  it('opens the create popover with the activity preselected on null→non-null transition', () => {
+    const { rerender } = render(build({ createRequest: null }))
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+    rerender(build({ createRequest: { slot: SLOT, activityId: 'act-1' } }))
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toHaveTextContent('Deep work')
+  })
+
+  it('does NOT open on initial mount when createRequest is already non-null (transition-only)', () => {
+    render(build({ createRequest: { slot: SLOT, activityId: 'act-1' } }))
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('submit flows through onEventCreate with the preselected activityId and mapped slot', async () => {
+    const onEventCreate = vi.fn()
+    const { rerender } = render(build({ createRequest: null, onEventCreate }))
+    rerender(build({ createRequest: { slot: SLOT, activityId: 'act-1' }, onEventCreate }))
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(onEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activityId: 'act-1',
+        title: 'Deep work',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T10:00:00',
+      }),
+    )
+  })
+
+  it('maps an overnight slot ISO span to next-day end via local getters', async () => {
+    const onEventCreate = vi.fn()
+    // 23:00 Mon → 01:00 Tue (next calendar day, real instants).
+    const overnight = { start: '2026-05-04T23:00:00', end: '2026-05-05T01:00:00' }
+    const { rerender } = render(build({ createRequest: null, onEventCreate }))
+    rerender(build({ createRequest: { slot: overnight, activityId: 'act-1' }, onEventCreate }))
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(onEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        start: '2026-05-04T23:00:00',
+        end: '2026-05-05T01:00:00',
+      }),
+    )
+  })
+
+  it('does not open when the createRequest slot falls outside the displayed week', () => {
+    const { rerender } = render(build({ createRequest: null }))
+    // 2026-06-15 is weeks away from the 2026-05-03 displayed week → no matching day column.
+    rerender(
+      build({
+        createRequest: {
+          slot: { start: '2026-06-15T09:00:00', end: '2026-06-15T10:00:00' },
+          activityId: 'act-1',
+        },
+      }),
+    )
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('opens with "No activity" when createRequest carries a draft but no activityId', async () => {
+    const onEventCreate = vi.fn()
+    const { rerender } = render(build({ createRequest: null, onEventCreate }))
+    rerender(
+      build({
+        createRequest: { slot: SLOT, draft: { title: 'Plain copy' } },
+        onEventCreate,
+      }),
+    )
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Plain copy')
+    expect(screen.getByRole('combobox', { name: 'Activity' })).toHaveTextContent('No activity')
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(onEventCreate.mock.calls[0][0].activityId).toBeNull()
+  })
+
+  it('applies draft overrides over option seeding', () => {
+    const { rerender } = render(build({ createRequest: null }))
+    rerender(
+      build({
+        createRequest: {
+          slot: SLOT,
+          activityId: 'act-1',
+          draft: { title: 'Dup event', color: 'red', location: 'Home', description: 'Copy' },
+        },
+      }),
+    )
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Dup event')
+    expect(screen.getByRole('button', { name: 'Color: red' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect((screen.getByLabelText('Location') as HTMLInputElement).value).toBe('Home')
+  })
+
+  it('cancel fires onCreateRequestDismiss and closes the popover', async () => {
+    const onCreateRequestDismiss = vi.fn()
+    const { rerender } = render(build({ createRequest: null, onCreateRequestDismiss }))
+    rerender(build({ createRequest: { slot: SLOT, activityId: 'act-1' }, onCreateRequestDismiss }))
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(onCreateRequestDismiss).toHaveBeenCalledOnce()
+    expect(screen.queryByLabelText('Event title')).not.toBeInTheDocument()
+  })
+
+  it('Escape (onOpenChange close) fires onCreateRequestDismiss', async () => {
+    const onCreateRequestDismiss = vi.fn()
+    const { rerender } = render(build({ createRequest: null, onCreateRequestDismiss }))
+    rerender(build({ createRequest: { slot: SLOT, activityId: 'act-1' }, onCreateRequestDismiss }))
+    await userEvent.keyboard('{Escape}')
+    expect(onCreateRequestDismiss).toHaveBeenCalledOnce()
+  })
+
+  it('submit does NOT fire onCreateRequestDismiss', async () => {
+    const onCreateRequestDismiss = vi.fn()
+    const onEventCreate = vi.fn()
+    const { rerender } = render(
+      build({ createRequest: null, onCreateRequestDismiss, onEventCreate }),
+    )
+    rerender(
+      build({
+        createRequest: { slot: SLOT, activityId: 'act-1' },
+        onCreateRequestDismiss,
+        onEventCreate,
+      }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: /create/i }))
+    expect(onEventCreate).toHaveBeenCalledOnce()
+    expect(onCreateRequestDismiss).not.toHaveBeenCalled()
+  })
+
+  it('re-setting createRequest to a new activity while open re-seeds the popover', () => {
+    const { rerender } = render(build({ createRequest: null }))
+    rerender(build({ createRequest: { slot: SLOT, activityId: 'act-1' } }))
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Deep work')
+    rerender(build({ createRequest: { slot: SLOT, activityId: 'act-2' } }))
+    expect((screen.getByLabelText('Event title') as HTMLInputElement).value).toBe('Reading')
+  })
+
+  it('uncontrolled drag-create still fires no dismiss when createRequest is absent', async () => {
+    const onCreateRequestDismiss = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventCreate={vi.fn()}
+        onCreateRequestDismiss={onCreateRequestDismiss}
+      />,
+    )
+    const rows = document.querySelectorAll('[data-drag-cell]')
+    fireEvent.pointerDown(rows[0], { pointerId: 1, clientY: 0 })
+    fireEvent.pointerUp(rows[0], { pointerId: 1 })
+    expect(screen.getByLabelText('Event title')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(onCreateRequestDismiss).not.toHaveBeenCalled()
+  })
+})
+
+describe('WeekCalendarView duplicate-from-event', () => {
+  it('renders the Duplicate action in the event popover only when onEventDuplicate is provided', async () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventDuplicate={vi.fn()}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeInTheDocument()
+  })
+
+  it('Duplicate action absent when onEventDuplicate is not provided', async () => {
+    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Duplicate' })).not.toBeInTheDocument()
+  })
+
+  it('Duplicate action does not require activityId (fires for a plain event)', async () => {
+    const onEventDuplicate = vi.fn()
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[events[0]]}
+        onEventDuplicate={onEventDuplicate}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Duplicate' }))
+    expect(onEventDuplicate).toHaveBeenCalledWith(events[0])
+  })
+
+  it('recurrence-instance chip resolves onEventDuplicate to the ORIGINAL event', async () => {
+    const onEventDuplicate = vi.fn()
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur dup',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[recurringEvent]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+        onEventDuplicate={onEventDuplicate}
+      />,
+    )
+    const chips = screen.getAllByRole('button', { name: /recur dup/i })
+    expect(chips).toHaveLength(2)
+    await userEvent.click(chips[1]) // Tuesday instance — synthetic id, not 'r1'
+    await userEvent.click(screen.getByRole('button', { name: 'Duplicate' }))
+    expect(onEventDuplicate).toHaveBeenCalledWith(recurringEvent)
+    expect((onEventDuplicate.mock.calls[0][0] as CalendarEvent).id).toBe('r1')
+  })
+})
