@@ -121,6 +121,12 @@ export interface CalendarEventChipProps {
    * AND `event.activityId` is non-null.
    */
   readonly onEditActivity?: (event: CalendarEvent) => void
+  /**
+   * Fires the popover's "Duplicate" action. The action renders whenever this is
+   * provided (no `activityId` requirement); it closes the popover and fires with
+   * the event, taking no other action.
+   */
+  readonly onDuplicate?: (event: CalendarEvent) => void
   readonly onMoveStart?: (
     event: CalendarEvent,
     clientY: number,
@@ -327,6 +333,7 @@ export function CalendarEventChip({
   onToggleComplete,
   onToggleLock,
   onEditActivity,
+  onDuplicate,
   onMoveStart,
   onResizeStart,
   renderPopover,
@@ -640,7 +647,8 @@ export function CalendarEventChip({
               {(onEdit !== undefined ||
                 onDelete !== undefined ||
                 onToggleComplete !== undefined ||
-                showEditActivity) && (
+                showEditActivity ||
+                onDuplicate !== undefined) && (
                 <div className="flex flex-wrap gap-2 border-t border-border px-3 py-2">
                   {onToggleComplete !== undefined && (
                     <Button
@@ -661,6 +669,18 @@ export function CalendarEventChip({
                   {showEditActivity && (
                     <Button variant="outline" size="sm" onClick={() => onEditActivity!(event)}>
                       Edit activity
+                    </Button>
+                  )}
+                  {onDuplicate !== undefined && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setOpen(false)
+                        onDuplicate(event)
+                      }}
+                    >
+                      Duplicate
                     </Button>
                   )}
                   {onDelete !== undefined && (
