@@ -119,6 +119,18 @@ export interface CreateActivityOption {
   readonly defaultDurationMin?: number
 }
 
+/**
+ * Optional field seeding applied on top of activity-option seeding when the form is
+ * opened via a controlled create request (reopen / duplicate). Each present key wins
+ * over the value derived from the preselected activity option.
+ */
+export interface EventCreateDraftSeed {
+  readonly title?: string
+  readonly color?: CalendarEventColor
+  readonly location?: string
+  readonly description?: string
+}
+
 export interface EventCreateFormProps {
   readonly startSlot: number
   readonly endSlot: number
@@ -143,6 +155,17 @@ export interface EventCreateFormProps {
     readonly start: string
     readonly end: string
   }) => void
+  /**
+   * Preselects this activity in the picker on first mount (controlled reopen /
+   * duplicate). `null`/absent leaves "No activity" selected. Title and color seed
+   * from the matching `createActivityOptions` entry unless overridden by `initialDraft`.
+   */
+  readonly initialActivityId?: string | null
+  /**
+   * Seeds the form's editable fields on first mount. Each present key wins over the
+   * value derived from the `initialActivityId` option.
+   */
+  readonly initialDraft?: EventCreateDraftSeed
   readonly onSubmit: (draft: EventCreateSubmitPayload) => void
   readonly onCancel: () => void
 }
@@ -158,6 +181,8 @@ export function EventCreateForm({
   use24h = false,
   createActivityOptions,
   onCreateActivityRequest,
+  initialActivityId,
+  initialDraft,
   onSubmit,
   onCancel,
 }: EventCreateFormProps): React.JSX.Element {
@@ -165,16 +190,23 @@ export function EventCreateForm({
   const maxDayIdx = Math.max(startDayIdx, currentDayIdx)
   const coveredDays = days.slice(minDayIdx, maxDayIdx + 1)
 
-  const [draft, setDraft] = React.useState<CreateDraft>({
-    title: '',
-    color: 'default',
-    location: '',
-    description: '',
-    startTime: slotToTimeString(startSlot),
-    endTime: slotToTimeString(endSlot),
-    allDay: false,
+  // Seed once from the controlled create request: activity-option values first,
+  // then `initialDraft` overrides on top (spec precedence: option < draft).
+  const [draft, setDraft] = React.useState<CreateDraft>(() => {
+    const seedOption = createActivityOptions?.find((o) => o.id === initialActivityId)
+    return {
+      title: initialDraft?.title ?? seedOption?.label ?? '',
+      color: initialDraft?.color ?? seedOption?.color ?? 'default',
+      location: initialDraft?.location ?? '',
+      description: initialDraft?.description ?? '',
+      startTime: slotToTimeString(startSlot),
+      endTime: slotToTimeString(endSlot),
+      allDay: false,
+    }
   })
-  const [activitySelection, setActivitySelection] = React.useState<string>(NO_ACTIVITY_VALUE)
+  const [activitySelection, setActivitySelection] = React.useState<string>(
+    initialActivityId != null ? initialActivityId : NO_ACTIVITY_VALUE,
+  )
 
   const selectedActivity = createActivityOptions?.find((o) => o.id === activitySelection)
   const snapMinutes = selectedActivity?.defaultDurationMin

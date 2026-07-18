@@ -4,6 +4,7 @@ import {
   WeekCalendarView,
   type DayWindow,
   type CreateActivityOption,
+  type CreateRequest,
 } from '@/components/ui/week-calendar-view'
 import type { CalendarEvent } from '@/components/ui/calendar-event-chip'
 import { EventCreateForm } from '@/components/ui/week-calendar-view/event-create-form'
@@ -315,6 +316,70 @@ export const CreateEventPopoverActivityPicker: Story = {
     },
   },
   render: () => <EventCreatePopoverActivityPickerDemo />,
+}
+
+function CreateRequestReopenDemo(): React.JSX.Element {
+  const [createRequest, setCreateRequest] = React.useState<CreateRequest | null>(null)
+  // Simulate the app setting `createRequest` right after creating an activity: the
+  // null→non-null transition reopens the create popover with the activity preselected.
+  // 2026-05-04 is Monday of the displayed week; the slot ISO strings are local instants.
+  React.useEffect(() => {
+    setCreateRequest({
+      slot: { start: '2026-05-04T09:00:00', end: '2026-05-04T10:30:00' },
+      activityId: 'act-1',
+    })
+  }, [])
+  return (
+    <WeekCalendarView
+      defaultWeekStart={WEEK}
+      events={[]}
+      hourStart={8}
+      hourCount={14}
+      hourHeight={56}
+      createActivityOptions={CREATE_ACTIVITY_OPTIONS}
+      createRequest={createRequest}
+      onCreateRequestDismiss={() => setCreateRequest(null)}
+      onEventCreate={() => setCreateRequest(null)}
+    />
+  )
+}
+
+export const CreateRequestReopen: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Controlled reopen: when `createRequest` transitions to a non-null value, `WeekCalendarView` opens the create popover at the slot (day/time derived from the ISO bounds via local getters) with the activity preselected in the picker — title and color seed from the matching `createActivityOptions` entry, then any `draft` overrides apply on top. Submit flows through the existing `onEventCreate` path (payload carries `activityId`); dismissing without submit (Cancel / Escape / outside click) fires `onCreateRequestDismiss`. This demo sets `createRequest` on mount, so the popover opens with "Deep work" preselected.',
+      },
+    },
+  },
+  render: () => <CreateRequestReopenDemo />,
+}
+
+export const DuplicateAction: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'When `onEventDuplicate` is provided, the event popover renders a **Duplicate** action alongside Edit / Delete (no `activityId` requirement). Click a chip to open its popover, then **Duplicate** — the lib fires `onEventDuplicate` with the source event and closes the popover, taking no other action. The app then typically reopens the create popover seeded from the event via `createRequest` so the user can adjust the time before creating the copy.',
+      },
+    },
+  },
+  args: {
+    defaultWeekStart: WEEK,
+    events: [
+      {
+        id: '1',
+        title: 'Click → Duplicate',
+        start: '2026-05-04T10:00:00',
+        end: '2026-05-04T11:00:00',
+        color: 'violet',
+        location: 'Studio',
+        description: 'Open the popover, then Duplicate.',
+      },
+    ],
+    onEventDuplicate: () => {},
+  },
 }
 
 export const SleepMode: Story = {

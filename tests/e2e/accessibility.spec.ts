@@ -60,6 +60,11 @@ const stories = [
     name: 'WeekCalendarView CreateEventPopoverActivityPicker',
     id: 'data-weekcalendarview--create-event-popover-activity-picker',
   },
+  {
+    name: 'WeekCalendarView CreateRequestReopen',
+    id: 'data-weekcalendarview--create-request-reopen',
+  },
+  { name: 'WeekCalendarView DuplicateAction', id: 'data-weekcalendarview--duplicate-action' },
   { name: 'Kbd', id: 'display-kbd--default' },
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },

@@ -15,9 +15,32 @@ import {
   EventCreateForm,
   type EventCreateSubmitPayload,
   type CreateActivityOption,
+  type EventCreateDraftSeed,
 } from './event-create-form'
 
-export type { EventCreateSubmitPayload, CreateActivityOption } from './event-create-form'
+export type {
+  EventCreateSubmitPayload,
+  CreateActivityOption,
+  EventCreateDraftSeed,
+} from './event-create-form'
+
+/**
+ * Controlled request to (re)open the create popover at a slot with an activity
+ * preselected — the mechanism behind the app's "new activity → reopen" and
+ * "duplicate event" flows. When this transitions to a non-null value, the view
+ * opens the create popover at the slot with `activityId` preselected in the
+ * picker (title/color seeded from the matching `createActivityOptions` entry,
+ * then `draft` overrides applied on top). Submit flows through the existing
+ * `onEventCreate` path; a dismiss without submit fires `onCreateRequestDismiss`.
+ */
+export interface CreateRequest {
+  /** ISO instants for the slot bounds — same shape `onCreateActivityRequest` emits. */
+  readonly slot: { readonly start: string; readonly end: string }
+  /** Preselects this activity in the create form's picker. */
+  readonly activityId?: string | null
+  /** Optional field seeding; each present key wins over the activity-option seed. */
+  readonly draft?: EventCreateDraftSeed
+}
 
 export type {
   CalendarEvent,
@@ -44,7 +67,27 @@ export interface WeekCalendarViewProps {
    * provided.
    */
   readonly onEventEditActivity?: (event: CalendarEvent) => void
+  /**
+   * Threads to the chip's `onDuplicate` — renders the event popover's "Duplicate"
+   * action whenever provided (no `activityId` requirement). Fires with the source
+   * event and takes no other action; the app decides what to do (e.g. reopen the
+   * create popover seeded from the event via `createRequest`).
+   */
+  readonly onEventDuplicate?: (event: CalendarEvent) => void
   readonly onEventCreate?: (event: EventCreateSubmitPayload) => void
+  /**
+   * Controlled reopen of the create popover with an activity preselected. A
+   * transition to a non-null value opens the popover at `slot` (day/time derived
+   * from the ISO bounds via local getters); `null`/absent leaves the uncontrolled
+   * drag-create behavior byte-for-byte unchanged.
+   */
+  readonly createRequest?: CreateRequest | null
+  /**
+   * Fires when a `createRequest`-opened popover closes without submit (Cancel,
+   * Escape, outside click) so the app can clear its `createRequest` state. Never
+   * fires for the uncontrolled drag-create popover or on submit.
+   */
+  readonly onCreateRequestDismiss?: () => void
   /**
    * When provided, the drag-create popover renders an activity picker fed
    * by these options ("No activity" · one per option · "New activity…").
@@ -426,6 +469,17 @@ interface PendingCreate {
   date: string
   startSlot: number
   endSlot: number
+  /**
+   * Monotonic id per open — keys the create form so a controlled re-open with new
+   * seed values remounts (and thus re-seeds) even while a popover is already open.
+   */
+  openId: number
+  /** Present only for a controlled (`createRequest`) open — drives dismiss vs submit. */
+  controlled?: boolean
+  /** Preselected activity for a controlled open. */
+  activityId?: string | null
+  /** Field-seed overrides for a controlled open. */
+  draft?: EventCreateDraftSeed
 }
 
 /**
@@ -459,7 +513,10 @@ export function WeekCalendarView({
   onEventToggleComplete,
   onEventToggleLock,
   onEventEditActivity,
+  onEventDuplicate,
   onEventCreate,
+  createRequest,
+  onCreateRequestDismiss,
   createActivityOptions,
   onCreateActivityRequest,
   onEventMove,
@@ -561,6 +618,44 @@ export function WeekCalendarView({
   const dayColRefs = React.useRef<Array<HTMLDivElement | null>>([])
   const pendingDragRef = React.useRef<PendingDrag | null>(null)
   const [pendingCreate, setPendingCreate] = React.useState<PendingCreate | null>(null)
+  const openSeqRef = React.useRef(0)
+
+  function openPendingCreate(pending: Omit<PendingCreate, 'openId'>): void {
+    openSeqRef.current += 1
+    setPendingCreate({ ...pending, openId: openSeqRef.current })
+  }
+
+  // Close the create popover; fire `onCreateRequestDismiss` only for a controlled
+  // (`createRequest`) open that closed WITHOUT submit (Cancel/Escape/outside click).
+  function closePendingCreate(dismissed: boolean): void {
+    const wasControlled = pendingCreate?.controlled === true
+    setPendingCreate(null)
+    if (dismissed && wasControlled) onCreateRequestDismiss?.()
+  }
+
+  // Controlled reopen: on a transition to a non-null `createRequest`, open the
+  // create popover at the slot. Day membership and time-of-day slots are derived
+  // from parsed-Date LOCAL getters (`timeToSlot`, `formatDateISO`) — never string
+  // slicing — per the local-wall-clock ISO-instant invariant.
+  const prevCreateRequestRef = React.useRef<CreateRequest | null | undefined>(createRequest)
+  React.useEffect(() => {
+    const prev = prevCreateRequestRef.current
+    prevCreateRequestRef.current = createRequest
+    if (createRequest == null || createRequest === prev) return
+    const startDate = new Date(createRequest.slot.start)
+    const dayIdx = days.findIndex((d) => formatDateISO(d) === formatDateISO(startDate))
+    if (dayIdx === -1) return
+    openPendingCreate({
+      startDayIdx: dayIdx,
+      currentDayIdx: dayIdx,
+      date: formatDateISO(startDate),
+      startSlot: timeToSlot(createRequest.slot.start),
+      endSlot: timeToSlot(createRequest.slot.end),
+      controlled: true,
+      activityId: createRequest.activityId ?? null,
+      draft: createRequest.draft,
+    })
+  }, [createRequest, days])
 
   function handleEventCreate(event: Omit<CalendarEvent, 'id'>): void {
     setLocalEvents((prev) => [...prev, { ...event, id: generateId() }])
@@ -713,7 +808,7 @@ export function WeekCalendarView({
         }
       }
 
-      setPendingCreate({
+      openPendingCreate({
         startDayIdx: Math.min(dragMode.startDayIdx, dragMode.currentDayIdx),
         currentDayIdx: Math.max(dragMode.startDayIdx, dragMode.currentDayIdx),
         date: formatDateISO(days[minDayIdx]),
@@ -987,6 +1082,17 @@ export function WeekCalendarView({
                             onEventEditActivity(localEvents.find((e) => e.id === originalId)!)
                           }
                     }
+                    onDuplicate={
+                      isOverflow || onEventDuplicate === undefined
+                        ? undefined
+                        : (duplicateEvent) => {
+                            if (!isRecur) {
+                              onEventDuplicate(duplicateEvent)
+                              return
+                            }
+                            onEventDuplicate(localEvents.find((e) => e.id === originalId)!)
+                          }
+                    }
                     renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}
                     onMoveStart={
                       isOverflow
@@ -1132,7 +1238,13 @@ export function WeekCalendarView({
                 )
               )}
               {pendingCreate?.startDayIdx === dayIdx && (
-                <Popover open onOpenChange={() => setPendingCreate(null)}>
+                <Popover
+                  open
+                  // `open` is hardcoded, so Radix only ever invokes this to REQUEST a
+                  // close (Escape / outside click) — always a dismiss. Submit and Cancel
+                  // unmount the popover directly and never route through here.
+                  onOpenChange={() => closePendingCreate(true)}
+                >
                   <PopoverTrigger asChild>
                     <div
                       aria-hidden="true"
@@ -1151,6 +1263,7 @@ export function WeekCalendarView({
                     collisionPadding={8}
                   >
                     <EventCreateForm
+                      key={pendingCreate.openId}
                       startSlot={pendingCreate.startSlot}
                       endSlot={pendingCreate.endSlot}
                       date={pendingCreate.date}
@@ -1160,22 +1273,21 @@ export function WeekCalendarView({
                       currentDayIdx={pendingCreate.currentDayIdx}
                       use24h={use24h}
                       createActivityOptions={createActivityOptions}
+                      initialActivityId={pendingCreate.activityId}
+                      initialDraft={pendingCreate.draft}
                       onCreateActivityRequest={(slot) => {
                         onCreateActivityRequest?.(slot)
                         setPendingCreate(null)
                       }}
                       onSubmit={(event) => {
-                        const timePart = event.start.substring(10)
-                        const endTimePart = event.end.substring(10)
+                        // The form already emits fully-correct local-wall-clock ISO bounds
+                        // (`date` prop === this slot's local day; overnight end carries the
+                        // next local day). Use them directly — a single-day recompose would
+                        // clobber an overnight end back onto the start day.
                         const minIdx = pendingCreate.startDayIdx
                         const maxIdx = pendingCreate.currentDayIdx
-                        const dateStr = formatDateISO(days[minIdx])
                         if (minIdx === maxIdx) {
-                          handleEventCreate({
-                            ...event,
-                            start: `${dateStr}${timePart}`,
-                            end: `${dateStr}${endTimePart}`,
-                          })
+                          handleEventCreate(event)
                         } else {
                           // Multi-day drag-create: the create form no longer carries any
                           // recurrence fields (recurring creation moved app-side), so the
@@ -1187,15 +1299,13 @@ export function WeekCalendarView({
                           )
                           handleEventCreate({
                             ...event,
-                            start: `${dateStr}${timePart}`,
-                            end: `${dateStr}${endTimePart}`,
                             recurrenceDays: [...new Set(spanDays)],
                             recurrenceFrequency: 'weekly',
                           })
                         }
-                        setPendingCreate(null)
+                        closePendingCreate(false)
                       }}
-                      onCancel={() => setPendingCreate(null)}
+                      onCancel={() => closePendingCreate(true)}
                     />
                   </PopoverContent>
                 </Popover>
