@@ -305,6 +305,35 @@ export const EditActivityAction: Story = {
   },
 }
 
+export const DuplicateAction: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'When `onDuplicate` is provided, the popover\'s action row gains a "Duplicate" button alongside Edit/Delete — click the chip to open the popover and see it. It renders whenever the handler is present (no `activityId` requirement); clicking it closes the popover and fires `onDuplicate` with the event, taking no other action.',
+      },
+    },
+  },
+  render: (args) => (
+    <div className="relative h-48 w-56 rounded border">
+      <CalendarEventChip {...args} />
+    </div>
+  ),
+  args: {
+    event: {
+      id: '12',
+      title: 'Team standup',
+      start: '2026-05-04T09:00:00',
+      end: '2026-05-04T09:30:00',
+      color: 'blue',
+    },
+    style: chipStyle,
+    onEdit: () => {},
+    onDelete: () => {},
+    onDuplicate: () => {},
+  },
+}
+
 export const ColorPalette: Story = {
   render: () => (
     <div className="relative h-[600px] w-72 rounded border p-2">

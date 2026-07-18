@@ -69,6 +69,7 @@ const stories = [
   { name: 'HoverCard', id: 'overlays-hovercard--default' },
   { name: 'NumberInput', id: 'inputs-numberinput--default' },
   { name: 'CalendarEventChip', id: 'data-calendareventchip--default' },
+  { name: 'CalendarEventChip DuplicateAction', id: 'data-calendareventchip--duplicate-action' },
   { name: 'CalendarEventChip Completed', id: 'data-calendareventchip--completed' },
   {
     name: 'CalendarEventChip CompletableWithStreak',
