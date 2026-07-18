@@ -79,7 +79,9 @@ export interface WeekCalendarViewProps {
    * Controlled reopen of the create popover with an activity preselected. A
    * transition to a non-null value opens the popover at `slot` (day/time derived
    * from the ISO bounds via local getters); `null`/absent leaves the uncontrolled
-   * drag-create behavior byte-for-byte unchanged.
+   * drag-create behavior byte-for-byte unchanged. A non-null→null transition is
+   * inert — it never auto-closes an already-open popover (the popover closes via
+   * its own submit/dismiss, which fires `onCreateRequestDismiss`).
    */
   readonly createRequest?: CreateRequest | null
   /**
