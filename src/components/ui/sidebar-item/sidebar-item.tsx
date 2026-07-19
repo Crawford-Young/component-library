@@ -1,5 +1,6 @@
 'use client'
 import * as React from 'react'
+import { Slot, Slottable } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils'
 import { SidebarContext } from '@/components/ui/sidebar/sidebar-context'
 
@@ -9,6 +10,11 @@ export interface SidebarItemProps {
   readonly href: string
   readonly isActive?: boolean
   readonly className?: string
+  /** Render the consumer's element (e.g. a framework Link) instead of an
+      anchor. Item classes + aria-current merge onto the child; the internal
+      icon/label markup injects inside it. The child owns navigation (href). */
+  readonly asChild?: boolean
+  readonly children?: React.ReactNode
 }
 
 export function SidebarItem({
@@ -17,12 +23,15 @@ export function SidebarItem({
   href,
   isActive = false,
   className,
+  asChild = false,
+  children,
 }: SidebarItemProps): React.JSX.Element {
   const { collapsed } = React.useContext(SidebarContext)
+  const Comp = asChild ? Slot : 'a'
 
   return (
-    <a
-      href={href}
+    <Comp
+      {...(asChild ? {} : { href })}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'flex items-center rounded-md text-sm font-medium transition-colors',
@@ -32,6 +41,7 @@ export function SidebarItem({
         className,
       )}
     >
+      {asChild ? <Slottable>{children}</Slottable> : null}
       {/* Fixed-width slot matches collapsed sidebar width — icon never moves */}
       <span className="flex h-9 w-10 shrink-0 items-center justify-center" aria-hidden="true">
         <span className="h-4 w-4">{icon}</span>
@@ -44,6 +54,6 @@ export function SidebarItem({
       >
         {label}
       </span>
-    </a>
+    </Comp>
   )
 }

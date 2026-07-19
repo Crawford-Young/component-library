@@ -47,3 +47,48 @@ describe('SidebarItem', () => {
     expect(screen.getByRole('link')).not.toHaveAttribute('aria-current')
   })
 })
+
+describe('asChild', () => {
+  it('renders the child element instead of an anchor', () => {
+    render(
+      <SidebarItem asChild icon={<svg data-testid="icon" />} label="Calendar" href="/calendar">
+        <button type="button" data-testid="slotted" />
+      </SidebarItem>,
+    )
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.getByTestId('slotted')).toBeInTheDocument()
+  })
+
+  it('injects icon and label inside the child element', () => {
+    render(
+      <SidebarItem asChild icon={<svg data-testid="icon" />} label="Calendar" href="/calendar">
+        <button type="button" data-testid="slotted" />
+      </SidebarItem>,
+    )
+    const child = screen.getByTestId('slotted')
+    expect(child).toContainElement(screen.getByTestId('icon'))
+    expect(child).toHaveTextContent('Calendar')
+  })
+
+  it('merges aria-current and item classes onto the child when active', () => {
+    render(
+      <SidebarItem asChild icon={<svg />} label="Calendar" href="/calendar" isActive>
+        <button type="button" data-testid="slotted" />
+      </SidebarItem>,
+    )
+    const child = screen.getByTestId('slotted')
+    expect(child).toHaveAttribute('aria-current', 'page')
+    expect(child.className).toContain('rounded-md')
+  })
+
+  it('preserves the child element own children', () => {
+    render(
+      <SidebarItem asChild icon={<svg />} label="Calendar" href="/calendar">
+        <button type="button">
+          <span data-testid="reporter" />
+        </button>
+      </SidebarItem>,
+    )
+    expect(screen.getByTestId('reporter')).toBeInTheDocument()
+  })
+})

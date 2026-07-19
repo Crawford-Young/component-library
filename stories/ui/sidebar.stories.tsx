@@ -61,6 +61,25 @@ export const WithActiveItem: Story = {
   ),
 }
 
+export const WithAsChildLink: Story = {
+  render: () => (
+    <Sidebar header={<SidebarBrand logo={logo} title="Cybond" />}>
+      {navItems.map((item, i) => (
+        <SidebarItem
+          key={item.href}
+          asChild
+          icon={item.icon}
+          label={item.label}
+          isActive={i === 0}
+          href={item.href}
+        >
+          <a href={item.href}>{/* Storybook has no next/link; consumers pass their own */}</a>
+        </SidebarItem>
+      ))}
+    </Sidebar>
+  ),
+}
+
 export const WithLogout: Story = {
   render: () => (
     <Sidebar
