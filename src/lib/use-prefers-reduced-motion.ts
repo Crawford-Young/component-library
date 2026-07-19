@@ -1,15 +1,5 @@
-import * as React from 'react'
+import { useMatchMedia } from '@/lib/use-match-media'
 
 export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = React.useState(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
-  React.useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduced(mq.matches)
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  return reduced
+  return useMatchMedia('(prefers-reduced-motion: reduce)')
 }

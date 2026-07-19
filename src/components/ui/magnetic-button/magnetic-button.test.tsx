@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { renderToString } from 'react-dom/server'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SPRING_MAGNETIC } from '@/lib/motion'
@@ -184,5 +185,49 @@ describe('MagneticButton', () => {
     render(<MagneticButton>Go</MagneticButton>)
     expect(wrapper()).toBeNull()
     expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument()
+  })
+
+  describe('SSR safety', () => {
+    it('server-renders without touching window (hoverCapable check)', () => {
+      vi.stubGlobal('window', undefined)
+      let markup = ''
+      expect(() => {
+        markup = renderToString(<MagneticButton>Go</MagneticButton>)
+      }).not.toThrow()
+      expect(markup.length).toBeGreaterThan(0)
+      vi.unstubAllGlobals()
+    })
+
+    it('server-renders a hook harness + MagneticButton + SplitText together via the real reduced-motion chain, without touching window', async () => {
+      vi.resetModules()
+      vi.doUnmock('@/lib/use-prefers-reduced-motion')
+      vi.stubGlobal('window', undefined)
+
+      const { usePrefersReducedMotion: realHook } = await import('@/lib/use-prefers-reduced-motion')
+      const { MagneticButton: RealMagneticButton } = await import('./magnetic-button')
+      const { SplitText: RealSplitText } = await import('@/components/ui/split-text/split-text')
+
+      function Harness(): React.JSX.Element {
+        const reduced = realHook()
+        return (
+          <div>
+            <span>{reduced ? 'reduced' : 'motion'}</span>
+            <RealMagneticButton>Go</RealMagneticButton>
+            <RealSplitText text="x" />
+          </div>
+        )
+      }
+
+      let markup = ''
+      expect(() => {
+        markup = renderToString(<Harness />)
+      }).not.toThrow()
+      expect(markup.length).toBeGreaterThan(0)
+
+      vi.unstubAllGlobals()
+      vi.doMock('@/lib/use-prefers-reduced-motion', () => ({
+        usePrefersReducedMotion: vi.fn(() => false),
+      }))
+    })
   })
 })

@@ -14,6 +14,7 @@ import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { Button, type ButtonProps } from '@/components/ui/button'
 import { SPRING_MAGNETIC } from '@/lib/motion'
 import { usePrefersReducedMotion } from '@/lib/use-prefers-reduced-motion'
+import { useMatchMedia } from '@/lib/use-match-media'
 
 /** Maximum distance in px the button is pulled toward the cursor. */
 const MAX_PULL_PX = 8
@@ -46,7 +47,7 @@ export const MagneticButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
       y.set(0)
     }, [x, y])
 
-    const hoverCapable = window.matchMedia('(hover: hover)').matches
+    const hoverCapable = useMatchMedia('(hover: hover)')
 
     if (reduced || !hoverCapable) {
       return <Button ref={ref} {...props} />
