@@ -318,6 +318,49 @@ export const CreateEventPopoverActivityPicker: Story = {
   render: () => <EventCreatePopoverActivityPickerDemo />,
 }
 
+function EventCreatePopoverActivityPickerNoNewActivityDemo(): React.JSX.Element {
+  return (
+    <div className="relative inline-block">
+      <Popover open onOpenChange={() => {}}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="rounded border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground"
+          >
+            9:00 – 10:00 (drag anchor)
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-0" side="bottom" align="start">
+          <EventCreateForm
+            startSlot={36}
+            endSlot={40}
+            date="2026-05-04"
+            dayCount={1}
+            days={[new Date('2026-05-04T00:00:00')]}
+            startDayIdx={0}
+            currentDayIdx={0}
+            createActivityOptions={CREATE_ACTIVITY_OPTIONS}
+            onSubmit={() => {}}
+            onCancel={() => {}}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+export const CreateEventPopoverActivityPickerNoNewActivity: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'When `createActivityOptions` is provided but `onCreateActivityRequest` is not, the activity picker still renders "No activity" and one item per option, but omits the "New activity…" escape hatch — there is no handler to fire it into.',
+      },
+    },
+  },
+  render: () => <EventCreatePopoverActivityPickerNoNewActivityDemo />,
+}
+
 function CreateRequestReopenDemo(): React.JSX.Element {
   const [createRequest, setCreateRequest] = React.useState<CreateRequest | null>(null)
   // Simulate the app setting `createRequest` right after creating an activity: the
