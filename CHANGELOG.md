@@ -1,5 +1,15 @@
 # @cy/ui
 
+## 0.26.0
+
+### Minor Changes
+
+- e9470d2: `SidebarItem` gains an `asChild` prop (Radix Slot) — consumers can supply their own link element (e.g. `next/link`) for client-side navigation; item classes, `aria-current`, and internal icon/label markup merge into the child.
+
+### Patch Changes
+
+- 1778a3b: SSR-safe `usePrefersReducedMotion`/MagneticButton hover check via `useSyncExternalStore`; fixes `window is not defined` 500 when SSR-rendering SplitText/MagneticButton/ProgressLine/CountUp/BrandSplash.
+
 ## 0.25.0
 
 ### Minor Changes
