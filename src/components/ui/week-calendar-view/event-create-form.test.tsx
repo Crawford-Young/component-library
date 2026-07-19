@@ -305,6 +305,30 @@ describe('EventCreateForm activity picker', () => {
     expect(screen.getByRole('combobox', { name: 'Activity' })).toBeInTheDocument()
   })
 
+  it('does not render "New activity…" entry when onCreateActivityRequest is not provided', async () => {
+    const user = userEvent.setup()
+    render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)
+    await user.click(screen.getByRole('combobox', { name: 'Activity' }))
+    const listbox = await screen.findByRole('listbox')
+    expect(within(listbox).getByText('No activity')).toBeInTheDocument()
+    expect(within(listbox).getByText('Deep work')).toBeInTheDocument()
+    expect(within(listbox).queryByText('New activity…')).not.toBeInTheDocument()
+  })
+
+  it('renders "New activity…" entry when onCreateActivityRequest is provided', async () => {
+    const user = userEvent.setup()
+    render(
+      <EventCreateForm
+        {...baseProps}
+        createActivityOptions={ACTIVITY_OPTIONS}
+        onCreateActivityRequest={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('combobox', { name: 'Activity' }))
+    const listbox = await screen.findByRole('listbox')
+    expect(within(listbox).getByText('New activity…')).toBeInTheDocument()
+  })
+
   it('selecting an activity seeds title and color', async () => {
     const user = userEvent.setup()
     render(<EventCreateForm {...baseProps} createActivityOptions={ACTIVITY_OPTIONS} />)

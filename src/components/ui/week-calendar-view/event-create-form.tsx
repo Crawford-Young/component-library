@@ -142,9 +142,10 @@ export interface EventCreateFormProps {
   readonly use24h?: boolean
   /**
    * When provided, renders an activity picker at the top of the form:
-   * "No activity" (default) · one item per option · "New activity…".
-   * Selecting an option seeds `title`/`color` once per selection change;
-   * user edits made after seeding are never overwritten by a re-render.
+   * "No activity" (default) · one item per option · "New activity…" (only
+   * when `onCreateActivityRequest` is also provided). Selecting an option
+   * seeds `title`/`color` once per selection change; user edits made after
+   * seeding are never overwritten by a re-render.
    */
   readonly createActivityOptions?: readonly CreateActivityOption[]
   /**
@@ -278,7 +279,9 @@ export function EventCreateForm({
                   {option.label}
                 </SelectItem>
               ))}
-              <SelectItem value={NEW_ACTIVITY_VALUE}>New activity…</SelectItem>
+              {onCreateActivityRequest !== undefined && (
+                <SelectItem value={NEW_ACTIVITY_VALUE}>New activity…</SelectItem>
+              )}
             </SelectContent>
           </Select>
           {snapMinutes !== undefined && (

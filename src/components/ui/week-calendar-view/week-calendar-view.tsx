@@ -92,7 +92,9 @@ export interface WeekCalendarViewProps {
   readonly onCreateRequestDismiss?: () => void
   /**
    * When provided, the drag-create popover renders an activity picker fed
-   * by these options ("No activity" · one per option · "New activity…").
+   * by these options ("No activity" · one per option · "New activity…",
+   * with "New activity…" gated on `onCreateActivityRequest` also being
+   * provided).
    */
   readonly createActivityOptions?: readonly CreateActivityOption[]
   /**
@@ -1277,10 +1279,14 @@ export function WeekCalendarView({
                       createActivityOptions={createActivityOptions}
                       initialActivityId={pendingCreate.activityId}
                       initialDraft={pendingCreate.draft}
-                      onCreateActivityRequest={(slot) => {
-                        onCreateActivityRequest?.(slot)
-                        setPendingCreate(null)
-                      }}
+                      onCreateActivityRequest={
+                        onCreateActivityRequest !== undefined
+                          ? (slot) => {
+                              onCreateActivityRequest(slot)
+                              setPendingCreate(null)
+                            }
+                          : undefined
+                      }
                       onSubmit={(event) => {
                         // The form already emits fully-correct local-wall-clock ISO bounds
                         // (`date` prop === this slot's local day; overnight end carries the

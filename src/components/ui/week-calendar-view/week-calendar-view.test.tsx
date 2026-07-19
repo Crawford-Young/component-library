@@ -1411,6 +1411,14 @@ describe('drag-create activity picker (threading)', () => {
     expect(screen.getByRole('combobox', { name: 'Activity' })).toBeInTheDocument()
   })
 
+  it('does not render "New activity…" entry when onCreateActivityRequest is not provided (options provided)', async () => {
+    renderWithDrag({ createActivityOptions: ACTIVITY_OPTIONS })
+    await userEvent.click(screen.getByRole('combobox', { name: 'Activity' }))
+    const listbox = await screen.findByRole('listbox')
+    expect(within(listbox).getByText('Deep work')).toBeInTheDocument()
+    expect(within(listbox).queryByText('New activity…')).not.toBeInTheDocument()
+  })
+
   it('selecting "New activity…" fires onCreateActivityRequest with the drawn slot and closes the popover', async () => {
     const onCreateActivityRequest = vi.fn()
     renderWithDrag({ createActivityOptions: ACTIVITY_OPTIONS, onCreateActivityRequest })
