@@ -55,18 +55,30 @@ beforeEach(() => {
 })
 
 describe('SplitText', () => {
-  it('renders every character of the text', () => {
+  it('renders every character of the text in the decorative glyph structure', () => {
     const { container } = render(<SplitText text="Hi there" />)
     const nbsp = String.fromCharCode(0x00a0)
-    const text = (container.textContent ?? '').split(nbsp).join(' ')
-    expect(text).toBe('Hi there')
+    const decorative = container.querySelectorAll('[aria-hidden="true"]')
+    const decorativeText = Array.from(decorative)
+      .map((el) => el.textContent ?? '')
+      .join('')
+      .split(nbsp)
+      .join(' ')
+    expect(decorativeText).toBe('Hi there')
     // one motion span per non-space character
     expect(charSpans(container)).toHaveLength('Hithere'.length)
   })
 
-  it('labels the wrapper with the full text for screen readers', () => {
+  it('never puts a prohibited aria-label on the role-less wrapper span', () => {
     const { container } = render(<SplitText text="Hi there" />)
-    expect((container.firstChild as HTMLElement).getAttribute('aria-label')).toBe('Hi there')
+    expect((container.firstChild as HTMLElement).hasAttribute('aria-label')).toBe(false)
+  })
+
+  it('announces the full text once via a visually-hidden sr-only child', () => {
+    const { container } = render(<SplitText text="Hi there" />)
+    const srOnly = container.querySelector('.sr-only')
+    expect(srOnly).not.toBeNull()
+    expect(srOnly?.textContent).toBe('Hi there')
   })
 
   it('hides the per-word spans from the accessibility tree', () => {
