@@ -17,10 +17,13 @@
         char offset so the cadence is uniform end-to-end.
      2. Word gaps are STATIC `&nbsp;` spans. The portfolio animated whitespace
         opacity — an invisible no-op — so we drop the motion on the gap.
-     3. A11y: aria-label on the wrapper + aria-hidden on the word spans. The
-        portfolio left the split glyphs exposed, so assistive tech announced
-        the text twice. Here the wrapper carries the accessible name and the
-        decorative per-char structure is hidden.
+     3. A11y: a visually-hidden `sr-only` text sibling + aria-hidden on the
+        word spans. The portfolio left the split glyphs exposed, so assistive
+        tech announced the text twice. `aria-label` on the wrapper was
+        rejected — it is prohibited on a role-less generic span (axe/Lighthouse
+        rule `aria-prohibited-attr`). Instead an `sr-only` span carries the
+        real contiguous text (announced once) while the decorative per-char
+        structure stays hidden from the accessibility tree.
      4. `delayMs` prop is in milliseconds (library convention) and converted to
         seconds only at the framer boundary. */
 
@@ -55,7 +58,8 @@ export function SplitText({ text, className, delayMs = 0 }: SplitTextProps): Rea
   let charIndex = 0
 
   return (
-    <span className={className} aria-label={text}>
+    <span className={className}>
+      <span className="sr-only">{text}</span>
       {words.map((word, wi) => (
         <span key={wi} aria-hidden="true" className="inline-block overflow-hidden">
           {word.split('').map((char, ci) => {
