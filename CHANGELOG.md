@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.26.2
+
+### Patch Changes
+
+- f42d517: `SplitText`'s accessible-name mechanism switched from a prohibited `aria-label` on the wrapper span to an `sr-only` text child — fixes axe `aria-prohibited-attr` on every consumer (`aria-label` is not permitted on a role-less generic `<span>`).
+
 ## 0.26.1
 
 ### Patch Changes
