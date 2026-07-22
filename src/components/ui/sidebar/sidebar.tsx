@@ -9,6 +9,10 @@ export interface SidebarProps {
   readonly collapsedHeader?: React.ReactNode
   readonly children: React.ReactNode
   readonly footer?: React.ReactNode
+  /** Controlled collapsed state. When provided, internal state and localStorage persistence are disabled. */
+  readonly collapsed?: boolean
+  /** Fires with the next collapsed value on every toggle, in both modes. */
+  readonly onCollapsedChange?: (collapsed: boolean) => void
   readonly className?: string
 }
 
@@ -17,9 +21,11 @@ export function Sidebar({
   collapsedHeader,
   children,
   footer,
+  collapsed: collapsedProp,
+  onCollapsedChange,
   className,
 }: SidebarProps): React.JSX.Element {
-  const [collapsed, setCollapsed] = React.useState(() => {
+  const [internalCollapsed, setInternalCollapsed] = React.useState(() => {
     // localStorage is unavailable during SSR (not defined) and can throw in
     // privacy modes; guard the render-phase read so the component is SSR-safe.
     try {
@@ -28,11 +34,16 @@ export function Sidebar({
       return false
     }
   })
+  const controlled = collapsedProp !== undefined
+  const collapsed = controlled ? collapsedProp : internalCollapsed
 
   function handleToggle(): void {
     const next = !collapsed
-    setCollapsed(next)
-    localStorage.setItem('sidebar-collapsed', String(next))
+    if (!controlled) {
+      setInternalCollapsed(next)
+      localStorage.setItem('sidebar-collapsed', String(next))
+    }
+    onCollapsedChange?.(next)
   }
 
   return (

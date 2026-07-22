@@ -10,6 +10,9 @@ const localStorageMock = (() => {
     setItem: (key: string, value: string) => {
       store[key] = value
     },
+    removeItem: (key: string) => {
+      delete store[key]
+    },
     clear: () => {
       store = {}
     },
@@ -164,5 +167,33 @@ describe('Sidebar', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
     expect(screen.getByText('Always Header')).toBeInTheDocument()
+  })
+
+  it('controlled: renders collapsed from the prop and ignores localStorage', () => {
+    localStorage.setItem('sidebar-collapsed', 'false')
+    render(<Sidebar collapsed>{<span>nav</span>}</Sidebar>)
+    expect(screen.getByLabelText('Main sidebar').className).toContain('w-14')
+  })
+
+  it('controlled: toggle fires onCollapsedChange without writing localStorage', async () => {
+    localStorage.removeItem('sidebar-collapsed')
+    const handler = vi.fn()
+    render(
+      <Sidebar collapsed={false} onCollapsedChange={handler}>
+        <span>nav</span>
+      </Sidebar>,
+    )
+    await userEvent.click(screen.getByLabelText('Collapse sidebar'))
+    expect(handler).toHaveBeenCalledWith(true)
+    expect(localStorage.getItem('sidebar-collapsed')).toBeNull()
+  })
+
+  it('uncontrolled: toggle still persists to localStorage and fires onCollapsedChange', async () => {
+    localStorage.removeItem('sidebar-collapsed')
+    const handler = vi.fn()
+    render(<Sidebar onCollapsedChange={handler}>{<span>nav</span>}</Sidebar>)
+    await userEvent.click(screen.getByLabelText('Collapse sidebar'))
+    expect(handler).toHaveBeenCalledWith(true)
+    expect(localStorage.getItem('sidebar-collapsed')).toBe('true')
   })
 })
