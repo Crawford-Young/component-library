@@ -27,4 +27,9 @@ describe('TopBar', () => {
     const { container } = render(<TopBar className="custom" />)
     expect(container.firstChild).toHaveClass('custom')
   })
+
+  it('renders a ReactNode title', () => {
+    render(<TopBar title={<em data-testid="rich-title">Cybond</em>} />)
+    expect(screen.getByTestId('rich-title')).toBeInTheDocument()
+  })
 })

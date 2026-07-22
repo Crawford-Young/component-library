@@ -22,4 +22,11 @@ describe('PageHeader', () => {
     const { container } = render(<PageHeader title="Goals" className="custom" />)
     expect(container.firstChild).toHaveClass('custom')
   })
+
+  it('renders a ReactNode title inside the h1', () => {
+    render(<PageHeader title={<em data-testid="rich-title">Calendar</em>} />)
+    expect(screen.getByRole('heading', { level: 1 })).toContainElement(
+      screen.getByTestId('rich-title'),
+    )
+  })
 })

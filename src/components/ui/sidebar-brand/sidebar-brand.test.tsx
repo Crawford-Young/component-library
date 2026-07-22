@@ -123,4 +123,13 @@ describe('SidebarBrand', () => {
     )
     expect(screen.getByRole('link').className).toContain('hover:bg-muted')
   })
+
+  it('renders a ReactNode title', () => {
+    render(
+      <SidebarContext.Provider value={{ collapsed: false }}>
+        <SidebarBrand logo={<span>L</span>} title={<em data-testid="rich-title">Cybond</em>} />
+      </SidebarContext.Provider>,
+    )
+    expect(screen.getByTestId('rich-title')).toBeInTheDocument()
+  })
 })

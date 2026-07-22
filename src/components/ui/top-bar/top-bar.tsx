@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 interface TopBarProps {
   readonly logo?: React.ReactNode
-  readonly title?: string
+  readonly title?: React.ReactNode
   readonly actions?: React.ReactNode
   readonly className?: string
 }
