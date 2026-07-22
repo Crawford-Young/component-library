@@ -44,4 +44,10 @@ describe('SleepToggle', () => {
     )
     expect((container.firstChild as HTMLElement).className).toContain('test-cls')
   })
+
+  it('renders a custom label on both the switch and the text', () => {
+    render(<SleepToggle enabled={false} onToggle={vi.fn()} label="Quiet hours" />)
+    expect(screen.getByRole('switch', { name: 'Quiet hours' })).toBeInTheDocument()
+    expect(screen.getByText('Quiet hours')).toBeInTheDocument()
+  })
 })
