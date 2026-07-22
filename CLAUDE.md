@@ -1,5 +1,7 @@
 # CLAUDE.md — @crawfordyoung/ui Component Library
 
+**Domain:** web — inherits `~/code/CLAUDE.md` (universal) → `~/code/web/CLAUDE.md` (stack + Definition of Done).
+
 This file overrides specific rules from `~/code/CLAUDE.md` for this repository. All rules not overridden below remain in effect.
 
 ## Project Overview
@@ -53,6 +55,21 @@ Every repo-doc edit lands in the wave branch BEFORE merge — reflect runs pre-P
 - **Releases via Changesets** — always run `just changeset` before opening a PR for a new component wave
 - **Additional dependency**: `@tanstack/react-table` — used by DataTable; install with `pnpm add @tanstack/react-table`
 - **Additional dependency**: `framer-motion` (>=12) — peer dep for motion primitives (ScrollReveal, StaggerReveal); install with `pnpm add framer-motion`
+
+## Extension conventions (slot generalization, 2026-07-21)
+
+Every component maps to one class; its extension mechanism is fixed by the class:
+
+| Component class                                             | Extension mechanism                                                                                                                 |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Primitive** (button, input, badge, dialog parts…)         | `asChild` + `className` + full prop passthrough.                                                                                    |
+| **Composed shell** (panels, cards, headers, app-shell)      | Named `ReactNode` slots (`header`, `actions`, `footer`) or compound parts. All `title`-class props are `ReactNode`, never `string`. |
+| **Stateful interior** (calendar, forms, drag/optimistic UI) | Headless hook owns state; typed render-prop slots receive ctx; the lib ships presets composed from the same parts + ctx apps get.   |
+
+**Hard rules:**
+
+1. **No new domain-typed props on shells.** A prop encoding app domain (streak, locked, activityId) goes through a slot or app-side composition. This anti-pattern produced 6 calendar waves of typed-prop additions while the existing `renderEventPopover` slot sat unused.
+2. **Slot ctx objects are versioned API.** Every ctx interface is exported and documented. Presets consume the exact same ctx as apps — if a preset can be built from the parts, the ctx is sufficient; if not, the ctx is wrong, not the preset.
 
 ## E2E / axe notes
 
