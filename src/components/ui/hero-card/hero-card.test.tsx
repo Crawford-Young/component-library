@@ -36,4 +36,14 @@ describe('HeroCard', () => {
     )
     expect(container.firstChild).toHaveClass('custom')
   })
+
+  it('renders the renderCta slot in place of the built-in button', () => {
+    render(<HeroCard headline="H" subtitle="S" renderCta={() => <a href="/go">Custom CTA</a>} />)
+    expect(screen.getByRole('link', { name: 'Custom CTA' })).toBeInTheDocument()
+  })
+
+  it('renders no CTA when neither renderCta nor ctaLabel/onCtaClick are provided', () => {
+    render(<HeroCard headline="H" subtitle="S" />)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
 })

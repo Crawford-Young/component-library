@@ -26,4 +26,17 @@ describe('EmptyState', () => {
     render(<EmptyState message="No goals" icon={<span data-testid="icon" />} />)
     expect(screen.getByTestId('icon')).toBeInTheDocument()
   })
+
+  it('renders the renderCta slot in place of the built-in button', () => {
+    render(
+      <EmptyState
+        message="Nothing here"
+        ctaLabel="Old"
+        onCtaClick={vi.fn()}
+        renderCta={() => <a href="/new">Custom CTA</a>}
+      />,
+    )
+    expect(screen.getByRole('link', { name: 'Custom CTA' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Old' })).not.toBeInTheDocument()
+  })
 })
