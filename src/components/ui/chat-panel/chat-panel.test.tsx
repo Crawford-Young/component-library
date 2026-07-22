@@ -55,4 +55,59 @@ describe('ChatPanel', () => {
     await user.click(backdrop)
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
+
+  it('renders a header slot in place of the title text', () => {
+    render(
+      <ChatPanel open onOpenChange={vi.fn()} title="Panel" header={<h2>Custom</h2>}>
+        body
+      </ChatPanel>,
+    )
+    expect(screen.getByRole('heading', { name: 'Custom' })).toBeInTheDocument()
+    expect(screen.queryByText('Panel')).not.toBeInTheDocument()
+  })
+
+  it('keeps title as the aside aria-label when header is provided', () => {
+    render(
+      <ChatPanel open onOpenChange={vi.fn()} title="Panel" header={<h2>Custom</h2>}>
+        body
+      </ChatPanel>,
+    )
+    expect(screen.getByLabelText('Panel')).toBeInTheDocument()
+  })
+
+  it('renders actions between the header and the close button', () => {
+    render(
+      <ChatPanel open onOpenChange={vi.fn()} title="Panel" actions={<button>Act</button>}>
+        body
+      </ChatPanel>,
+    )
+    expect(screen.getByRole('button', { name: 'Act' })).toBeInTheDocument()
+  })
+
+  it('renders no backdrop when modal={false}', () => {
+    const { container } = render(
+      <ChatPanel open onOpenChange={vi.fn()} title="Panel" modal={false}>
+        body
+      </ChatPanel>,
+    )
+    expect(container.querySelector('.backdrop-blur-sm')).not.toBeInTheDocument()
+  })
+
+  it('spreads rest props (style, data-testid, role) onto the aside', () => {
+    render(
+      <ChatPanel
+        open
+        onOpenChange={vi.fn()}
+        title="Panel"
+        role="dialog"
+        data-testid="popup"
+        style={{ top: '10px' }}
+      >
+        body
+      </ChatPanel>,
+    )
+    const aside = screen.getByTestId('popup')
+    expect(aside).toHaveAttribute('role', 'dialog')
+    expect(aside).toHaveStyle({ top: '10px' })
+  })
 })
