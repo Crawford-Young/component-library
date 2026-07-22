@@ -16,6 +16,10 @@ interface ComboboxOption {
   label: string
 }
 
+interface ComboboxOptionState {
+  readonly selected: boolean
+}
+
 interface ComboboxProps {
   options: ComboboxOption[]
   value?: string
@@ -25,6 +29,7 @@ interface ComboboxProps {
   emptyText?: string
   className?: string
   disabled?: boolean
+  renderOption?: (option: ComboboxOption, state: ComboboxOptionState) => React.ReactNode
 }
 
 const Combobox = ({
@@ -36,6 +41,7 @@ const Combobox = ({
   emptyText = 'No option found.',
   className,
   disabled,
+  renderOption,
 }: ComboboxProps) => {
   const [open, setOpen] = React.useState(false)
   const [internalValue, setInternalValue] = React.useState(value ?? '')
@@ -81,13 +87,19 @@ const Combobox = ({
             <CommandGroup>
               {options.map((opt) => (
                 <CommandItem key={opt.value} value={opt.value} onSelect={handleSelect}>
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      currentValue === opt.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                  {opt.label}
+                  {renderOption !== undefined ? (
+                    renderOption(opt, { selected: currentValue === opt.value })
+                  ) : (
+                    <>
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          currentValue === opt.value ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                      {opt.label}
+                    </>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -100,4 +112,4 @@ const Combobox = ({
 Combobox.displayName = 'Combobox'
 
 export { Combobox }
-export type { ComboboxOption, ComboboxProps }
+export type { ComboboxOption, ComboboxProps, ComboboxOptionState }

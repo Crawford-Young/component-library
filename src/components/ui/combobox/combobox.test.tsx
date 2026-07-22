@@ -110,4 +110,38 @@ describe('Combobox', () => {
     await user.click(reactItem as HTMLElement)
     expect(onValueChange).toHaveBeenCalledWith('')
   })
+
+  it('renders options through the renderOption slot', async () => {
+    const user = userEvent.setup()
+    render(
+      <Combobox
+        options={[{ value: 'a', label: 'Alpha' }]}
+        renderOption={(opt, { selected }) => (
+          <span data-testid={`opt-${opt.value}`} data-selected={selected}>
+            {opt.label}!
+          </span>
+        )}
+      />,
+    )
+    await user.click(screen.getByRole('button'))
+    expect(screen.getByTestId('opt-a')).toHaveTextContent('Alpha!')
+    expect(screen.getByTestId('opt-a')).toHaveAttribute('data-selected', 'false')
+  })
+
+  it('passes selected=true to renderOption for the current value', async () => {
+    const user = userEvent.setup()
+    render(
+      <Combobox
+        options={[{ value: 'a', label: 'Alpha' }]}
+        value="a"
+        renderOption={(opt, { selected }) => (
+          <span data-testid={`opt-${opt.value}`} data-selected={selected}>
+            {opt.label}
+          </span>
+        )}
+      />,
+    )
+    await user.click(screen.getByRole('button'))
+    expect(screen.getByTestId('opt-a')).toHaveAttribute('data-selected', 'true')
+  })
 })
