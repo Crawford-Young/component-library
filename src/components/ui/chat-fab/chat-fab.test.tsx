@@ -21,4 +21,22 @@ describe('ChatFab', () => {
     render(<ChatFab onClick={vi.fn()} className="custom" />)
     expect(screen.getByRole('button').className).toContain('custom')
   })
+
+  it('renders a custom icon in place of the default', () => {
+    render(<ChatFab onClick={vi.fn()} icon={<span data-testid="custom-icon" />} />)
+    expect(screen.getByTestId('custom-icon')).toBeInTheDocument()
+    expect(document.querySelector('svg')).not.toBeInTheDocument()
+  })
+
+  it('uses a custom aria-label', () => {
+    render(<ChatFab onClick={vi.fn()} label="Open help" />)
+    expect(screen.getByRole('button', { name: 'Open help' })).toBeInTheDocument()
+  })
+
+  it('drops fixed positioning when position="static"', () => {
+    render(<ChatFab onClick={vi.fn()} position="static" />)
+    const btn = screen.getByRole('button')
+    expect(btn.className).not.toContain('fixed')
+    expect(btn.className).toContain('static')
+  })
 })
