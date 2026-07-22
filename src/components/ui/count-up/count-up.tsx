@@ -7,10 +7,12 @@ export interface CountUpProps {
   suffix?: string
   duration?: number
   className?: string
+  /** Optional function to format the displayed value. Runs on every animation frame. */
+  readonly format?: (value: number) => string
 }
 
 export const CountUp = React.forwardRef<HTMLSpanElement, CountUpProps>(
-  ({ to, suffix = '', duration = 1400, className }, forwardedRef) => {
+  ({ to, suffix = '', duration = 1400, className, format }, forwardedRef) => {
     const [value, setValue] = React.useState(to)
     const reduced = usePrefersReducedMotion()
     const started = React.useRef(false)
@@ -62,7 +64,7 @@ export const CountUp = React.forwardRef<HTMLSpanElement, CountUpProps>(
 
     return (
       <span ref={setRef} className={className}>
-        {value}
+        {format !== undefined ? format(value) : value}
         {suffix}
       </span>
     )

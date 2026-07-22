@@ -196,4 +196,10 @@ describe('CountUp', () => {
     expect(capturedNode).not.toBeNull()
     expect((capturedNode as HTMLSpanElement | null)?.tagName).toBe('SPAN')
   })
+
+  it('formats the displayed value through the format prop', () => {
+    mockMatchMedia(true)
+    render(<CountUp to={1234} format={(n) => n.toLocaleString('en-US')} />)
+    expect(screen.getByText('1,234')).toBeInTheDocument()
+  })
 })
