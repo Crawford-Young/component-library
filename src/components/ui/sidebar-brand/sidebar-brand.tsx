@@ -5,7 +5,7 @@ import { SidebarContext } from '@/components/ui/sidebar/sidebar-context'
 
 export interface SidebarBrandProps {
   readonly logo: React.ReactNode
-  readonly title: string
+  readonly title: React.ReactNode
   readonly href?: string
   readonly className?: string
   /** view-transition-name for the splash → app morph. Pass ONLY once the

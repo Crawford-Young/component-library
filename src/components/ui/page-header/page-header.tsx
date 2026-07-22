@@ -2,7 +2,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 interface PageHeaderProps {
-  readonly title: string
+  readonly title: React.ReactNode
   readonly action?: React.ReactNode
   readonly className?: string
 }
