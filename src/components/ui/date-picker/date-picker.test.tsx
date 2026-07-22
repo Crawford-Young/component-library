@@ -122,6 +122,48 @@ describe('DatePicker', () => {
     render(<DatePicker value={date} placeholder="Pick a date" />)
     expect(screen.getByText(/jan(uary)? 15(,)? 2025/i)).toBeInTheDocument()
   })
+
+  it('renders a custom trigger via renderTrigger', () => {
+    render(
+      <DatePicker
+        renderTrigger={({ label, open }) => (
+          <button data-testid="custom-trigger" data-open={open}>
+            {label}
+          </button>
+        )}
+      />,
+    )
+    const trigger = screen.getByTestId('custom-trigger')
+    expect(trigger).toHaveTextContent('Pick a date')
+    expect(trigger).toHaveAttribute('data-open', 'false')
+  })
+
+  it('custom trigger opens the calendar popover', async () => {
+    const user = userEvent.setup()
+    render(<DatePicker renderTrigger={({ label }) => <button>{label}</button>} />)
+    await user.click(screen.getByRole('button', { name: 'Pick a date' }))
+    expect(screen.getByRole('grid')).toBeInTheDocument()
+  })
+
+  it('forwards calendarClassNames to the DayPicker grid', async () => {
+    const user = userEvent.setup()
+    render(<DatePicker calendarClassNames={{ month_grid: 'custom-grid-cls' }} />)
+    await user.click(screen.getByRole('button'))
+    expect(document.querySelector('.custom-grid-cls')).toBeInTheDocument()
+  })
+
+  it('forwards calendarComponents merged over the defaults', async () => {
+    const user = userEvent.setup()
+    render(
+      <DatePicker
+        calendarComponents={{
+          DayButton: (props) => <button {...props} data-testid="custom-day" />,
+        }}
+      />,
+    )
+    await user.click(screen.getByRole('button'))
+    expect(screen.getAllByTestId('custom-day').length).toBeGreaterThan(0)
+  })
 })
 
 describe('DateRangePicker', () => {
@@ -150,5 +192,33 @@ describe('DateRangePicker', () => {
     const from = new Date(2025, 2, 5) // March 5, 2025
     render(<DateRangePicker value={{ from }} placeholder="Pick a range" />)
     expect(screen.getByRole('button', { name: /march 5/i })).toBeInTheDocument()
+  })
+
+  it('renders a custom trigger via renderTrigger', () => {
+    render(
+      <DateRangePicker
+        placeholder="Pick a date range"
+        renderTrigger={({ label, open }) => (
+          <button data-testid="custom-range-trigger" data-open={open}>
+            {label}
+          </button>
+        )}
+      />,
+    )
+    const trigger = screen.getByTestId('custom-range-trigger')
+    expect(trigger).toHaveTextContent('Pick a date range')
+    expect(trigger).toHaveAttribute('data-open', 'false')
+  })
+
+  it('custom trigger opens the calendar popover', async () => {
+    const user = userEvent.setup()
+    render(
+      <DateRangePicker
+        placeholder="Pick a date range"
+        renderTrigger={({ label }) => <button>{label}</button>}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Pick a date range' }))
+    expect(screen.getAllByRole('grid').length).toBeGreaterThan(0)
   })
 })

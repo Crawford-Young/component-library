@@ -113,7 +113,13 @@ const CalendarDropdown = ({
   )
 }
 
-const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) => (
+const Calendar = ({
+  className,
+  classNames,
+  components,
+  showOutsideDays = true,
+  ...props
+}: CalendarProps) => (
   <DayPicker
     showOutsideDays={showOutsideDays}
     navLayout="around"
@@ -159,6 +165,7 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
         return <ChevronRight className={cn('h-4 w-4', cls)} {...rest} />
       },
       Dropdown: CalendarDropdown,
+      ...components,
     }}
     {...props}
   />
@@ -166,6 +173,13 @@ const Calendar = ({ className, classNames, showOutsideDays = true, ...props }: C
 Calendar.displayName = 'Calendar'
 
 // ─── DatePicker ───────────────────────────────────────────────────────────────
+
+export interface DatePickerTriggerContext {
+  readonly value?: Date
+  readonly label: string
+  readonly open: boolean
+  readonly disabled?: boolean
+}
 
 interface DatePickerProps {
   value?: Date
@@ -176,6 +190,9 @@ interface DatePickerProps {
   captionLayout?: React.ComponentProps<typeof DayPicker>['captionLayout']
   fromYear?: number
   toYear?: number
+  renderTrigger?: (ctx: DatePickerTriggerContext) => React.ReactElement
+  calendarClassNames?: CalendarProps['classNames']
+  calendarComponents?: CalendarProps['components']
 }
 
 const DatePicker = ({
@@ -187,29 +204,37 @@ const DatePicker = ({
   captionLayout = 'dropdown',
   fromYear = new Date().getFullYear() - 100,
   toYear = new Date().getFullYear() + 10,
+  renderTrigger,
+  calendarClassNames,
+  calendarComponents,
 }: DatePickerProps) => {
   const [open, setOpen] = React.useState(false)
+  const label = value ? format(value, 'MMMM d, yyyy') : placeholder
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          disabled={disabled}
-          aria-label={value ? format(value, 'MMMM d, yyyy') : placeholder}
-          className={cn(
-            'inline-flex min-w-[176px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm',
-            'ring-offset-background transition-colors',
-            'hover:bg-item-hover',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-            className,
-          )}
-        >
-          <CalendarIcon className="h-4 w-4 shrink-0 text-accent" />
-          <span className={cn('flex-1 text-left', !value && 'text-muted-foreground')}>
-            {value ? format(value, 'MMMM d, yyyy') : placeholder}
-          </span>
-        </button>
+        {renderTrigger !== undefined ? (
+          renderTrigger({ value, label, open, disabled })
+        ) : (
+          <button
+            disabled={disabled}
+            aria-label={label}
+            className={cn(
+              'inline-flex min-w-[176px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm',
+              'ring-offset-background transition-colors',
+              'hover:bg-item-hover',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              className,
+            )}
+          >
+            <CalendarIcon className="h-4 w-4 shrink-0 text-accent" />
+            <span className={cn('flex-1 text-left', !value && 'text-muted-foreground')}>
+              {label}
+            </span>
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="center">
         <Calendar
@@ -222,6 +247,8 @@ const DatePicker = ({
           captionLayout={captionLayout}
           fromYear={fromYear}
           toYear={toYear}
+          classNames={calendarClassNames}
+          components={calendarComponents}
         />
       </PopoverContent>
     </Popover>
@@ -230,6 +257,13 @@ const DatePicker = ({
 DatePicker.displayName = 'DatePicker'
 
 // ─── DateRangePicker ──────────────────────────────────────────────────────────
+
+export interface DateRangePickerTriggerContext {
+  readonly value?: DateRange
+  readonly label: string
+  readonly open: boolean
+  readonly disabled?: boolean
+}
 
 interface DateRangePickerProps {
   value?: DateRange
@@ -240,6 +274,9 @@ interface DateRangePickerProps {
   captionLayout?: React.ComponentProps<typeof DayPicker>['captionLayout']
   fromYear?: number
   toYear?: number
+  renderTrigger?: (ctx: DateRangePickerTriggerContext) => React.ReactElement
+  calendarClassNames?: CalendarProps['classNames']
+  calendarComponents?: CalendarProps['components']
 }
 
 const DateRangePicker = ({
@@ -251,6 +288,9 @@ const DateRangePicker = ({
   captionLayout = 'dropdown',
   fromYear = new Date().getFullYear() - 100,
   toYear = new Date().getFullYear() + 10,
+  renderTrigger,
+  calendarClassNames,
+  calendarComponents,
 }: DateRangePickerProps) => {
   const [open, setOpen] = React.useState(false)
 
@@ -263,23 +303,27 @@ const DateRangePicker = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          disabled={disabled}
-          aria-label={label}
-          className={cn(
-            'inline-flex min-w-[220px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm',
-            'ring-offset-background transition-colors',
-            'hover:bg-item-hover',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-            className,
-          )}
-        >
-          <CalendarIcon className="h-4 w-4 shrink-0 text-accent" />
-          <span className={cn('flex-1 text-left', !value?.from && 'text-muted-foreground')}>
-            {label}
-          </span>
-        </button>
+        {renderTrigger !== undefined ? (
+          renderTrigger({ value, label, open, disabled })
+        ) : (
+          <button
+            disabled={disabled}
+            aria-label={label}
+            className={cn(
+              'inline-flex min-w-[220px] items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm',
+              'ring-offset-background transition-colors',
+              'hover:bg-item-hover',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              className,
+            )}
+          >
+            <CalendarIcon className="h-4 w-4 shrink-0 text-accent" />
+            <span className={cn('flex-1 text-left', !value?.from && 'text-muted-foreground')}>
+              {label}
+            </span>
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="center">
         <Calendar
@@ -290,6 +334,8 @@ const DateRangePicker = ({
           captionLayout={captionLayout}
           fromYear={fromYear}
           toYear={toYear}
+          classNames={calendarClassNames}
+          components={calendarComponents}
         />
       </PopoverContent>
     </Popover>

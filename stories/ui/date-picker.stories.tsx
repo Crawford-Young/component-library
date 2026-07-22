@@ -20,3 +20,20 @@ export const WithDropdownNavigation: Story = {
     <DatePicker placeholder="Pick a date" captionLayout="dropdown" fromYear={2000} toYear={2040} />
   ),
 }
+
+export const CustomTrigger: Story = {
+  render: () => (
+    <DatePicker
+      placeholder="Pick a date"
+      renderTrigger={({ label, open }) => (
+        <button
+          className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium transition-colors hover:bg-item-hover ${
+            open ? 'ring-2 ring-ring' : ''
+          }`}
+        >
+          {label}
+        </button>
+      )}
+    />
+  ),
+}
