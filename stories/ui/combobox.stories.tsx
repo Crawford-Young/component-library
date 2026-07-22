@@ -1,6 +1,6 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, Home, Settings, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -10,6 +10,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { Combobox } from '@/components/ui/combobox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
@@ -81,4 +82,67 @@ function ComboboxDemo() {
 
 export const Default: Story = {
   render: () => <ComboboxDemo />,
+}
+
+interface RichOption {
+  value: string
+  label: string
+  description: string
+  icon: React.ReactNode
+}
+
+const richOptions: RichOption[] = [
+  {
+    value: 'home',
+    label: 'Home',
+    description: 'Personal dashboard',
+    icon: <Home className="h-4 w-4" />,
+  },
+  {
+    value: 'settings',
+    label: 'Settings',
+    description: 'Configure your preferences',
+    icon: <Settings className="h-4 w-4" />,
+  },
+  {
+    value: 'power',
+    label: 'Power',
+    description: 'System power controls',
+    icon: <Zap className="h-4 w-4" />,
+  },
+]
+
+function RichOptionsDemo() {
+  const [value, setValue] = React.useState('')
+  const selectedLabel = richOptions.find((opt) => opt.value === value)?.label
+  return (
+    <Combobox
+      options={richOptions.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+      }))}
+      value={value}
+      onValueChange={setValue}
+      placeholder={selectedLabel || 'Select option…'}
+      renderOption={(opt, { selected }) => {
+        const richOpt = richOptions.find((o) => o.value === opt.value)
+        return (
+          <div className="flex items-center gap-2">
+            {selected && <Check className="h-4 w-4" />}
+            <div className="flex items-center gap-2">
+              {richOpt?.icon}
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{richOpt?.label}</span>
+                <span className="text-xs text-muted-foreground">{richOpt?.description}</span>
+              </div>
+            </div>
+          </div>
+        )
+      }}
+    />
+  )
+}
+
+export const RichOptions: Story = {
+  render: () => <RichOptionsDemo />,
 }
