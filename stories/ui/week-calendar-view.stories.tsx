@@ -729,7 +729,11 @@ export const EventBadges: Story = {
     ],
     renderEventBadge: (event) =>
       event.id === '1' ? (
-        <span aria-label="Travel conflict" className="block size-2 rounded-full bg-red-500" />
+        <span
+          role="img"
+          aria-label="Travel conflict"
+          className="block size-2 rounded-full bg-red-500"
+        />
       ) : null,
   },
 }
