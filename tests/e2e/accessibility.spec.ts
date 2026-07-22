@@ -122,6 +122,7 @@ const stories = [
   { name: 'ChatPanel WithActions', id: 'overlays-chatpanel--with-actions' },
   { name: 'Combobox RichOptions', id: 'menus-combobox--rich-options' },
   { name: 'DatePicker CustomTrigger', id: 'inputs-datepicker--custom-trigger' },
+  { name: 'WeekCalendarView EventBadges', id: 'data-weekcalendarview--event-badges' },
 ]
 
 for (const { name, id } of stories) {

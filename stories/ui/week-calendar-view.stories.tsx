@@ -698,3 +698,38 @@ export const ResyncToken: Story = {
   },
   render: () => <ResyncTokenDemo />,
 }
+
+export const EventBadges: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`renderEventBadge` renders a per-event badge on the chip face — e.g. a travel-conflict warning dot. Unlike `renderEventPopover`, the slot is threaded to every visible chip unconditionally, including recurrence-instance and overflow chips.',
+      },
+    },
+  },
+  args: {
+    defaultWeekStart: WEEK,
+    events: [
+      {
+        id: '1',
+        title: 'Flight to conference',
+        start: '2026-05-04T09:00:00',
+        end: '2026-05-04T09:30:00',
+        color: 'amber',
+        location: 'Airport',
+      },
+      {
+        id: '2',
+        title: 'Design review',
+        start: '2026-05-05T14:00:00',
+        end: '2026-05-05T15:00:00',
+        color: 'violet',
+      },
+    ],
+    renderEventBadge: (event) =>
+      event.id === '1' ? (
+        <span aria-label="Travel conflict" className="block size-2 rounded-full bg-red-500" />
+      ) : null,
+  },
+}
