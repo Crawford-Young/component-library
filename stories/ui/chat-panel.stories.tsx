@@ -30,3 +30,16 @@ function WithFabDemo() {
 export const WithFab: Story = {
   render: () => <WithFabDemo />,
 }
+
+export const WithActions: Story = {
+  render: () => (
+    <ChatPanel
+      open
+      onOpenChange={() => {}}
+      title="Assistant"
+      actions={<button className="rounded px-2 py-1 text-xs text-muted-foreground">New</button>}
+    >
+      <div className="p-4 text-sm text-muted-foreground">Panel body</div>
+    </ChatPanel>
+  ),
+}
