@@ -30,7 +30,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Button`         | 6 variants × 4 sizes, `asChild` via Radix Slot                                                                                                              |
 | `Checkbox`       | Controlled and uncontrolled                                                                                                                                 |
-| `DatePicker`     | Popover + react-day-picker v9                                                                                                                               |
+| `DatePicker`     | Popover + react-day-picker v9 — `renderTrigger` custom trigger slot, `calendarClassNames`/`calendarComponents` pass-through                                 |
 | `Input`          | Forwarded ref, fully accessible                                                                                                                             |
 | `MagneticButton` | `Button` with magnetic cursor pull (≤8px, `SPRING_MAGNETIC`) — hero CTAs on cinematic surfaces only; falls back to plain `Button` on touch / reduced motion |
 | `RadioGroup`     | `RadioGroup`, `RadioGroupItem`                                                                                                                              |
@@ -84,7 +84,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | Component      | Notes                                                                   |
 | -------------- | ----------------------------------------------------------------------- |
 | `Command`      | `Command`, `CommandInput`, `CommandList`, `CommandItem`, `CommandGroup` |
-| `Combobox`     | Popover + Command pattern                                               |
+| `Combobox`     | Popover + Command pattern — `renderOption` custom option rendering slot |
 | `ContextMenu`  | Full Radix ContextMenu                                                  |
 | `DropdownMenu` | Full Radix DropdownMenu                                                 |
 
@@ -103,12 +103,12 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Layout
 
-| Component      | Notes                                                                                    |
-| -------------- | ---------------------------------------------------------------------------------------- |
-| `AspectRatio`  | Wraps `@radix-ui/react-aspect-ratio`                                                     |
-| `ScrollArea`   | `ScrollArea`, `ScrollBar`                                                                |
-| `Sidebar`      | Collapsible app sidebar shell — `header` slot, context-driven collapse                   |
-| `SidebarBrand` | Logo + title header for `Sidebar`; `handoffName` receives the splash → app morph landing |
+| Component      | Notes                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `AspectRatio`  | Wraps `@radix-ui/react-aspect-ratio`                                                                                   |
+| `ScrollArea`   | `ScrollArea`, `ScrollBar`                                                                                              |
+| `Sidebar`      | Collapsible app sidebar shell — `header` slot, context-driven collapse; controlled via `collapsed`/`onCollapsedChange` |
+| `SidebarBrand` | Logo + title header for `Sidebar`; `handoffName` receives the splash → app morph landing                               |
 
 ### Motion
 

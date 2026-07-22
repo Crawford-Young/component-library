@@ -119,6 +119,9 @@ const stories = [
     id: 'data-weekcalendarview--overnight-local-vs-utc',
   },
   { name: 'WeekCalendarView ResyncToken', id: 'data-weekcalendarview--resync-token' },
+  { name: 'ChatPanel WithActions', id: 'overlays-chatpanel--with-actions' },
+  { name: 'Combobox RichOptions', id: 'menus-combobox--rich-options' },
+  { name: 'DatePicker CustomTrigger', id: 'inputs-datepicker--custom-trigger' },
 ]
 
 for (const { name, id } of stories) {
