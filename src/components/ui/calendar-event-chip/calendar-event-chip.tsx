@@ -135,6 +135,7 @@ export interface CalendarEventChipProps {
   ) => void
   readonly onResizeStart?: (event: CalendarEvent, edge: 'start' | 'end') => void
   readonly renderPopover?: (event: CalendarEvent) => React.ReactNode
+  readonly renderBadge?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
   readonly use24h?: boolean
 }
@@ -337,6 +338,7 @@ export function CalendarEventChip({
   onMoveStart,
   onResizeStart,
   renderPopover,
+  renderBadge,
   className,
   use24h = false,
 }: CalendarEventChipProps): React.JSX.Element {
@@ -780,6 +782,17 @@ export function CalendarEventChip({
             </button>
           )}
         </div>
+      )}
+      {renderBadge && (
+        // Sibling of the trigger button, same reasoning as the edit/delete/checkbox/lock
+        // cluster above: `style` (the containing block for absolute positioning) lands on
+        // THIS wrapper div, not the trigger button, so any absolutely-positioned decoration
+        // must live here too. Opposite corner (top-left) from the icon cluster (top-right)
+        // so the two never collide; `pointer-events-none` keeps the badge from intercepting
+        // clicks meant for the trigger button beneath it.
+        <span className="pointer-events-none absolute left-0.5 top-0.5 z-10">
+          {renderBadge(event)}
+        </span>
       )}
     </div>
   )

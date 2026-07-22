@@ -446,6 +446,27 @@ describe('event forwarding', () => {
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     expect(screen.getByText('custom popover')).toBeInTheDocument()
   })
+
+  it('forwards renderEventBadge to plain AND recurring-instance chips (not gated off like the popover)', () => {
+    const recurringEvent: CalendarEvent = {
+      id: 'r1',
+      title: 'Recur badge',
+      start: '2026-05-04T09:00:00', // Monday
+      end: '2026-05-04T09:30:00',
+      recurrenceDays: ['Mon', 'Tue'],
+    }
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0], recurringEvent]}
+        renderEventBadge={(e) => <span data-testid={`badge-${e.id}`} />}
+      />,
+    )
+    // Plain (non-recurring) chip gets its badge.
+    expect(screen.getByTestId(`badge-${events[0].id}`)).toBeInTheDocument()
+    // Both fanned recurrence-instance chips (Mon + Tue) get their own badge too.
+    expect(screen.getAllByTestId(/^badge-r1/)).toHaveLength(2)
+  })
 })
 
 describe('chip-popover edit preserves stored recurrence fan-out', () => {

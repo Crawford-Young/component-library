@@ -1302,4 +1302,22 @@ describe('inline complete circle', () => {
       expect(screen.getByLabelText('4-day streak')).toBeInTheDocument()
     })
   })
+
+  describe('renderBadge', () => {
+    it('renders badge content on the chip face', () => {
+      render(
+        <CalendarEventChip
+          event={event}
+          style={style}
+          renderBadge={(e) => <span data-testid="badge">{e.id}-warn</span>}
+        />,
+      )
+      expect(screen.getByTestId('badge')).toHaveTextContent('1-warn')
+    })
+
+    it('renders no badge container when renderBadge absent', () => {
+      render(<CalendarEventChip event={event} style={style} />)
+      expect(screen.queryByTestId('badge')).not.toBeInTheDocument()
+    })
+  })
 })

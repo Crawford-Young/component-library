@@ -140,6 +140,13 @@ export interface WeekCalendarViewProps {
    */
   readonly dayWindows?: readonly DayWindow[]
   readonly renderEventPopover?: (event: CalendarEvent) => React.ReactNode
+  /**
+   * Per-event chip-face badge slot (e.g. a travel-conflict warning dot). Unlike
+   * `renderEventPopover`, this is NEVER gated off for recurrence-instance or overflow
+   * chips — a badge condition (e.g. a travel warning) applies to any visible chip,
+   * not just the "original" event.
+   */
+  readonly renderEventBadge?: (event: CalendarEvent) => React.ReactNode
   readonly className?: string
 }
 
@@ -533,6 +540,7 @@ export function WeekCalendarView({
   sleepEnd,
   dayWindows,
   renderEventPopover,
+  renderEventBadge,
   className,
 }: WeekCalendarViewProps): React.JSX.Element {
   const [currentWeek, setCurrentWeek] = React.useState<string>(() =>
@@ -1098,6 +1106,7 @@ export function WeekCalendarView({
                           }
                     }
                     renderPopover={isRecur || isOverflow ? undefined : renderEventPopover}
+                    renderBadge={renderEventBadge}
                     onMoveStart={
                       isOverflow
                         ? undefined
