@@ -46,6 +46,12 @@ describe('title, description, children', () => {
     const field = screen.getByRole('textbox', { name: 'Field' })
     expect(field.closest('form')).not.toBeNull()
   })
+
+  it('renders the internal form with noValidate so custom validation is never pre-empted', () => {
+    render(<FormDialog {...makeProps()} />)
+    const form = screen.getByRole('textbox', { name: 'Field' }).closest('form')
+    expect(form).toHaveProperty('noValidate', true)
+  })
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
