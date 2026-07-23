@@ -122,6 +122,8 @@ const stories = [
   { name: 'ChatPanel WithActions', id: 'overlays-chatpanel--with-actions' },
   { name: 'Combobox RichOptions', id: 'menus-combobox--rich-options' },
   { name: 'DatePicker CustomTrigger', id: 'inputs-datepicker--custom-trigger' },
+  { name: 'ColorSwatchPicker', id: 'primitives-colorswatchpicker--default' },
+  { name: 'ColorSwatchPicker Small', id: 'primitives-colorswatchpicker--small' },
 ]
 
 for (const { name, id } of stories) {
