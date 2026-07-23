@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import { CircleCheck, Flame, Lock, LockOpen, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ColorSwatchPicker } from '@/components/ui/color-swatch-picker'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { TimeInput } from '@/components/ui/time-input'
 
@@ -138,24 +139,6 @@ export interface CalendarEventChipProps {
   readonly className?: string
   readonly use24h?: boolean
 }
-
-const ALL_COLORS: readonly CalendarEventColor[] = [
-  'default',
-  'blue',
-  'violet',
-  'indigo',
-  'teal',
-  'cyan',
-  'sky',
-  'green',
-  'lime',
-  'amber',
-  'orange',
-  'red',
-  'rose',
-  'pink',
-  'fuchsia',
-]
 
 interface DraftEvent {
   title: string
@@ -531,23 +514,12 @@ export function CalendarEventChip({
                   <p className={labelCls} aria-hidden="true">
                     Color
                   </p>
-                  <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Color">
-                    {ALL_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        aria-label={`Color: ${c}`}
-                        aria-pressed={draft.color === c}
-                        onClick={() => setDraft((d) => ({ ...d, color: c }))}
-                        className={cn(
-                          eventColorVariants({ color: c }),
-                          'h-5 w-5 cursor-pointer rounded-full p-0 overflow-visible',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                          draft.color === c && 'ring-2 ring-ring ring-offset-1',
-                        )}
-                      />
-                    ))}
-                  </div>
+                  <ColorSwatchPicker
+                    size="sm"
+                    className="mt-1"
+                    value={draft.color}
+                    onChange={(c) => setDraft((d) => ({ ...d, color: c }))}
+                  />
                 </div>
 
                 <div className="flex flex-col gap-2">
