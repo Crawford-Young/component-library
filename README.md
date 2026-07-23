@@ -26,22 +26,23 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Inputs
 
-| Component        | Notes                                                                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`         | 6 variants × 4 sizes, `asChild` via Radix Slot                                                                                                              |
-| `Checkbox`       | Controlled and uncontrolled                                                                                                                                 |
-| `DatePicker`     | Popover + react-day-picker v9 — `renderTrigger` custom trigger slot, `calendarClassNames`/`calendarComponents` pass-through                                 |
-| `Input`          | Forwarded ref, fully accessible                                                                                                                             |
-| `MagneticButton` | `Button` with magnetic cursor pull (≤8px, `SPRING_MAGNETIC`) — hero CTAs on cinematic surfaces only; falls back to plain `Button` on touch / reduced motion |
-| `RadioGroup`     | `RadioGroup`, `RadioGroupItem`                                                                                                                              |
-| `Select`         | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`                                                                                     |
-| `Slider`         | Single value, forwarded ref                                                                                                                                 |
-| `Switch`         | Controlled and uncontrolled                                                                                                                                 |
-| `TaskTimeFields` | Date + start/end time; `use24h` toggles 12h/24h display                                                                                                     |
-| `TimeInput`      | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle                                                                                     |
-| `Textarea`       | Forwarded ref, resizable                                                                                                                                    |
-| `Toggle`         | default / outline × sm / md / lg                                                                                                                            |
-| `ToggleGroup`    | single / multiple                                                                                                                                           |
+| Component           | Notes                                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`            | 6 variants × 4 sizes, `asChild` via Radix Slot                                                                                                              |
+| `Checkbox`          | Controlled and uncontrolled                                                                                                                                 |
+| `ColorSwatchPicker` | Color swatch grid for `CalendarEventColor` — aria-pressed group, `size` (`sm` / `md`), full palette exported as `EVENT_COLORS`                              |
+| `DatePicker`        | Popover + react-day-picker v9 — `renderTrigger` custom trigger slot, `calendarClassNames`/`calendarComponents` pass-through                                 |
+| `Input`             | Forwarded ref, fully accessible                                                                                                                             |
+| `MagneticButton`    | `Button` with magnetic cursor pull (≤8px, `SPRING_MAGNETIC`) — hero CTAs on cinematic surfaces only; falls back to plain `Button` on touch / reduced motion |
+| `RadioGroup`        | `RadioGroup`, `RadioGroupItem`                                                                                                                              |
+| `Select`            | `Select`, `SelectContent`, `SelectItem`, `SelectTrigger`, `SelectValue`                                                                                     |
+| `Slider`            | Single value, forwarded ref                                                                                                                                 |
+| `Switch`            | Controlled and uncontrolled                                                                                                                                 |
+| `TaskTimeFields`    | Date + start/end time; `use24h` toggles 12h/24h display                                                                                                     |
+| `TimeInput`         | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle                                                                                     |
+| `Textarea`          | Forwarded ref, resizable                                                                                                                                    |
+| `Toggle`            | default / outline × sm / md / lg                                                                                                                            |
+| `ToggleGroup`       | single / multiple                                                                                                                                           |
 
 ### Form
 
@@ -52,16 +53,15 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Overlays
 
-| Component                | Notes                                                                                                                                          |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ActivityTemplateDialog` | Create/edit dialog for activity templates — schedule builder (weekday toggles + start time/duration per slot), min/max duration, weekly target |
-| `AlertDialog`            | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                                                                  |
-| `Dialog`                 | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`                                                  |
-| `EventFormDialog`        | Create/edit dialog for calendar events — title, all-day, `TaskTimeFields`, color, location, description; forwards `use24h`                     |
-| `Popover`                | `Popover`, `PopoverContent`, `PopoverTrigger`                                                                                                  |
-| `Sheet`                  | `Sheet`, `SheetContent` — side: top / right / bottom / left                                                                                    |
-| `Toast`                  | Sonner wrapper themed to design tokens                                                                                                         |
-| `Tooltip`                | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                                                                               |
+| Component     | Notes                                                                                                                                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AlertDialog` | `AlertDialog`, `AlertDialogContent`, `AlertDialogAction`, `AlertDialogCancel`                                                                                                                                                 |
+| `Dialog`      | `Dialog`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`                                                                                                                                 |
+| `FormDialog`  | Composed form-dialog shell — title/description header, scrollable form body (children), Cancel/Save footer wired via `formId`; `footer` render-prop receives `FormDialogFooterContext`; `isPending`, `submitDisabled`, `size` |
+| `Popover`     | `Popover`, `PopoverContent`, `PopoverTrigger`                                                                                                                                                                                 |
+| `Sheet`       | `Sheet`, `SheetContent` — side: top / right / bottom / left                                                                                                                                                                   |
+| `Toast`       | Sonner wrapper themed to design tokens                                                                                                                                                                                        |
+| `Tooltip`     | `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger`                                                                                                                                                              |
 
 ### Navigation
 
