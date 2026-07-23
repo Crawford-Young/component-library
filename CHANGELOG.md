@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.28.1
+
+### Patch Changes
+
+- b95650a: FormDialog renders `noValidate` on its internal form — the shell owns custom-controlled validation; native constraint validation no longer pre-empts in-form error rendering.
+
 ## 0.28.0
 
 ### Minor Changes
