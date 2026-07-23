@@ -124,6 +124,8 @@ const stories = [
   { name: 'DatePicker CustomTrigger', id: 'inputs-datepicker--custom-trigger' },
   { name: 'ColorSwatchPicker', id: 'primitives-colorswatchpicker--default' },
   { name: 'ColorSwatchPicker Small', id: 'primitives-colorswatchpicker--small' },
+  { name: 'FormDialog', id: 'dialogs-formdialog--default' },
+  { name: 'FormDialog Pending', id: 'dialogs-formdialog--pending' },
 ]
 
 for (const { name, id } of stories) {
