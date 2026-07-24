@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test'
 
 const stories = [
   { name: 'Alert', id: 'feedback-alert--default' },
+  { name: 'CarsickYakTheme Light', id: 'foundation-carsickyaktheme--light' },
+  { name: 'CarsickYakTheme Dark', id: 'foundation-carsickyaktheme--dark' },
   { name: 'Avatar', id: 'display-avatar--with-fallback' },
   { name: 'Badge', id: 'display-badge--default' },
   { name: 'Button', id: 'inputs-button--default' },
