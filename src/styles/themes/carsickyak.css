@@ -1,0 +1,76 @@
+/* src/styles/themes/carsickyak.css
+   CarsickYak brand theme — scoped override of the semantic tokens in tokens.css.
+   RGB channel values — use as rgb(var(--token)) or rgb(var(--token) / 0.5).
+   Light is the theme default (the carsickyak site is light-first); dark via
+   .theme-carsickyak.dark. Palette source:
+   ~/code/docs/web/carsickyak/specs/2026-07-22-brand-design.md §3.
+   The dark block must redeclare every var the light block declares — base
+   .dark (tokens.css) ties the light block on specificity otherwise. */
+
+.theme-carsickyak {
+  /* Backgrounds */
+  --background: 250 247 240; /* #FAF7F0 offwhite */
+  --surface: 245 239 228; /* #F5EFE4 cream */
+  --surface-raised: 237 229 213;
+
+  /* Borders */
+  --border: 226 217 200;
+  --border-subtle: 237 231 219;
+  --input: 226 217 200;
+
+  /* Text */
+  --foreground: 43 42 38; /* #2B2A26 charcoal */
+  --muted: 237 231 219;
+  --muted-foreground: 92 102 96; /* #5C6660 slate */
+
+  /* Brand — yak-brown accent */
+  --accent: 177 125 70; /* #B17D46 */
+  --accent-foreground: 23 21 15;
+  --accent-hover: 192 143 91;
+  --accent-hover-foreground: 23 21 15;
+  --accent-subtle: 237 224 206;
+  --accent-subtle-foreground: 92 61 30;
+  --accent-active: 205 159 112;
+  --accent-active-foreground: 23 21 15;
+  --ring: 177 125 70;
+  --item-hover: 237 231 219;
+
+  /* CarsickYak palette extras — same value both modes */
+  --ember: 217 123 63; /* #D97B3F */
+  --pine: 46 75 63; /* #2E4B3F */
+  --gold: 201 162 39; /* #C9A227 */
+  --sage: 156 175 136; /* #9CAF88 */
+  --navy: 31 42 61; /* #1F2A3D */
+
+  /* Serif slot — consuming app overrides via next/font */
+  --font-serif: Georgia, 'Times New Roman', serif;
+}
+
+.theme-carsickyak.dark {
+  /* Backgrounds */
+  --background: 43 42 38; /* #2B2A26 charcoal */
+  --surface: 46 75 63; /* #2E4B3F pine */
+  --surface-raised: 58 92 78;
+
+  /* Borders */
+  --border: 62 60 53;
+  --border-subtle: 52 51 45;
+  --input: 62 60 53;
+
+  /* Text */
+  --foreground: 250 247 240; /* offwhite */
+  --muted: 52 51 45;
+  --muted-foreground: 168 186 150; /* sage, lightened for AA on pine surface */
+
+  /* Brand */
+  --accent: 177 125 70;
+  --accent-foreground: 23 21 15;
+  --accent-hover: 192 143 91;
+  --accent-hover-foreground: 23 21 15;
+  --accent-subtle: 74 52 25;
+  --accent-subtle-foreground: 227 203 168;
+  --accent-active: 205 159 112;
+  --accent-active-foreground: 23 21 15;
+  --ring: 192 143 91;
+  --item-hover: 56 55 49;
+}

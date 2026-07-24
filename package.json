@@ -28,7 +28,8 @@
       "import": "./dist/tailwind/index.mjs",
       "require": "./dist/tailwind/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./themes/carsickyak.css": "./dist/themes/carsickyak.css"
   },
   "files": [
     "dist",
