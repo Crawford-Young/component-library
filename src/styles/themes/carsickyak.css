@@ -3,37 +3,40 @@
    RGB channel values — use as rgb(var(--token)) or rgb(var(--token) / 0.5).
    Light is the theme default (the carsickyak site is light-first); dark via
    .theme-carsickyak.dark. Palette source:
-   ~/code/docs/web/carsickyak/specs/2026-07-22-brand-design.md §3.
+   ~/code/docs/web/carsickyak/specs/2026-07-22-brand-design.md §3, tuned at the
+   2026-07-23 W0 visual gate (4 user rounds): neutral grounds, brand color in
+   interactive elements only — ember primary, pine secondary. Never colored
+   card/page backgrounds.
    The dark block must redeclare every var the light block declares — base
    .dark (tokens.css) ties the light block on specificity otherwise. */
 
 .theme-carsickyak {
-  /* Backgrounds */
-  --background: 250 247 240; /* #FAF7F0 offwhite */
-  --surface: 245 239 228; /* #F5EFE4 cream */
-  --surface-raised: 237 229 213;
+  /* Backgrounds — linen ground, white cards (F1b) */
+  --background: 243 240 233;
+  --surface: 255 255 255;
+  --surface-raised: 201 214 197; /* soft pine — secondary buttons */
 
   /* Borders */
-  --border: 226 217 200;
-  --border-subtle: 237 231 219;
-  --input: 226 217 200;
+  --border: 200 211 196;
+  --border-subtle: 226 231 222;
+  --input: 208 200 184;
 
   /* Text */
   --foreground: 43 42 38; /* #2B2A26 charcoal */
-  --muted: 237 231 219;
+  --muted: 226 231 222;
   --muted-foreground: 92 102 96; /* #5C6660 slate */
 
-  /* Brand — yak-brown accent */
-  --accent: 177 125 70; /* #B17D46 */
-  --accent-foreground: 23 21 15;
-  --accent-hover: 192 143 91;
-  --accent-hover-foreground: 23 21 15;
-  --accent-subtle: 237 224 206;
-  --accent-subtle-foreground: 92 61 30;
-  --accent-active: 205 159 112;
-  --accent-active-foreground: 23 21 15;
-  --ring: 177 125 70;
-  --item-hover: 237 231 219;
+  /* Brand — ember primary (deepened from #D97B3F for AA with white fg) */
+  --accent: 186 84 32;
+  --accent-foreground: 255 255 255;
+  --accent-hover: 166 72 24; /* darker on hover so white fg holds AA */
+  --accent-hover-foreground: 255 255 255;
+  --accent-subtle: 246 226 210;
+  --accent-subtle-foreground: 122 56 20;
+  --accent-active: 150 64 20;
+  --accent-active-foreground: 255 255 255;
+  --ring: 186 84 32;
+  --item-hover: 231 235 227;
 
   /* CarsickYak palette extras — same value both modes */
   --ember: 217 123 63; /* #D97B3F */
@@ -41,36 +44,37 @@
   --gold: 201 162 39; /* #C9A227 */
   --sage: 156 175 136; /* #9CAF88 */
   --navy: 31 42 61; /* #1F2A3D */
+  --yak-brown: 177 125 70; /* #B17D46 */
 
   /* Serif slot — consuming app overrides via next/font */
   --font-serif: Georgia, 'Times New Roman', serif;
 }
 
 .theme-carsickyak.dark {
-  /* Backgrounds */
-  --background: 43 42 38; /* #2B2A26 charcoal */
-  --surface: 46 75 63; /* #2E4B3F pine */
-  --surface-raised: 58 92 78;
+  /* Backgrounds — warm-steel ground and cards (G2) */
+  --background: 39 40 44;
+  --surface: 50 51 56;
+  --surface-raised: 46 75 63; /* pine — secondary buttons */
 
   /* Borders */
-  --border: 62 60 53;
-  --border-subtle: 52 51 45;
-  --input: 62 60 53;
+  --border: 70 70 77;
+  --border-subtle: 57 57 63;
+  --input: 70 70 77;
 
   /* Text */
   --foreground: 250 247 240; /* offwhite */
-  --muted: 52 51 45;
-  --muted-foreground: 168 186 150; /* sage, lightened for AA on pine surface */
+  --muted: 57 57 63;
+  --muted-foreground: 181 173 156; /* warm sand */
 
-  /* Brand */
-  --accent: 177 125 70;
+  /* Brand — ember primary (#D97B3F carries near-black fg at 5.7:1) */
+  --accent: 217 123 63;
   --accent-foreground: 23 21 15;
-  --accent-hover: 192 143 91;
+  --accent-hover: 230 143 88;
   --accent-hover-foreground: 23 21 15;
-  --accent-subtle: 74 52 25;
-  --accent-subtle-foreground: 227 203 168;
-  --accent-active: 205 159 112;
+  --accent-subtle: 74 46 28;
+  --accent-subtle-foreground: 240 200 170;
+  --accent-active: 236 158 108;
   --accent-active-foreground: 23 21 15;
-  --ring: 192 143 91;
-  --item-hover: 56 55 49;
+  --ring: 217 123 63;
+  --item-hover: 60 60 66;
 }
