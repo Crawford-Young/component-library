@@ -166,6 +166,21 @@ In your root layout or global CSS entry point:
 import '@crawfordyoung/ui/styles.css'
 ```
 
+#### Optional brand themes
+
+Theme presets re-map the semantic tokens under a scoping class. Import the theme css after the base styles and put the scoping class on `<html>` (it composes with next-themes' `dark` class):
+
+```ts
+import '@crawfordyoung/ui/styles.css'
+import '@crawfordyoung/ui/themes/carsickyak.css'
+```
+
+```html
+<html class="theme-carsickyak"></html>
+```
+
+Available themes: `carsickyak` (ember primary, pine secondary, linen/steel grounds — light-first).
+
 ### 2. Add the Tailwind preset
 
 ```ts
