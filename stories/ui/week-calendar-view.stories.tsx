@@ -186,6 +186,8 @@ export const EditAndDelete: Story = {
         color: 'green',
       },
     ],
+    onEventEdit: () => {},
+    onEventDelete: () => {},
     onEventToggleComplete: () => {},
   },
 }
@@ -213,6 +215,7 @@ export const Interactive: Story = {
     onEventCreate: () => {},
     onEventMove: () => {},
     onEventResize: () => {},
+    onEventEdit: () => {},
   },
 }
 

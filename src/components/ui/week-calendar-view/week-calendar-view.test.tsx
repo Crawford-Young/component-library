@@ -508,7 +508,13 @@ describe('WeekCalendarView complete toggle', () => {
   })
 
   it('toggle updates local state — chip title gets line-through after marking complete, other events untouched', async () => {
-    render(<WeekCalendarView defaultWeekStart={WEEK_START} events={events} />)
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={events}
+        onEventToggleComplete={vi.fn()}
+      />,
+    )
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
     await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
     const titleEls = screen.getAllByText('Team standup')
@@ -545,11 +551,13 @@ describe('WeekCalendarView complete toggle', () => {
     expect(onEventToggleComplete).toHaveBeenCalledWith({ ...recurringEvent, completed: true })
   })
 
-  it('toggles locally without crashing when onEventToggleComplete is not provided', async () => {
+  it('mark-complete action absent when onEventToggleComplete is not provided', async () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
     await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
-    await userEvent.click(screen.getByRole('button', { name: /mark complete/i }))
-    expect(screen.getByRole('button', { name: /mark incomplete/i })).toBeInTheDocument()
+    // Anchor: popover actually opened (guards against a vacuous pass if a refactor stops the
+    // click from opening it, which would make the "mark complete" absence assertion trivial).
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /mark complete/i })).not.toBeInTheDocument()
   })
 
   it('completable event renders the chip circle and toggles via onEventToggleComplete', async () => {
@@ -664,10 +672,9 @@ describe('WeekCalendarView lock', () => {
     expect(onEventToggleLock).toHaveBeenCalledWith({ ...recurringEvent, locked: true })
   })
 
-  it('toggles locally without crashing when onEventToggleLock is not provided', async () => {
+  it('lock button absent when onEventToggleLock is not provided', () => {
     render(<WeekCalendarView defaultWeekStart={WEEK_START} events={[events[0]]} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Lock event' }) as HTMLElement)
-    expect(screen.getByRole('button', { name: 'Unlock event' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lock event' })).not.toBeInTheDocument()
   })
 
   it('locked event: chip has no cursor-grab even when onEventMove is wired', () => {
@@ -820,6 +827,68 @@ describe('WeekCalendarView edit activity', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit activity' }))
     expect(onEventEditActivity).toHaveBeenCalledWith(recurringEvent)
     expect((onEventEditActivity.mock.calls[0][0] as CalendarEvent).id).toBe('r1')
+  })
+})
+
+describe('read-only gating — zero view-level onEvent* handlers', () => {
+  it('renders no complete checkbox, no lock button, and no popover action buttons when only onWeekChange is provided', async () => {
+    const completableEvent: CalendarEvent = { ...events[0], completable: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[completableEvent]}
+        onWeekChange={vi.fn()}
+      />,
+    )
+    // No always-visible checkbox or lock button on the chip itself.
+    expect(screen.queryByRole('checkbox', { name: 'Mark complete' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lock event' })).not.toBeInTheDocument()
+
+    // Opening the popover exposes no Edit/Delete/complete-toggle action buttons.
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /mark complete/i })).not.toBeInTheDocument()
+  })
+
+  it('shift+pointerdown then pointerup does not start a recurrence-select when onEventEdit is not provided', () => {
+    render(
+      <WeekCalendarView
+        defaultWeekStart="2026-05-03"
+        events={[events[0]]}
+        hourStart={8}
+        hourCount={14}
+        hourHeight={56}
+      />,
+    )
+    const chip = screen.getByRole('button', { name: /team standup/i })
+    fireEvent.pointerDown(chip, { pointerId: 1, clientX: 100, clientY: 200, shiftKey: true })
+    // No recurrence-select ghost is created without a landing handler for its release.
+    expect(screen.queryByTestId('ghost-event')).not.toBeInTheDocument()
+    fireEvent.pointerUp(chip, { pointerId: 1 })
+    // Event's recurrenceDays remain untouched — still renders as a single chip, not fanned out.
+    expect(screen.getAllByRole('button', { name: /team standup/i })).toHaveLength(1)
+  })
+
+  it('renders full read-write affordances when all view-level onEvent* handlers are provided (regression control)', async () => {
+    const completableEvent: CalendarEvent = { ...events[0], completable: true }
+    render(
+      <WeekCalendarView
+        defaultWeekStart={WEEK_START}
+        events={[completableEvent]}
+        onEventEdit={vi.fn()}
+        onEventDelete={vi.fn()}
+        onEventToggleComplete={vi.fn()}
+        onEventToggleLock={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('checkbox', { name: 'Mark complete' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Lock event' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /team standup/i }))
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument()
   })
 })
 
@@ -1494,6 +1563,7 @@ describe('drag ghost — resizing and recurrence-select', () => {
         hourCount={14}
         hourHeight={56}
         onEventMove={vi.fn()}
+        onEventEdit={vi.fn()}
       />,
     )
     const chip = screen.getByRole('button', { name: /team standup/i })
@@ -1584,6 +1654,7 @@ describe('drag slop threshold — press-release is a click, not a move', () => {
         hourCount={14}
         hourHeight={56}
         onEventMove={onMove}
+        onEventEdit={vi.fn()}
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /slop event/i }))
@@ -1602,6 +1673,7 @@ describe('drag slop threshold — press-release is a click, not a move', () => {
         hourCount={14}
         hourHeight={56}
         onEventMove={onMove}
+        onEventEdit={vi.fn()}
       />,
     )
     const chip = screen.getByRole('button', { name: /slop event/i })
@@ -1808,7 +1880,9 @@ describe('internal CRUD state management', () => {
       { id: 'e1', title: 'First event', start: '2026-05-04T09:00:00', end: '2026-05-04T10:00:00' },
       { id: 'e2', title: 'Second event', start: '2026-05-05T09:00:00', end: '2026-05-05T10:00:00' },
     ]
-    render(<WeekCalendarView defaultWeekStart="2026-05-04" events={twoEvents} />)
+    render(
+      <WeekCalendarView defaultWeekStart="2026-05-04" events={twoEvents} onEventEdit={vi.fn()} />,
+    )
     await userEvent.click(screen.getByRole('button', { name: /first event/i }))
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     const titleInput = screen.getByRole('textbox', { name: /title/i })
@@ -2199,6 +2273,7 @@ describe('shift+drag day header highlighting', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventEdit={vi.fn()}
       />,
     )
     const chip = screen.getByRole('button', { name: /recur target/i })
@@ -2237,6 +2312,7 @@ describe('shift+drag day header highlighting', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventEdit={vi.fn()}
       />,
     )
     const chip = screen.getByRole('button', { name: /recur target/i })
@@ -2262,6 +2338,7 @@ describe('ctrl+z undo delete', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventDelete={vi.fn()}
       />,
     )
     // Open chip popover and delete
@@ -2285,6 +2362,7 @@ describe('ctrl+z undo delete', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventDelete={vi.fn()}
       />,
     )
     // Delete first event
@@ -2325,6 +2403,7 @@ describe('ctrl+z undo delete', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventDelete={vi.fn()}
         onEventRestore={onRestore}
       />,
     )
@@ -2373,6 +2452,8 @@ describe('recurrence day expansion', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventEdit={vi.fn()}
+        onEventDelete={vi.fn()}
       />,
     )
     const chips = screen.getAllByRole('button', { name: /recur editable/i })
@@ -2428,6 +2509,7 @@ describe('recurrence day expansion', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventDelete={vi.fn()}
       />,
     )
     const chips = screen.getAllByRole('button', { name: /delete recur/i })
@@ -2821,6 +2903,7 @@ describe('recurrence day expansion', () => {
         hourStart={8}
         hourCount={14}
         hourHeight={56}
+        onEventDelete={vi.fn()}
       />,
     )
     const chips = screen.getAllByRole('button', { name: /hidden base delete/i })
