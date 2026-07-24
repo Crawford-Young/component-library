@@ -1004,7 +1004,7 @@ export function WeekCalendarView({
                     use24h={use24h}
                     onClick={onEventClick}
                     onEdit={
-                      isOverflow
+                      isOverflow || onEventEdit === undefined
                         ? undefined
                         : (editedEvent) => {
                             if (!isRecur) {
@@ -1043,7 +1043,7 @@ export function WeekCalendarView({
                           }
                     }
                     onDelete={
-                      isOverflow
+                      isOverflow || onEventDelete === undefined
                         ? undefined
                         : (deletedEvent) => {
                             if (!isRecur) {
@@ -1054,7 +1054,7 @@ export function WeekCalendarView({
                           }
                     }
                     onToggleComplete={
-                      isOverflow
+                      isOverflow || onEventToggleComplete === undefined
                         ? undefined
                         : (toggledEvent) => {
                             if (!isRecur) {
@@ -1065,7 +1065,7 @@ export function WeekCalendarView({
                           }
                     }
                     onToggleLock={
-                      isOverflow
+                      isOverflow || onEventToggleLock === undefined
                         ? undefined
                         : (toggledEvent) => {
                             if (!isRecur) {
@@ -1102,7 +1102,7 @@ export function WeekCalendarView({
                       isOverflow
                         ? undefined
                         : (ev, clientY, clientX, shiftKey) => {
-                            if (shiftKey) {
+                            if (shiftKey && onEventEdit !== undefined) {
                               const source = isRecur
                                 ? localEvents.find((e) => e.id === originalId)!
                                 : ev
