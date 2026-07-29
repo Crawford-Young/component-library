@@ -1,0 +1,14 @@
+# This host is deliberately kept out of search results. The exclusion is done by
+# the `X-Robots-Tag: noindex, nofollow` header in `vercel.json`, NOT by a
+# Disallow rule here — and that is on purpose, not an oversight.
+#
+# A Disallow rule would be actively counterproductive: Googlebot never fetches a
+# disallowed URL, so it would never see the noindex header, and any URL already
+# in the index would stay there indefinitely (disallowed URLs can still be listed
+# from external links, just without a snippet). noindex only works on a page the
+# crawler is allowed to fetch. Crawling stays open so the header can do its job.
+#
+# If this host later gains real content and should be indexed, drop the header
+# block from `vercel.json`; this file needs no change.
+User-agent: *
+Allow: /
