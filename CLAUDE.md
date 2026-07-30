@@ -36,6 +36,14 @@ Every repo-doc edit lands in the wave branch BEFORE merge — reflect runs pre-P
 - **Additional dependency**: `@tanstack/react-table` — used by DataTable; install with `pnpm add @tanstack/react-table`
 - **Additional dependency**: `framer-motion` (>=12) — peer dep for motion primitives (ScrollReveal, StaggerReveal); install with `pnpm add framer-motion`
 
+## Search indexing — `ui.crawfordyoung.dev` is noindex-by-HEADER (adsense-w1, 2026-07-28)
+
+The deployed Storybook host must stay out of search results: it is a component gallery with no publisher content, and an AdSense review of the `crawfordyoung.dev` property should never reach it.
+
+- **The exclusion is `vercel.json`'s `X-Robots-Tag: noindex, nofollow` on `/(.*)`. `public/robots.txt` deliberately says `Allow: /`.**
+- **Do not "fix" that Allow into a `Disallow: /`.** The two are not additive — a Disallow destroys the header's precondition. Googlebot never fetches a disallowed URL, so it would never receive the noindex, and this host has been serving 200 long enough to plausibly be indexed already: disallowing would freeze whatever is in the index, permanently, because recrawl can never discover the noindex. The result reads as "definitely deindexed" and guarantees the opposite. `robots.txt` carries a comment block saying so; this entry is the second copy, because the file-local comment only helps someone already editing that file.
+- If this host ever gains real content and should be indexed, drop the header block from `vercel.json` — `robots.txt` needs no change either way.
+
 ## Extension conventions (slot generalization, 2026-07-21)
 
 Every component maps to one class; its extension mechanism is fixed by the class:
