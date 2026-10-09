@@ -103,12 +103,13 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Layout
 
-| Component      | Notes                                                                                                                  |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `AspectRatio`  | Wraps `@radix-ui/react-aspect-ratio`                                                                                   |
-| `ScrollArea`   | `ScrollArea`, `ScrollBar`                                                                                              |
-| `Sidebar`      | Collapsible app sidebar shell — `header` slot, context-driven collapse; controlled via `collapsed`/`onCollapsedChange` |
-| `SidebarBrand` | Logo + title header for `Sidebar`; `handoffName` receives the splash → app morph landing                               |
+| Component             | Notes                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AspectRatio`         | Wraps `@radix-ui/react-aspect-ratio`                                                                                                                    |
+| `ResizablePanelGroup` | `ResizablePanelGroup`, `ResizablePanel`, `ResizableHandle` (`withHandle`) over `react-resizable-panels`; keyboard-resizable, collapsible via `panelRef` |
+| `ScrollArea`          | `ScrollArea`, `ScrollBar`                                                                                                                               |
+| `Sidebar`             | Collapsible app sidebar shell — `header` slot, context-driven collapse; controlled via `collapsed`/`onCollapsedChange`                                  |
+| `SidebarBrand`        | Logo + title header for `Sidebar`; `handoffName` receives the splash → app morph landing                                                                |
 
 ### Motion
 
@@ -134,6 +135,14 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | ----------- | ---------------------------------------------- |
 | `TokenChip` | Token balance chip with normal/low/zero states |
 | `TokenCost` | Inline AI cost estimate chip                   |
+
+### Agents
+
+| Component       | Notes                                                                                                                                                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ContextGauge`  | `role="meter"` context bar; tone ok / warn / danger from `nudgeAt` / `hardStopAt` (`contextGaugeTone`); `label` slot; `sm` / `md`                                                                                                             |
+| `AgentNodeCard` | Canvas node button — status dot, `name`, `state` (working / needs-you / idle / done), `detail`, `ContextGauge`; `selected` (`aria-pressed`), `dimmed`; no graph-library dependency                                                            |
+| `Transcript`    | Claude Code-style console `<ol>` — `TranscriptUserTurn`, `TranscriptText`, `TranscriptNote`, `TranscriptThinking`, `TranscriptToolCall`, `TranscriptTodos`/`TranscriptTodo`, `TranscriptPermission`/`…Choice`; `timestamp` slot on every part |
 
 ## Installation
 

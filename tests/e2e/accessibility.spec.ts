@@ -124,6 +124,14 @@ const stories = [
   { name: 'ColorSwatchPicker Small', id: 'primitives-colorswatchpicker--small' },
   { name: 'FormDialog', id: 'dialogs-formdialog--default' },
   { name: 'FormDialog Pending', id: 'dialogs-formdialog--pending' },
+  { name: 'ContextGauge Tones', id: 'feedback-contextgauge--tones' },
+  { name: 'AgentNodeCard AllStates', id: 'display-agentnodecard--all-states' },
+  { name: 'Resizable Horizontal', id: 'layout-resizable--horizontal' },
+  { name: 'Resizable ThreePanelNested', id: 'layout-resizable--three-panel-nested' },
+  { name: 'Transcript', id: 'display-transcript--default' },
+  { name: 'Transcript Expanded', id: 'display-transcript--expanded' },
+  { name: 'Transcript ToolStatuses', id: 'display-transcript--tool-statuses' },
+  { name: 'Transcript NoteTones', id: 'display-transcript--note-tones' },
 ]
 
 for (const { name, id } of stories) {
