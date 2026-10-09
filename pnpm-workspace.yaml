@@ -3,7 +3,8 @@ allowBuilds:
   msw: true
 auditConfig:
   ignoreGhsas:
-    # GHSA-mh99-v99m-4gvg (brace-expansion DoS): patched only on 5.x (pinned 5.0.8).
-    # Remaining hits are dev-only eslint>minimatch>brace-expansion 1.x/2.x with no
-    # upstream backport as of 2026-07-25 — remove when 1.1.17 / 2.1.3 publish.
-    - GHSA-mh99-v99m-4gvg
+    # GHSA-vfj7-8cjw-p6xm (braces stack-exhaustion DoS): no patched version exists
+    # (<=3.0.3 all affected). Dev-only: via @changesets/cli and tailwindcss>chokidar,
+    # never shipped. Added 2026-10-09 — re-check when braces publishes a patched
+    # release (npm view braces version) or a parent drops micromatch>braces.
+    - GHSA-vfj7-8cjw-p6xm
