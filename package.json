@@ -90,6 +90,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "react-resizable-panels": "^4.14.3",
     "recharts": "^3.8.1",
     "tailwind-merge": "^2.0.0"
   },
