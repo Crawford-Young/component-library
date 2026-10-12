@@ -50,7 +50,7 @@
     "release": "pnpm build && changeset publish"
   },
   "peerDependencies": {
-    "@tanstack/react-table": ">=8",
+    "@tanstack/react-table": "^8",
     "cmdk": ">=1",
     "date-fns": ">=3",
     "framer-motion": ">=12",

@@ -12,6 +12,7 @@ describe('Badge', () => {
     ['default', 'bg-primary'],
     ['secondary', 'bg-secondary'],
     ['destructive', 'bg-destructive'],
+    ['warning', 'bg-warning'],
     ['outline', 'text-foreground'],
   ] as const)('renders %s variant with key class', (variant, expectedClass) => {
     render(<Badge variant={variant}>B</Badge>)
