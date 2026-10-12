@@ -136,6 +136,8 @@ const stories = [
   { name: 'Transcript Expanded', id: 'display-transcript--expanded' },
   { name: 'Transcript ToolStatuses', id: 'display-transcript--tool-statuses' },
   { name: 'Transcript NoteTones', id: 'display-transcript--note-tones' },
+  { name: 'StackedBarChart', id: 'display-stackedbarchart--default' },
+  { name: 'StackedBarChart Empty', id: 'display-stackedbarchart--empty' },
 ]
 
 for (const { name, id } of stories) {
