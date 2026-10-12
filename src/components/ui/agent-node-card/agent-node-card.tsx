@@ -2,8 +2,9 @@ import * as React from 'react'
 import { cva } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { ContextGauge } from '../context-gauge'
+import { StatusDot, type StatusDotState } from '../status-dot'
 
-export type AgentNodeState = 'working' | 'needs-you' | 'idle' | 'done'
+export type AgentNodeState = StatusDotState
 
 const DEFAULT_LABEL: Record<AgentNodeState, string> = {
   working: 'working',
@@ -25,17 +26,6 @@ const cardVariants = cva(
     defaultVariants: { selected: false, dimmed: false },
   },
 )
-
-const dotVariants = cva('size-2 shrink-0 rounded-full', {
-  variants: {
-    state: {
-      working: 'bg-success',
-      'needs-you': 'bg-warning',
-      idle: 'bg-muted-foreground',
-      done: 'bg-muted-foreground opacity-60',
-    },
-  },
-})
 
 const stateTextVariants = cva('ml-auto shrink-0 text-[10.5px] font-medium', {
   variants: {
@@ -95,11 +85,7 @@ export const AgentNodeCard = React.forwardRef<HTMLButtonElement, AgentNodeCardPr
         {...props}
       >
         <span className="flex items-center gap-1.5">
-          <span
-            data-slot="dot"
-            aria-hidden="true"
-            className={cn(dotVariants({ state }), dimmed && 'opacity-50')}
-          />
+          <StatusDot data-slot="dot" state={state} className={cn(dimmed && 'opacity-50')} />
           <span
             className={cn(
               'min-w-0 truncate text-xs font-medium',
