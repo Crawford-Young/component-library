@@ -47,6 +47,7 @@ const stories = [
   { name: 'DatePicker', id: 'inputs-datepicker--default' },
   { name: 'PaginationControl', id: 'data-paginationcontrol--few-pages' },
   { name: 'DataTable', id: 'data-datatable--default' },
+  { name: 'DataTable TreeRows', id: 'data-datatable--tree-rows' },
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
   { name: 'RouteErrorFallback', id: 'feedback-routeerrorfallback--with-home-link' },
   { name: 'CountUp', id: 'display-countup--default' },
