@@ -40,6 +40,14 @@
   --info: 14 165 233;
   --info-foreground: 250 250 250;
 
+  /* Chart series — categorical, cycled by StackedBarChart */
+  --chart-1: 16 185 129;
+  --chart-2: 14 165 233;
+  --chart-3: 245 158 11;
+  --chart-4: 168 85 247;
+  --chart-5: 244 63 94;
+  --chart-6: 113 113 122;
+
   /* Radius */
   --radius-sm: 0.25rem;
   --radius: 0.5rem;
@@ -99,6 +107,14 @@
   --warning-foreground: 0 0 0;
   --info: 14 165 233;
   --info-foreground: 250 250 250;
+
+  /* Chart series — same hues, lightened for dark bg; cycled by StackedBarChart */
+  --chart-1: 16 185 129;
+  --chart-2: 56 189 248;
+  --chart-3: 245 158 11;
+  --chart-4: 192 132 252;
+  --chart-5: 251 113 133;
+  --chart-6: 161 161 170;
 }
 
 /* View-transition defaults — brand handoff (see startBrandHandoff) */
