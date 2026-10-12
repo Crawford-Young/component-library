@@ -1,15 +1,18 @@
 import * as React from 'react'
 import {
   getCoreRowModel,
+  getExpandedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   flexRender,
   type ColumnDef,
+  type ExpandedState,
+  type OnChangeFn,
   type PaginationState,
   type SortingState,
 } from '@tanstack/react-table'
-import { ChevronsUpDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronsUpDown, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   Table,
@@ -28,9 +31,31 @@ export interface DataTableProps<TData> {
   data: TData[]
   pagination?: boolean | { pageSize?: number; pageSizeOptions?: number[] }
   className?: string
+  /** Returns a row's children; enables tree rows, expand toggles and the expand-all control. */
+  getSubRows?: (row: TData) => TData[] | undefined
+  /** Controlled expanded state (react-table `ExpandedState`); pair with `onExpandedChange`. */
+  expanded?: ExpandedState
+  onExpandedChange?: OnChangeFn<ExpandedState>
+  /** Initial expanded state when uncontrolled. */
+  defaultExpanded?: ExpandedState
+  /** Names a row in its toggle: "Expand <label>". Falls back to "row". */
+  getRowLabel?: (row: TData) => string
 }
 
-export function DataTable<TData>({ columns, data, pagination, className }: DataTableProps<TData>) {
+/** Indent per tree level; matches the `6` step of the spacing scale. */
+const INDENT_STEP = '1.5rem'
+
+export function DataTable<TData>({
+  columns,
+  data,
+  pagination,
+  className,
+  getSubRows,
+  expanded,
+  onExpandedChange,
+  defaultExpanded,
+  getRowLabel,
+}: DataTableProps<TData>) {
   const hasPagination = pagination !== undefined && pagination !== false
   const resolvedPageSize = typeof pagination === 'object' ? (pagination.pageSize ?? 10) : 10
   const pageSizeOptions =
@@ -42,14 +67,25 @@ export function DataTable<TData>({ columns, data, pagination, className }: DataT
     pageSize: resolvedPageSize,
   })
 
+  const [innerExpanded, setInnerExpanded] = React.useState<ExpandedState>(defaultExpanded ?? {})
+  const isTree = getSubRows !== undefined
+
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
+      ...(isTree ? { expanded: expanded ?? innerExpanded } : {}),
       ...(hasPagination ? { pagination: { pageIndex, pageSize } } : {}),
     },
     onSortingChange: setSorting,
+    ...(isTree
+      ? {
+          getSubRows,
+          onExpandedChange: onExpandedChange ?? setInnerExpanded,
+          getExpandedRowModel: getExpandedRowModel(),
+        }
+      : {}),
     ...(hasPagination ? { onPaginationChange: setPagination } : {}),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -58,6 +94,15 @@ export function DataTable<TData>({ columns, data, pagination, className }: DataT
 
   return (
     <div className={cn('space-y-4', className)}>
+      {isTree && (
+        <button
+          type="button"
+          onClick={table.getToggleAllRowsExpandedHandler()}
+          className="rounded text-sm text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {table.getIsAllRowsExpanded() ? 'Collapse all' : 'Expand all'}
+        </button>
+      )}
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -97,8 +142,30 @@ export function DataTable<TData>({ columns, data, pagination, className }: DataT
           {table.getRowModel().rows.length > 0 ? (
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                {row.getVisibleCells().map((cell, index) => (
+                  <TableCell
+                    key={cell.id}
+                    style={
+                      isTree && index === 0 && row.depth > 0
+                        ? { paddingLeft: `calc(${row.depth} * ${INDENT_STEP})` }
+                        : undefined
+                    }
+                  >
+                    {isTree && index === 0 && row.getCanExpand() && (
+                      <button
+                        type="button"
+                        onClick={row.getToggleExpandedHandler()}
+                        aria-expanded={row.getIsExpanded()}
+                        aria-label={`${row.getIsExpanded() ? 'Collapse' : 'Expand'} ${getRowLabel?.(row.original) ?? 'row'}`}
+                        className="mr-1 inline-flex rounded align-middle text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {row.getIsExpanded() ? (
+                          <ChevronDown className="size-4" aria-hidden="true" />
+                        ) : (
+                          <ChevronRight className="size-4" aria-hidden="true" />
+                        )}
+                      </button>
+                    )}
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

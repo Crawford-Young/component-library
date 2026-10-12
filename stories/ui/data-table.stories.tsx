@@ -164,3 +164,47 @@ export const WithPageSizeSelector: Story = {
 export const Empty: Story = {
   render: () => <DataTable columns={columns} data={[]} />,
 }
+
+interface AuditNode {
+  name: string
+  kind: string
+  children?: AuditNode[]
+}
+
+const auditTree: AuditNode[] = [
+  {
+    name: 'strate',
+    kind: 'Repo',
+    children: [
+      {
+        name: 'Audit view',
+        kind: 'Epic',
+        children: [
+          {
+            name: 'Render the tree',
+            kind: 'Issue',
+            children: [{ name: 'Add tree rows', kind: 'PR' }],
+          },
+        ],
+      },
+    ],
+  },
+  { name: 'component-library', kind: 'Repo' },
+]
+
+const auditColumns: ColumnDef<AuditNode>[] = [
+  { accessorKey: 'name', header: 'Name' },
+  { accessorKey: 'kind', header: 'Kind' },
+]
+
+export const TreeRows: Story = {
+  render: () => (
+    <DataTable
+      columns={auditColumns}
+      data={auditTree}
+      getSubRows={(row: AuditNode) => row.children}
+      defaultExpanded={{ '0': true }}
+      getRowLabel={(row: AuditNode) => `${row.kind} ${row.name}`}
+    />
+  ),
+}
