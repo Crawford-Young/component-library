@@ -6,20 +6,25 @@ import { EmptyState } from '@/components/ui/empty-state'
 
 // Literal class names so Tailwind's scanner sees them; order matches seriesColor.
 const SWATCH_CLASSES = [
-  'bg-[rgb(var(--chart-1))]',
-  'bg-[rgb(var(--chart-2))]',
-  'bg-[rgb(var(--chart-3))]',
-  'bg-[rgb(var(--chart-4))]',
-  'bg-[rgb(var(--chart-5))]',
-  'bg-[rgb(var(--chart-6))]',
+  'bg-chart-1',
+  'bg-chart-2',
+  'bg-chart-3',
+  'bg-chart-4',
+  'bg-chart-5',
+  'bg-chart-6',
 ] as const
+
+const TICK_FONT_SIZE = 10
+const CURSOR_OPACITY = 0.4
+const PLOT_MARGIN = { top: 4, right: 4, left: 0, bottom: 0 } as const
 
 export interface StackedBarSeries {
   readonly key: string
   readonly label: string
 }
 
-export type StackedBarDatum = Readonly<Record<string, unknown>>
+/** Series values should be numbers; anything else is read as 0 everywhere (bars, table, tooltip). */
+export type StackedBarDatum = Readonly<Record<string, string | number | null | undefined>>
 
 export interface StackedBarChartProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -29,6 +34,8 @@ export interface StackedBarChartProps extends Omit<
   readonly data: ReadonlyArray<StackedBarDatum>
   /** Key on each datum holding the x value. */
   readonly xKey: string
+  /** Human name for the x dimension in the aria-label and table header; defaults to `xKey`. */
+  readonly xLabel?: string
   /** Stacked segments, bottom to top; colors cycle through `--chart-1…6`. */
   readonly series: ReadonlyArray<StackedBarSeries>
   /** Formats y-axis ticks and tooltip values; the consumer owns the unit. */
@@ -36,6 +43,8 @@ export interface StackedBarChartProps extends Omit<
   /** Formats x-axis ticks, tooltip headings and the table rows. */
   readonly xFormat?: (x: string) => string
   readonly emptyMessage?: string
+  /** Tailwind classes sizing the plot area; replaces the default `h-48`. */
+  readonly plotClassName?: string
 }
 
 const seriesColor = (index: number): string =>
@@ -44,6 +53,16 @@ const seriesColor = (index: number): string =>
 const swatchClass = (index: number): string => SWATCH_CLASSES[index % SWATCH_CLASSES.length]
 
 const toNumber = (value: unknown): number => (typeof value === 'number' ? value : 0)
+
+/** Coerces each series value to a number once, so bars, table and tooltip read the same data. */
+const normalize = (
+  data: ReadonlyArray<StackedBarDatum>,
+  series: ReadonlyArray<StackedBarSeries>,
+): Array<Record<string, string | number | null | undefined>> =>
+  data.map((row) => ({
+    ...row,
+    ...Object.fromEntries(series.map((s) => [s.key, toNumber(row[s.key])])),
+  }))
 
 interface TooltipEntry {
   readonly dataKey?: unknown
@@ -100,16 +119,19 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
     {
       data,
       xKey,
+      xLabel = xKey,
       series,
       format,
       xFormat = identity,
       emptyMessage = 'No data',
+      plotClassName = 'h-48',
       className,
       ...props
     },
     ref,
   ) => {
-    const hasData = data.some((row) => series.some((s) => toNumber(row[s.key]) > 0))
+    const rows = normalize(data, series)
+    const hasData = rows.some((row) => series.some((s) => row[s.key] !== 0))
     if (!hasData) {
       return (
         <div ref={ref} className={className} {...props}>
@@ -122,29 +144,26 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
       <div ref={ref} className={cn('flex w-full flex-col gap-2', className)} {...props}>
         <div
           role="img"
-          aria-label={`Stacked bar chart: ${seriesLabels} by ${xKey}, ${data.length} values`}
-          className="h-48 w-full"
+          aria-label={`Stacked bar chart: ${seriesLabels} by ${xLabel}, ${rows.length} values`}
+          className={cn('w-full', plotClassName)}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data as StackedBarDatum[]}
-              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-            >
+            <BarChart data={rows} margin={PLOT_MARGIN}>
               <XAxis
                 dataKey={xKey}
                 tickFormatter={xFormat}
-                tick={{ fontSize: 10, fill: 'rgb(var(--muted-foreground))' }}
+                tick={{ fontSize: TICK_FONT_SIZE, fill: 'rgb(var(--muted-foreground))' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 tickFormatter={format}
-                tick={{ fontSize: 10, fill: 'rgb(var(--muted-foreground))' }}
+                tick={{ fontSize: TICK_FONT_SIZE, fill: 'rgb(var(--muted-foreground))' }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
-                cursor={{ fill: 'rgb(var(--muted))', opacity: 0.4 }}
+                cursor={{ fill: 'rgb(var(--muted))', opacity: CURSOR_OPACITY }}
                 content={<StackedBarTooltip series={series} format={format} xFormat={xFormat} />}
               />
               {series.map((s, i) => (
@@ -167,18 +186,18 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
         <table className="sr-only">
           <thead>
             <tr>
-              <th>{xKey}</th>
+              <th>{xLabel}</th>
               {series.map((s) => (
                 <th key={s.key}>{s.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {data.map((row, i) => (
+            {rows.map((row, i) => (
               <tr key={i}>
                 <td>{xFormat(String(row[xKey]))}</td>
                 {series.map((s) => (
-                  <td key={s.key}>{format(toNumber(row[s.key]))}</td>
+                  <td key={s.key}>{format(row[s.key] as number)}</td>
                 ))}
               </tr>
             ))}

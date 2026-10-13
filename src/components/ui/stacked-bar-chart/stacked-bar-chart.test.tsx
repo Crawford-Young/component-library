@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import * as barrel from './index'
 import { StackedBarChart, StackedBarTooltip } from './stacked-bar-chart'
 
 const data = [
@@ -24,8 +25,8 @@ describe('StackedBarChart', () => {
     render(<StackedBarChart data={data} xKey="day" series={series} format={format} />)
     const items = within(screen.getByRole('list', { name: 'Legend' })).getAllByRole('listitem')
     expect(items.map((i) => i.textContent)).toEqual(['Demo', 'Other'])
-    expect(items[0].querySelector('span')).toHaveClass('bg-[rgb(var(--chart-1))]')
-    expect(items[1].querySelector('span')).toHaveClass('bg-[rgb(var(--chart-2))]')
+    expect(items[0].querySelector('span')).toHaveClass('bg-chart-1')
+    expect(items[1].querySelector('span')).toHaveClass('bg-chart-2')
   })
 
   it('cycles chart tokens past the palette size', () => {
@@ -33,7 +34,7 @@ describe('StackedBarChart', () => {
     const row = Object.fromEntries([['day', 'd'], ...many.map((s) => [s.key, 1])])
     render(<StackedBarChart data={[row]} xKey="day" series={many} format={format} />)
     const items = within(screen.getByRole('list', { name: 'Legend' })).getAllByRole('listitem')
-    expect(items[6].querySelector('span')).toHaveClass('bg-[rgb(var(--chart-1))]')
+    expect(items[6].querySelector('span')).toHaveClass('bg-chart-1')
   })
 
   it('exposes formatted values in an sr-only table', () => {
@@ -86,6 +87,65 @@ describe('StackedBarChart', () => {
     const odd = [{ day: 'a', demo: 'x', other: undefined }]
     render(<StackedBarChart data={odd} xKey="day" series={series} format={format} />)
     expect(screen.getByText('No data')).toBeInTheDocument()
+  })
+
+  it('names the x dimension from xLabel in the aria-label and table header', () => {
+    render(<StackedBarChart data={data} xKey="day" xLabel="Day" series={series} format={format} />)
+    expect(screen.getByRole('img')).toHaveAccessibleName(
+      'Stacked bar chart: Demo, Other by Day, 2 values',
+    )
+    expect(
+      within(screen.getByRole('table'))
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Day', 'Demo', 'Other'])
+  })
+
+  it('renders negative values instead of the empty state', () => {
+    render(
+      <StackedBarChart
+        data={[{ day: 'a', demo: -2, other: 0 }]}
+        xKey="day"
+        series={series}
+        format={format}
+      />,
+    )
+    expect(screen.queryByText('No data')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('$-2.00')).toBeInTheDocument()
+  })
+
+  it('shows non-numeric cells as zero in the table', () => {
+    render(
+      <StackedBarChart
+        data={[{ day: 'a', demo: 3, other: 'x' }]}
+        xKey="day"
+        series={series}
+        format={format}
+      />,
+    )
+    expect(within(screen.getByRole('table')).getByText('$0.00')).toBeInTheDocument()
+  })
+
+  it('sizes the plot with plotClassName, defaulting to h-48', () => {
+    const { rerender } = render(
+      <StackedBarChart data={data} xKey="day" series={series} format={format} />,
+    )
+    expect(screen.getByRole('img')).toHaveClass('h-48')
+    rerender(
+      <StackedBarChart
+        data={data}
+        xKey="day"
+        series={series}
+        format={format}
+        plotClassName="h-80"
+      />,
+    )
+    expect(screen.getByRole('img')).toHaveClass('h-80')
+    expect(screen.getByRole('img')).not.toHaveClass('h-48')
+  })
+
+  it('keeps the tooltip out of the public barrel', () => {
+    expect(Object.keys(barrel).sort()).toEqual(['StackedBarChart'])
   })
 
   it('merges className and forwards ref and props', () => {

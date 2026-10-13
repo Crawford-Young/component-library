@@ -187,4 +187,29 @@ describe('DataTable', () => {
     expect(screen.getByText('Info')).toBeInTheDocument()
     expect(screen.getByText('Name')).toBeInTheDocument()
   })
+
+  it('sorts from the keyboard through a header button and reports aria-sort', async () => {
+    const user = userEvent.setup()
+    render(<DataTable columns={columns} data={data} />)
+    const header = screen.getByRole('columnheader', { name: /Name/ })
+    expect(header).toHaveAttribute('aria-sort', 'none')
+    const button = within(header).getByRole('button')
+    button.focus()
+    await user.keyboard('{Enter}')
+    expect(header).toHaveAttribute('aria-sort', 'ascending')
+    await user.keyboard(' ')
+    expect(header).toHaveAttribute('aria-sort', 'descending')
+  })
+
+  it('gives unsortable columns no button and no aria-sort', () => {
+    render(
+      <DataTable
+        columns={[{ accessorKey: 'name', header: 'Name', enableSorting: false }]}
+        data={data}
+      />,
+    )
+    const header = screen.getByRole('columnheader', { name: 'Name' })
+    expect(header).not.toHaveAttribute('aria-sort')
+    expect(within(header).queryByRole('button')).toBeNull()
+  })
 })
