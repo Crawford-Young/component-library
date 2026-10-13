@@ -138,6 +138,9 @@ const stories = [
   { name: 'Transcript NoteTones', id: 'display-transcript--note-tones' },
   { name: 'StackedBarChart', id: 'display-stackedbarchart--default' },
   { name: 'StackedBarChart Empty', id: 'display-stackedbarchart--empty' },
+  { name: 'DayTimeline', id: 'display-daytimeline--default' },
+  { name: 'DayTimeline CustomKindLabels', id: 'display-daytimeline--custom-kind-labels' },
+  { name: 'DayTimeline Empty', id: 'display-daytimeline--empty' },
 ]
 
 for (const { name, id } of stories) {
