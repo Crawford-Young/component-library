@@ -144,6 +144,15 @@ const stories = [
   { name: 'DayTimeline CustomKinds', id: 'display-daytimeline--custom-kinds' },
   { name: 'DayTimeline MarksOnly', id: 'display-daytimeline--marks-only' },
   { name: 'DayTimeline Empty', id: 'display-daytimeline--empty' },
+  { name: 'StatTile', id: 'display-stattile--default' },
+  { name: 'StatTile Worse', id: 'display-stattile--worse' },
+  { name: 'StatTile FlatLabel', id: 'display-stattile--flat-label' },
+  { name: 'StatTile Unavailable', id: 'display-stattile--unavailable' },
+  { name: 'StatTile RealZero', id: 'display-stattile--real-zero' },
+  { name: 'StatTile InAGrid', id: 'display-stattile--in-a-grid' },
+  { name: 'TrendChart', id: 'display-trendchart--default' },
+  { name: 'TrendChart WithBackgroundBars', id: 'display-trendchart--with-background-bars' },
+  { name: 'TrendChart Empty', id: 'display-trendchart--empty' },
 ]
 
 for (const { name, id } of stories) {
