@@ -10,6 +10,7 @@ import {
   type ExpandedState,
   type OnChangeFn,
   type PaginationState,
+  type Row,
   type SortingState,
 } from '@tanstack/react-table'
 import { ChevronsUpDown, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react'
@@ -40,6 +41,8 @@ export interface DataTableProps<TData> {
   defaultExpanded?: ExpandedState
   /** Names a row in its toggle: "Expand <label>". Falls back to "row". */
   getRowLabel?: (row: TData) => string
+  /** Stable row id (react-table `getRowId`). Without it expanded state is keyed by index, so a live insert shifts it onto the wrong rows. */
+  getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string
 }
 
 /** Indent per tree level; matches the `6` step of the spacing scale. */
@@ -55,6 +58,7 @@ export function DataTable<TData>({
   onExpandedChange,
   defaultExpanded,
   getRowLabel,
+  getRowId,
 }: DataTableProps<TData>) {
   const hasPagination = pagination !== undefined && pagination !== false
   const resolvedPageSize = typeof pagination === 'object' ? (pagination.pageSize ?? 10) : 10
@@ -73,6 +77,7 @@ export function DataTable<TData>({
   const table = useReactTable({
     data,
     columns,
+    getRowId,
     state: {
       sorting,
       ...(isTree ? { expanded: expanded ?? innerExpanded } : {}),

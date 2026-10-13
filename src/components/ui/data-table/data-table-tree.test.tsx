@@ -154,3 +154,26 @@ describe('DataTable tree rows', () => {
     expect(screen.getByRole('button', { name: 'Expand Zeta' })).toBeInTheDocument()
   })
 })
+
+describe('DataTable getRowId', () => {
+  it('keeps an expanded row expanded when a sibling is inserted before it', async () => {
+    const user = userEvent.setup()
+    const getRowId = (n: Node) => n.name
+    const { rerender } = render(
+      <DataTable columns={columns} data={tree} getSubRows={getSubRows} getRowId={getRowId} />,
+    )
+    await user.click(screen.getAllByRole('button', { name: 'Expand row' })[1])
+    expect(names()).toEqual(['Zeta', 'Alpha', 'Child', 'Solo'])
+
+    const fresh: Node = { name: 'Fresh', size: 0, children: [{ name: 'Fresh-child', size: 1 }] }
+    rerender(
+      <DataTable
+        columns={columns}
+        data={[fresh, ...tree]}
+        getSubRows={getSubRows}
+        getRowId={getRowId}
+      />,
+    )
+    expect(names()).toEqual(['Fresh', 'Zeta', 'Alpha', 'Child', 'Solo'])
+  })
+})
