@@ -2,19 +2,18 @@
 import * as React from 'react'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { cn } from '@/lib/utils'
+import {
+  ChartLegend,
+  ChartSrTable,
+  ChartTooltipCard,
+  identity,
+  seriesColor,
+  swatchClass,
+  TICK_STYLE,
+  type ChartTooltipRow,
+} from '@/components/ui/chart-parts/chart-parts'
 import { EmptyState } from '@/components/ui/empty-state'
 
-// Literal class names so Tailwind's scanner sees them; order matches seriesColor.
-const SWATCH_CLASSES = [
-  'bg-chart-1',
-  'bg-chart-2',
-  'bg-chart-3',
-  'bg-chart-4',
-  'bg-chart-5',
-  'bg-chart-6',
-] as const
-
-const TICK_FONT_SIZE = 10
 const CURSOR_OPACITY = 0.4
 const PLOT_MARGIN = { top: 4, right: 4, left: 0, bottom: 0 } as const
 
@@ -24,7 +23,9 @@ export interface StackedBarSeries {
 }
 
 /** Series values should be numbers; anything else is read as 0 everywhere (bars, table, tooltip). */
-export type StackedBarDatum = Readonly<Record<string, string | number | null | undefined>>
+export interface StackedBarDatum {
+  readonly [key: string]: string | number | null | undefined
+}
 
 export interface StackedBarChartProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -46,11 +47,6 @@ export interface StackedBarChartProps extends Omit<
   /** Tailwind classes sizing the plot area; replaces the default `h-48`. */
   readonly plotClassName?: string
 }
-
-const seriesColor = (index: number): string =>
-  `rgb(var(--chart-${(index % SWATCH_CLASSES.length) + 1}))`
-
-const swatchClass = (index: number): string => SWATCH_CLASSES[index % SWATCH_CLASSES.length]
 
 const toNumber = (value: unknown): number => (typeof value === 'number' ? value : 0)
 
@@ -87,32 +83,19 @@ export function StackedBarTooltip({
   payload,
 }: StackedBarTooltipProps): React.JSX.Element | null {
   if (active !== true || payload === undefined || payload.length === 0) return null
-  return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-foreground">
-      <p className="mb-1 font-medium">{xFormat(String(label))}</p>
-      <ul className="space-y-0.5">
-        {payload.map((entry) => {
-          const index = series.findIndex((s) => s.key === entry.dataKey)
-          if (index === -1) return null
-          return (
-            <li key={series[index].key} className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className={cn('inline-block h-2 w-2 rounded-sm', swatchClass(index))}
-                />
-                {series[index].label}
-              </span>
-              <span className="tabular-nums">{format(toNumber(entry.value))}</span>
-            </li>
-          )
-        })}
-      </ul>
-    </div>
-  )
+  const rows: ChartTooltipRow[] = []
+  for (const entry of payload) {
+    const index = series.findIndex((s) => s.key === entry.dataKey)
+    if (index === -1) continue
+    rows.push({
+      key: series[index].key,
+      label: series[index].label,
+      swatch: swatchClass(index),
+      text: format(toNumber(entry.value)),
+    })
+  }
+  return <ChartTooltipCard heading={xFormat(String(label))} rows={rows} />
 }
-
-const identity = (x: string): string => x
 
 export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartProps>(
   (
@@ -152,16 +135,11 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
               <XAxis
                 dataKey={xKey}
                 tickFormatter={xFormat}
-                tick={{ fontSize: TICK_FONT_SIZE, fill: 'rgb(var(--muted-foreground))' }}
+                tick={TICK_STYLE}
                 axisLine={false}
                 tickLine={false}
               />
-              <YAxis
-                tickFormatter={format}
-                tick={{ fontSize: TICK_FONT_SIZE, fill: 'rgb(var(--muted-foreground))' }}
-                axisLine={false}
-                tickLine={false}
-              />
+              <YAxis tickFormatter={format} tick={TICK_STYLE} axisLine={false} tickLine={false} />
               <Tooltip
                 cursor={{ fill: 'rgb(var(--muted))', opacity: CURSOR_OPACITY }}
                 content={<StackedBarTooltip series={series} format={format} xFormat={xFormat} />}
@@ -172,37 +150,16 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <ul aria-label="Legend" className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground">
-          {series.map((s, i) => (
-            <li key={s.key} className="flex items-center gap-1.5">
-              <span
-                aria-hidden="true"
-                className={cn('inline-block h-2.5 w-2.5 rounded-sm', swatchClass(i))}
-              />
-              {s.label}
-            </li>
-          ))}
-        </ul>
-        <table className="sr-only">
-          <thead>
-            <tr>
-              <th>{xLabel}</th>
-              {series.map((s) => (
-                <th key={s.key}>{s.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i}>
-                <td>{xFormat(String(row[xKey]))}</td>
-                {series.map((s) => (
-                  <td key={s.key}>{format(row[s.key] as number)}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ChartLegend
+          items={series.map((s, i) => ({ key: s.key, label: s.label, swatch: swatchClass(i) }))}
+        />
+        <ChartSrTable
+          headers={[xLabel, ...series.map((s) => s.label)]}
+          rows={rows.map((row) => [
+            xFormat(String(row[xKey])),
+            ...series.map((s) => format(row[s.key] as number)),
+          ])}
+        />
       </div>
     )
   },
