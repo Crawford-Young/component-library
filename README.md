@@ -90,9 +90,12 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Data
 
-| Component | Notes                                                                     |
-| --------- | ------------------------------------------------------------------------- |
-| `Table`   | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` |
+| Component         | Notes                                                                                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DataTable`       | TanStack Table wrapper — sorting, pagination; tree rows via `getSubRows` (`expanded` / `onExpandedChange` / `defaultExpanded`, `getRowLabel`, expand-all toggle, sorting within siblings) |
+| `DayTimeline`     | One row per day, spans by kind (active / wait / agent) on a 24 h axis, marks, legend; `role="img"` + sr-only table                                                                        |
+| `StackedBarChart` | Recharts stacked bars by series (`data`, `xKey`, `series`, `format`, `xFormat`, `emptyMessage`), colored by `--chart-1..6`                                                                |
+| `Table`           | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`                                                                                                                 |
 
 ### Calendar
 
