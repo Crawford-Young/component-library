@@ -9,13 +9,20 @@ const DAY_MS = 24 * HOUR_MS
 const MINUTE_MS = 60_000
 const AXIS_HOURS = [0, 6, 12, 18, 24] as const
 
-export type DayTimelineKind = 'active' | 'wait' | 'agent'
+/** A span category: its legend label, colour (by position, cycling `--chart-1…6`) and lane. */
+export interface DayTimelineKind {
+  readonly key: string
+  readonly label: string
+  /** `main` (default) is the top lane; `sub` is a bottom strip for runs that overlap main-lane time. */
+  readonly lane?: 'main' | 'sub'
+}
 
 export interface DayTimelineSpan {
-  /** Ms since the day's local midnight (0 to 86_400_000). */
+  /** Ms since the day's local midnight (0 to 86_400_000); values outside clip to the track. */
   readonly startMs: number
   readonly endMs: number
-  readonly kind: DayTimelineKind
+  /** `key` of an entry in `kinds`; spans with an unknown key are not drawn. */
+  readonly kind: string
 }
 
 export interface DayTimelineMark {
@@ -25,49 +32,62 @@ export interface DayTimelineMark {
 }
 
 export interface DayTimelineDay {
-  /** Day key, e.g. `2026-10-05`; formatted by `dayFormat`. */
+  /** Day key, e.g. `2026-10-05`; formatted by `dayFormat`. Must be unique across `days`. */
   readonly day: string
+  /**
+   * Callers split spans at local midnight: a span running past 24:00 is clipped there, not
+   * continued on the next row. Spans with `endMs < startMs` are dropped. Spans within one lane
+   * are expected not to overlap; the bar draws them stacked on each other if they do.
+   */
   readonly spans: ReadonlyArray<DayTimelineSpan>
   readonly marks: ReadonlyArray<DayTimelineMark>
 }
 
 export interface DayTimelineProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   readonly days: ReadonlyArray<DayTimelineDay>
+  /** Span categories, in legend order; colors cycle `--chart-1…6` by position. */
+  readonly kinds: ReadonlyArray<DayTimelineKind>
   /** Formats the row label and table cell for each day key. */
   readonly dayFormat?: (day: string) => string
-  /** Overrides the legend, hover and table names per kind. */
-  readonly kindLabels?: Partial<Record<DayTimelineKind, string>>
   readonly emptyMessage?: string
 }
 
-const DEFAULT_KIND_LABELS: Record<DayTimelineKind, string> = {
-  active: 'Active',
-  wait: 'Wait',
-  agent: 'Agent',
-}
-
-const KINDS: ReadonlyArray<DayTimelineKind> = ['active', 'wait', 'agent']
+/** Literal class names so Tailwind's scanner sees them; keyed by the 1-based `--chart-n`. */
+const CHART_BG = {
+  1: 'bg-chart-1',
+  2: 'bg-chart-2',
+  3: 'bg-chart-3',
+  4: 'bg-chart-4',
+  5: 'bg-chart-5',
+  6: 'bg-chart-6',
+} as const
 
 /**
- * Active and wait share the main lane (top half of the row); agent runs get
- * their own lane (bottom strip) because they overlap active time.
- * Class strings are literal so Tailwind's scanner sees them.
+ * Main-lane spans take the top half of the row, sub-lane spans a bottom strip.
+ * `color` is the 1-based `--chart-n`.
  */
 export const dayTimelineSpanVariants = cva('absolute rounded-sm', {
   variants: {
-    kind: {
-      active: 'top-0 h-3 bg-[rgb(var(--chart-1))]',
-      wait: 'top-0 h-3 bg-[rgb(var(--chart-3))]',
-      agent: 'bottom-0 h-2 bg-[rgb(var(--chart-2))]',
+    lane: {
+      main: 'top-0 h-3',
+      sub: 'bottom-0 h-2',
     },
+    color: CHART_BG,
   },
+  defaultVariants: { lane: 'main' },
 })
 
-const LEGEND_SWATCH: Record<DayTimelineKind, string> = {
-  active: 'bg-[rgb(var(--chart-1))]',
-  wait: 'bg-[rgb(var(--chart-3))]',
-  agent: 'bg-[rgb(var(--chart-2))]',
-}
+const PALETTE_SIZE = 6
+
+const colorOf = (index: number): 1 | 2 | 3 | 4 | 5 | 6 =>
+  ((index % PALETTE_SIZE) + 1) as 1 | 2 | 3 | 4 | 5 | 6
+
+/** Shared width of the day-label column and the axis spacer so the tracks line up. */
+const DAY_LABEL_COLUMN = 'w-20 shrink-0'
+
+/** Axis labels at the track edges hang inward so they don't spill out of it. */
+const axisLabelAlign = (hour: number): string =>
+  hour === 0 ? '' : hour === 24 ? '-translate-x-full' : '-translate-x-1/2'
 
 const clamp = (ms: number): number => Math.min(DAY_MS, Math.max(0, ms))
 
@@ -93,20 +113,25 @@ const plural = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? '' 
 const identity = (x: string): string => x
 
 export const DayTimeline = React.forwardRef<HTMLDivElement, DayTimelineProps>(
-  (
-    { days, dayFormat = identity, kindLabels, emptyMessage = 'No data', className, ...props },
-    ref,
-  ) => {
-    const spanCount = days.reduce((n, d) => n + d.spans.length, 0)
-    if (spanCount === 0) {
+  ({ days, kinds, dayFormat = identity, emptyMessage = 'No data', className, ...props }, ref) => {
+    const kindIndex = new Map(kinds.map((k, i) => [k.key, i]))
+    const drawn = days.map((d) => ({
+      ...d,
+      spans: d.spans.filter((s) => s.endMs >= s.startMs && kindIndex.has(s.kind)),
+    }))
+    const spanCount = drawn.reduce((n, d) => n + d.spans.length, 0)
+    const markCount = drawn.reduce((n, d) => n + d.marks.length, 0)
+    if (spanCount === 0 && markCount === 0) {
       return (
         <div ref={ref} className={className} {...props}>
           <EmptyState message={emptyMessage} />
         </div>
       )
     }
-    const labels = { ...DEFAULT_KIND_LABELS, ...kindLabels }
-    const markCount = days.reduce((n, d) => n + d.marks.length, 0)
+    const kindOf = (key: string): { kind: DayTimelineKind; index: number } => {
+      const index = kindIndex.get(key)!
+      return { kind: kinds[index], index }
+    }
     return (
       <div ref={ref} className={cn('flex w-full flex-col gap-2', className)} {...props}>
         <div
@@ -114,43 +139,54 @@ export const DayTimeline = React.forwardRef<HTMLDivElement, DayTimelineProps>(
           aria-label={`Day timeline: ${plural(days.length, 'day')}, ${plural(spanCount, 'span')}, ${plural(markCount, 'mark')}`}
           className="flex flex-col gap-1"
         >
-          {days.map((d) => (
+          {drawn.map((d) => (
             <div key={d.day} className="flex items-center gap-2">
-              <span className="w-20 shrink-0 text-xs text-foreground">{dayFormat(d.day)}</span>
+              <span className={cn(DAY_LABEL_COLUMN, 'text-xs text-foreground')}>
+                {dayFormat(d.day)}
+              </span>
               <div className="relative h-6 flex-1 rounded-sm bg-muted">
-                {d.spans.map((s, i) => (
-                  <div
-                    key={i}
-                    data-span=""
-                    data-kind={s.kind}
-                    data-lane={s.kind === 'agent' ? 'agent' : 'main'}
-                    title={`${labels[s.kind]}: ${clock(s.startMs)}–${clock(s.endMs)} (${duration(s.startMs, s.endMs)})`}
-                    className={dayTimelineSpanVariants({ kind: s.kind })}
-                    style={{ left: pct(s.startMs), width: pct(clamp(s.endMs) - clamp(s.startMs)) }}
-                  />
-                ))}
+                {d.spans.map((s, i) => {
+                  const { kind, index } = kindOf(s.kind)
+                  const lane = kind.lane ?? 'main'
+                  return (
+                    <div
+                      key={i}
+                      data-span=""
+                      data-kind={s.kind}
+                      data-lane={lane}
+                      title={`${kind.label}: ${clock(s.startMs)}–${clock(s.endMs)} (${duration(s.startMs, s.endMs)})`}
+                      className={dayTimelineSpanVariants({ lane, color: colorOf(index) })}
+                      style={{
+                        left: pct(s.startMs),
+                        width: pct(clamp(s.endMs) - clamp(s.startMs)),
+                      }}
+                    />
+                  )
+                })}
                 {d.marks.map((m, i) => (
                   <div
                     key={i}
                     data-mark=""
                     title={`${m.label} · ${clock(m.atMs)}`}
-                    className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground"
+                    className="absolute inset-y-0 flex w-3 -translate-x-1/2 justify-center"
                     style={{ left: pct(m.atMs) }}
-                  />
+                  >
+                    <span data-mark-line="" aria-hidden="true" className="w-0.5 bg-foreground" />
+                  </div>
                 ))}
               </div>
             </div>
           ))}
           <div className="flex items-center gap-2" aria-hidden="true">
-            <span className="w-20 shrink-0" />
+            <span className={DAY_LABEL_COLUMN} />
             <div
               data-testid="day-timeline-axis"
-              className="relative h-4 flex-1 text-[10px] text-muted-foreground"
+              className="relative h-4 flex-1 text-xs text-muted-foreground"
             >
               {AXIS_HOURS.map((h) => (
                 <span
                   key={h}
-                  className="absolute -translate-x-1/2 tabular-nums"
+                  className={cn('absolute tabular-nums', axisLabelAlign(h))}
                   style={{ left: pct(h * HOUR_MS) }}
                 >
                   {h}
@@ -160,13 +196,13 @@ export const DayTimeline = React.forwardRef<HTMLDivElement, DayTimelineProps>(
           </div>
         </div>
         <ul aria-label="Legend" className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground">
-          {KINDS.map((kind) => (
-            <li key={kind} className="flex items-center gap-1.5">
+          {kinds.map((kind, i) => (
+            <li key={kind.key} className="flex items-center gap-1.5">
               <span
                 aria-hidden="true"
-                className={cn('inline-block h-2.5 w-2.5 rounded-sm', LEGEND_SWATCH[kind])}
+                className={cn('inline-block h-2.5 w-2.5 rounded-sm', CHART_BG[colorOf(i)])}
               />
-              {labels[kind]}
+              {kind.label}
             </li>
           ))}
         </ul>
@@ -180,11 +216,11 @@ export const DayTimeline = React.forwardRef<HTMLDivElement, DayTimelineProps>(
             </tr>
           </thead>
           <tbody>
-            {days.flatMap((d) => [
+            {drawn.flatMap((d) => [
               ...d.spans.map((s, i) => (
                 <tr key={`s${d.day}-${i}`}>
                   <td>{dayFormat(d.day)}</td>
-                  <td>{labels[s.kind]}</td>
+                  <td>{kindOf(s.kind).kind.label}</td>
                   <td>{clock(s.startMs)}</td>
                   <td>{clock(s.endMs)}</td>
                 </tr>

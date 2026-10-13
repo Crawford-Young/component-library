@@ -1,5 +1,6 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
+import type { ExpandedState } from '@tanstack/react-table'
 import { DataTable, type ColumnDef } from '@/components/ui/data-table'
 import { Badge } from '@/components/ui/badge'
 
@@ -207,4 +208,28 @@ export const TreeRows: Story = {
       getRowLabel={(row: AuditNode) => `${row.kind} ${row.name}`}
     />
   ),
+}
+
+export const TreeRowsControlled: Story = {
+  render: function Render() {
+    const [expanded, setExpanded] = React.useState<ExpandedState>({})
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Expanded ids: {Object.keys(expanded).join(', ') || 'none'}
+        </p>
+        <DataTable
+          columns={auditColumns}
+          data={auditTree}
+          getSubRows={(row: AuditNode) => row.children}
+          getRowId={(row: AuditNode, _index: number, parent) =>
+            parent ? parent.id + '/' + row.name : row.name
+          }
+          expanded={expanded}
+          onExpandedChange={setExpanded}
+          getRowLabel={(row: AuditNode) => row.kind + ' ' + row.name}
+        />
+      </div>
+    )
+  },
 }

@@ -76,8 +76,8 @@ describe('DataTable tree rows', () => {
     const byName = (n: string) => bodyRows().find((r) => within(r).queryByText(n))!
     const firstCell = (n: string) => within(byName(n)).getAllByRole('cell')[0]
     expect(firstCell('Zeta').style.paddingLeft).toBe('')
-    expect(firstCell('Zed-b').style.paddingLeft).toBe('calc(1 * 1.5rem)')
-    expect(firstCell('Leaf').style.paddingLeft).toBe('calc(2 * 1.5rem)')
+    expect(firstCell('Zed-b').style.paddingLeft).toBe('calc(1rem + 1 * 1.5rem)')
+    expect(firstCell('Leaf').style.paddingLeft).toBe('calc(1rem + 2 * 1.5rem)')
     expect(within(byName('Leaf')).getAllByRole('cell')[1].style.paddingLeft).toBe('')
   })
 
@@ -113,7 +113,35 @@ describe('DataTable tree rows', () => {
     expect(names()).toEqual(['Zeta', 'Alpha', 'Child', 'Solo'])
   })
 
-  it('is controllable via expanded and onExpandedChange', async () => {
+  it('renders children from a controlled expanded value and follows a new one', async () => {
+    const user = userEvent.setup()
+    const onExpandedChange = vi.fn()
+    const view = (expanded: Record<string, boolean>) => (
+      <DataTable
+        columns={columns}
+        data={tree}
+        getSubRows={getSubRows}
+        expanded={expanded}
+        onExpandedChange={onExpandedChange}
+      />
+    )
+    const { rerender } = render(view({ '1': true }))
+    expect(names()).toEqual(['Zeta', 'Alpha', 'Child', 'Solo'])
+    await user.click(screen.getByRole('button', { name: 'Expand row' }))
+    expect(onExpandedChange).toHaveBeenCalledTimes(1)
+    expect(names()).toEqual(['Zeta', 'Alpha', 'Child', 'Solo'])
+    rerender(view({ '0': true }))
+    expect(names()).toEqual(['Zeta', 'Zed-b', 'Zed-a', 'Alpha', 'Solo'])
+  })
+
+  it('treats a controlled expanded without onExpandedChange as read-only', async () => {
+    const user = userEvent.setup()
+    render(<DataTable columns={columns} data={tree} getSubRows={getSubRows} expanded={{}} />)
+    await user.click(screen.getAllByRole('button', { name: 'Expand row' })[0])
+    expect(names()).toEqual(['Zeta', 'Alpha', 'Solo'])
+  })
+
+  it('keeps expanding when uncontrolled and onExpandedChange only observes', async () => {
     const user = userEvent.setup()
     const onExpandedChange = vi.fn()
     render(
@@ -121,16 +149,15 @@ describe('DataTable tree rows', () => {
         columns={columns}
         data={tree}
         getSubRows={getSubRows}
-        expanded={{}}
         onExpandedChange={onExpandedChange}
       />,
     )
-    await user.click(screen.getAllByRole('button', { name: 'Expand row' })[0])
+    await user.click(screen.getAllByRole('button', { name: 'Expand row' })[1])
     expect(onExpandedChange).toHaveBeenCalledTimes(1)
-    expect(names()).toEqual(['Zeta', 'Alpha', 'Solo'])
+    expect(names()).toEqual(['Zeta', 'Alpha', 'Child', 'Solo'])
   })
 
-  it('leaves flat tables without toggles even when rows are plain', () => {
+  it('renders no toggles when getSubRows is set but no row has children', () => {
     render(<DataTable columns={columns} data={[{ name: 'A', size: 1 }]} getSubRows={getSubRows} />)
     expect(screen.queryByRole('button', { name: 'Expand row' })).toBeNull()
   })
@@ -152,6 +179,52 @@ describe('DataTable tree rows', () => {
       'true',
     )
     expect(screen.getByRole('button', { name: 'Expand Zeta' })).toBeInTheDocument()
+  })
+  it('hides expand-all when no row can expand', () => {
+    render(<DataTable columns={columns} data={[{ name: 'A', size: 1 }]} getSubRows={getSubRows} />)
+    expect(screen.queryByRole('button', { name: /all/i })).toBeNull()
+  })
+
+  it('reads "Collapse all" once every expandable row is expanded by hand', async () => {
+    const user = userEvent.setup()
+    render(
+      <DataTable
+        columns={columns}
+        data={tree}
+        getSubRows={getSubRows}
+        getRowLabel={(n) => n.name}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Expand Zeta' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Alpha' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Zed-b' }))
+    expect(screen.getByRole('button', { name: 'Collapse all' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Collapse all' }))
+    expect(names()).toEqual(['Zeta', 'Alpha', 'Solo'])
+  })
+
+  it('aligns leaf rows with a same-size aria-hidden spacer where the chevron would be', () => {
+    render(<DataTable columns={columns} data={tree} getSubRows={getSubRows} />)
+    const solo = within(bodyRows()[2]).getAllByRole('cell')[0]
+    const spacer = solo.querySelector('[aria-hidden="true"]')!
+    expect(spacer).toHaveClass('size-4', 'mr-1')
+    expect(within(bodyRows()[1]).getAllByRole('cell')[1].querySelector('[aria-hidden]')).toBeNull()
+  })
+
+  it('counts every visible tree row in the pagination totals', async () => {
+    const user = userEvent.setup()
+    render(
+      <DataTable
+        columns={columns}
+        data={tree}
+        getSubRows={getSubRows}
+        pagination={{ pageSize: 2 }}
+      />,
+    )
+    expect(screen.getByText('1–2 of 3')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    expect(screen.getByText('1–2 of 7')).toBeInTheDocument()
   })
 })
 

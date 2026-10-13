@@ -48,6 +48,7 @@ const stories = [
   { name: 'PaginationControl', id: 'data-paginationcontrol--few-pages' },
   { name: 'DataTable', id: 'data-datatable--default' },
   { name: 'DataTable TreeRows', id: 'data-datatable--tree-rows' },
+  { name: 'DataTable TreeRowsControlled', id: 'data-datatable--tree-rows-controlled' },
   { name: 'ErrorPage', id: 'feedback-errorboundary--not-found' },
   { name: 'RouteErrorFallback', id: 'feedback-routeerrorfallback--with-home-link' },
   { name: 'CountUp', id: 'display-countup--default' },
@@ -137,9 +138,11 @@ const stories = [
   { name: 'Transcript ToolStatuses', id: 'display-transcript--tool-statuses' },
   { name: 'Transcript NoteTones', id: 'display-transcript--note-tones' },
   { name: 'StackedBarChart', id: 'display-stackedbarchart--default' },
+  { name: 'StackedBarChart Hours', id: 'display-stackedbarchart--hours' },
   { name: 'StackedBarChart Empty', id: 'display-stackedbarchart--empty' },
   { name: 'DayTimeline', id: 'display-daytimeline--default' },
-  { name: 'DayTimeline CustomKindLabels', id: 'display-daytimeline--custom-kind-labels' },
+  { name: 'DayTimeline CustomKinds', id: 'display-daytimeline--custom-kinds' },
+  { name: 'DayTimeline MarksOnly', id: 'display-daytimeline--marks-only' },
   { name: 'DayTimeline Empty', id: 'display-daytimeline--empty' },
 ]
 

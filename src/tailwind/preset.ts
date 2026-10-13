@@ -46,6 +46,15 @@ export const cyUIPreset: Partial<Config> = {
           DEFAULT: 'rgb(var(--info) / <alpha-value>)',
           foreground: 'rgb(var(--info-foreground) / <alpha-value>)',
         },
+        // Categorical series, cycled by StackedBarChart and DayTimeline
+        chart: {
+          1: 'rgb(var(--chart-1) / <alpha-value>)',
+          2: 'rgb(var(--chart-2) / <alpha-value>)',
+          3: 'rgb(var(--chart-3) / <alpha-value>)',
+          4: 'rgb(var(--chart-4) / <alpha-value>)',
+          5: 'rgb(var(--chart-5) / <alpha-value>)',
+          6: 'rgb(var(--chart-6) / <alpha-value>)',
+        },
         'item-hover': 'rgb(var(--item-hover) / <alpha-value>)',
         // Semantic aliases used by component CVA variants
         primary: {

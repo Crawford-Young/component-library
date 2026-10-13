@@ -33,20 +33,30 @@ export interface DataTableProps<TData> {
   pagination?: boolean | { pageSize?: number; pageSizeOptions?: number[] }
   className?: string
   /** Returns a row's children; enables tree rows, expand toggles and the expand-all control. */
-  getSubRows?: (row: TData) => TData[] | undefined
-  /** Controlled expanded state (react-table `ExpandedState`); pair with `onExpandedChange`. */
-  expanded?: ExpandedState
-  onExpandedChange?: OnChangeFn<ExpandedState>
+  readonly getSubRows?: (row: TData) => TData[] | undefined
+  /**
+   * Controlled expanded state (react-table `ExpandedState`). Pair with `onExpandedChange`;
+   * without it the tree is read-only (toggles do nothing).
+   */
+  readonly expanded?: ExpandedState
+  /** Called on every expand change, controlled or not. */
+  readonly onExpandedChange?: OnChangeFn<ExpandedState>
   /** Initial expanded state when uncontrolled. */
-  defaultExpanded?: ExpandedState
+  readonly defaultExpanded?: ExpandedState
   /** Names a row in its toggle: "Expand <label>". Falls back to "row". */
-  getRowLabel?: (row: TData) => string
-  /** Stable row id (react-table `getRowId`). Without it expanded state is keyed by index, so a live insert shifts it onto the wrong rows. */
-  getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string
+  readonly getRowLabel?: (row: TData) => string
+  /**
+   * Stable row id (react-table `getRowId`). Without it expanded state is keyed by index, so a
+   * live insert shifts it onto the wrong rows. Ids must be unique across the whole tree, not just
+   * among siblings: compose the parent's id (`parent?.id`) into each row's id.
+   */
+  readonly getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string
 }
 
 /** Indent per tree level; matches the `6` step of the spacing scale. */
 const INDENT_STEP = '1.5rem'
+/** Cell padding (`p-4`) that every indent builds on. */
+const CELL_PADDING = '1rem'
 
 export function DataTable<TData>({
   columns,
@@ -59,7 +69,7 @@ export function DataTable<TData>({
   defaultExpanded,
   getRowLabel,
   getRowId,
-}: DataTableProps<TData>) {
+}: DataTableProps<TData>): React.JSX.Element {
   const hasPagination = pagination !== undefined && pagination !== false
   const resolvedPageSize = typeof pagination === 'object' ? (pagination.pageSize ?? 10) : 10
   const pageSizeOptions =
@@ -74,6 +84,11 @@ export function DataTable<TData>({
   const [innerExpanded, setInnerExpanded] = React.useState<ExpandedState>(defaultExpanded ?? {})
   const isTree = getSubRows !== undefined
 
+  const handleExpandedChange: OnChangeFn<ExpandedState> = (updater) => {
+    if (expanded === undefined) setInnerExpanded(updater)
+    onExpandedChange?.(updater)
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -87,7 +102,7 @@ export function DataTable<TData>({
     ...(isTree
       ? {
           getSubRows,
-          onExpandedChange: onExpandedChange ?? setInnerExpanded,
+          onExpandedChange: handleExpandedChange,
           getExpandedRowModel: getExpandedRowModel(),
         }
       : {}),
@@ -97,15 +112,22 @@ export function DataTable<TData>({
     ...(hasPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
   })
 
+  const allExpanded =
+    isTree &&
+    table
+      .getCoreRowModel()
+      .flatRows.filter((row) => row.getCanExpand())
+      .every((row) => row.getIsExpanded())
+
   return (
     <div className={cn('space-y-4', className)}>
-      {isTree && (
+      {isTree && table.getCanSomeRowsExpand() && (
         <button
           type="button"
-          onClick={table.getToggleAllRowsExpandedHandler()}
+          onClick={() => table.toggleAllRowsExpanded(!allExpanded)}
           className="rounded text-sm text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {table.getIsAllRowsExpanded() ? 'Collapse all' : 'Expand all'}
+          {allExpanded ? 'Collapse all' : 'Expand all'}
         </button>
       )}
       <Table>
@@ -115,17 +137,29 @@ export function DataTable<TData>({
               {headerGroup.headers.map((header) => {
                 const sorted = header.column.getIsSorted()
                 const canSort = header.column.getCanSort()
+                const content = header.isPlaceholder
+                  ? null
+                  : flexRender(header.column.columnDef.header, header.getContext())
                 return (
                   <TableHead
                     key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    className={cn(canSort && 'cursor-pointer select-none')}
+                    aria-sort={
+                      canSort
+                        ? sorted === 'asc'
+                          ? 'ascending'
+                          : sorted === 'desc'
+                            ? 'descending'
+                            : 'none'
+                        : undefined
+                    }
                   >
-                    <div className="flex items-center gap-1">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                      {canSort && (
+                    {canSort ? (
+                      <button
+                        type="button"
+                        onClick={header.column.getToggleSortingHandler()}
+                        className="flex select-none items-center gap-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {content}
                         <span className="text-muted-foreground">
                           {sorted === 'asc' ? (
                             <ChevronUp className="size-3.5" aria-hidden="true" />
@@ -135,8 +169,10 @@ export function DataTable<TData>({
                             <ChevronsUpDown className="size-3.5 opacity-50" aria-hidden="true" />
                           )}
                         </span>
-                      )}
-                    </div>
+                      </button>
+                    ) : (
+                      content
+                    )}
                   </TableHead>
                 )
               })}
@@ -152,10 +188,13 @@ export function DataTable<TData>({
                     key={cell.id}
                     style={
                       isTree && index === 0 && row.depth > 0
-                        ? { paddingLeft: `calc(${row.depth} * ${INDENT_STEP})` }
+                        ? { paddingLeft: `calc(${CELL_PADDING} + ${row.depth} * ${INDENT_STEP})` }
                         : undefined
                     }
                   >
+                    {isTree && index === 0 && !row.getCanExpand() && (
+                      <span aria-hidden="true" className="mr-1 inline-block size-4 align-middle" />
+                    )}
                     {isTree && index === 0 && row.getCanExpand() && (
                       <button
                         type="button"
@@ -218,7 +257,7 @@ export function DataTable<TData>({
               totalPages={table.getPageCount()}
               onPageChange={(p) => table.setPageIndex(p - 1)}
               pageSize={pageSize}
-              totalItems={data.length}
+              totalItems={table.getPrePaginationRowModel().rows.length}
             />
           )}
         </div>
