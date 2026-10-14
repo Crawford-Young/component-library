@@ -153,6 +153,16 @@ const stories = [
   { name: 'TrendChart', id: 'display-trendchart--default' },
   { name: 'TrendChart WithBackgroundBars', id: 'display-trendchart--with-background-bars' },
   { name: 'TrendChart Empty', id: 'display-trendchart--empty' },
+  { name: 'Sparkbars', id: 'display-sparkbars--default' },
+  { name: 'Sparkbars AllZero', id: 'display-sparkbars--all-zero' },
+  { name: 'Sparkbars InATableRow', id: 'display-sparkbars--in-a-table-row' },
+  { name: 'InlineStackedBar', id: 'display-inlinestackedbar--default' },
+  { name: 'InlineStackedBar WithoutLabel', id: 'display-inlinestackedbar--without-label' },
+  { name: 'InlineStackedBar Empty', id: 'display-inlinestackedbar--empty' },
+  {
+    name: 'InlineStackedBar SameSeriesAcrossRows',
+    id: 'display-inlinestackedbar--same-series-across-rows',
+  },
 ]
 
 for (const { name, id } of stories) {
