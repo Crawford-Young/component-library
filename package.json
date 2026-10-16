@@ -9,7 +9,7 @@
   "author": "Crawford Young",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Crawford-Young/cy-ui.git"
+    "url": "https://github.com/Crawford-Young/component-library.git"
   },
   "sideEffects": [
     "**/*.css"

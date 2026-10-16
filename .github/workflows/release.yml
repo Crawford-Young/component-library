@@ -32,12 +32,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
       - name: Install just
         uses: extractions/setup-just@v4
+
+      - name: Check npm supports trusted publishing
+        run: npx --yes semver@7 -r ">=11.5.1" "$(npm --version)"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -45,16 +48,11 @@ jobs:
       - name: Build library
         run: just build
 
-      - name: Configure npm auth for pnpm
-        run: pnpm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
-
       - name: Create release PR or publish to npm
         uses: changesets/action@v1
         with:
-          publish: pnpm changeset publish --provenance
+          publish: pnpm changeset publish
           title: 'chore: version packages'
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
