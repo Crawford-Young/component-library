@@ -402,6 +402,8 @@ Releases are managed with [Changesets](https://github.com/changesets/changesets)
 4. On merge to `main`, the release workflow opens a **Version Packages** PR automatically
 5. Merging that PR publishes to npm
 
+Publishing uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC): npmjs.com trusts `release.yml` in this repo, so the workflow holds no npm token. The job's `id-token: write` permission lets npm (≥ 11.5.1, from Node 24) exchange a short-lived GitHub OIDC token at publish time, and provenance is attached automatically. `package.json`'s `repository.url` must match this repo exactly, case included, or the publish fails with a 403. The package's publishing access disallows tokens, so a local `npm publish` is not possible.
+
 ## CI
 
 GitHub Actions runs on every push to `main` and every PR:
