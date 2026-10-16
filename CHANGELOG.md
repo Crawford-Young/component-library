@@ -1,5 +1,17 @@
 # @cy/ui
 
+## 0.31.0
+
+### Minor Changes
+
+- 17c0a52: Add `DataTable` tree rows (`getSubRows`, `expanded` / `onExpandedChange` / `defaultExpanded`, `getRowLabel`, optional `getRowId` so expanded state survives live inserts, expand-all / collapse-all) and keyboard-operable column sorting (header `<button>` + `aria-sort`), the `StackedBarChart` component, and the `DayTimeline` component (per-day spans on a 24 h axis; `kinds` prop of `{ key, label, lane? }` sets the legend, lane and cycled `--chart-n` color), plus the `--chart-1..6` color tokens (light and dark, with `bg-chart-n` utilities in the Tailwind preset).
+- 05580ac: Add `Sparkbars` (a ~20px inline bar strip for a table cell: heights scale to the row's own max, a zero is a muted stub, `--chart-1` fill) and `InlineStackedBar` (an 8px rounded bar split by share, each segment coloured by a caller-picked `--chart-1..6` token, optional label line). Both carry exact values in a hover `title` and a `role="img"` summary listing each value.
+- 7be69a0: Add `StatTile` (a `dl` KPI tile: value, period-over-period `delta` with a `goodWhen` tone, `hint`, `unavailable` reason, muted zero) and `TrendChart` (recharts multi-series line chart in `StackedBarChart`'s API: missing values are gaps, not zero; optional muted `background` bars on their own axis; `role="img"` summary and sr-only table).
+
+### Patch Changes
+
+- 5c63630: Narrow the `@tanstack/react-table` peer range from `>=8` to `^8` (v9 dropped `useReactTable`, so the barrel import threw under Bun). Add `StatusDot` (working / needs-you / idle / done) and a Badge `warning` variant; `AgentNodeCard` now renders its dot through `StatusDot`.
+
 ## 0.30.0
 
 ### Minor Changes
