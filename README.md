@@ -13,7 +13,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ActivityCard` | Presentational card for tasks / goals / habits — compact spacing, optional actions                                                                                                                         |
 | `Avatar`       | `AvatarImage`, `AvatarFallback` — sm / md / lg                                                                                                                                                             |
-| `Badge`        | default, secondary, destructive, outline                                                                                                                                                                   |
+| `Badge`        | default, secondary, destructive, outline, warning; `asChild`                                                                                                                                               |
 | `Card`         | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`                                                                                                                          |
 | `Separator`    | Horizontal and vertical orientations                                                                                                                                                                       |
 | `BorderTrace`  | Standalone pending indicator — CSS border-stroke trace, `size` xs/sm/md/lg, `shape` rect/circle, `appearDelayMs` (default 150, `0` disables); `resolved` + `onResolveComplete` play the completion gesture |
@@ -145,11 +145,11 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 ### Agents
 
-| Component       | Notes                                                                                                                                                                                                                                         |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ContextGauge`  | `role="meter"` context bar; tone ok / warn / danger from `nudgeAt` / `hardStopAt` (`contextGaugeTone`); `label` slot; `sm` / `md`                                                                                                             |
-| `AgentNodeCard` | Canvas node button — status dot, `name`, `state` (working / needs-you / idle / done), `detail`, `ContextGauge`; `selected` (`aria-pressed`), `dimmed`; no graph-library dependency                                                            |
-| `Transcript`    | Claude Code-style console `<ol>` — `TranscriptUserTurn`, `TranscriptText`, `TranscriptNote`, `TranscriptThinking`, `TranscriptToolCall`, `TranscriptTodos`/`TranscriptTodo`, `TranscriptPermission`/`…Choice`; `timestamp` slot on every part |
+| Component       | Notes                                                                                                                                                                                                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ContextGauge`  | `role="meter"` context bar; tone ok / warn / danger from `nudgeAt` / `hardStopAt` (`contextGaugeTone`); `label` slot; `sm` / `md`                                                                                                                                          |
+| `AgentNodeCard` | Canvas node button — status dot, `name`, `state` (working / needs-you / idle / done), `detail`, `ContextGauge`; `selected` (`aria-pressed`), `dimmed`; `lane`, `charge`, `cost` slots; `AgentNodeCharge` chip (charge source as sr-only text); no graph-library dependency |
+| `Transcript`    | Claude Code-style console `<ol>` — `TranscriptUserTurn`, `TranscriptText`, `TranscriptNote`, `TranscriptThinking`, `TranscriptToolCall`, `TranscriptTodos`/`TranscriptTodo`, `TranscriptPermission`/`…Choice`; `timestamp` slot on every part                              |
 
 ## Installation
 
