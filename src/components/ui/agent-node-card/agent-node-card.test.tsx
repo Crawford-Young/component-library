@@ -1,7 +1,7 @@
 import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { AgentNodeCard } from './agent-node-card'
+import { AgentNodeCard, AgentNodeCharge } from './agent-node-card'
 
 describe('AgentNodeCard', () => {
   it('renders a button with name, detail and default state label', () => {
@@ -72,5 +72,97 @@ describe('AgentNodeCard', () => {
     expect(ref.current).toBe(screen.getByRole('button'))
     expect(ref.current).toHaveClass('w-44')
     expect(ref.current).toHaveAttribute('data-x', '1')
+  })
+})
+
+describe('AgentNodeCard slots', () => {
+  it('shows lane and charge together on one row below the name', () => {
+    const { container } = render(
+      <AgentNodeCard name="a" lane="background" charge={<span>#109</span>} />,
+    )
+    const row = container.querySelector('[data-slot="meta"]')
+    expect(row).toHaveTextContent('background')
+    expect(row).toHaveTextContent('#109')
+  })
+
+  it('omits the meta row without lane or charge', () => {
+    const { container } = render(<AgentNodeCard name="a" detail="x" />)
+    expect(container.querySelector('[data-slot="meta"]')).toBeNull()
+  })
+
+  it('renders a lane alone, and a charge alone', () => {
+    const { container, rerender } = render(<AgentNodeCard name="a" lane="interactive" />)
+    expect(container.querySelector('[data-slot="meta"]')).toHaveTextContent('interactive')
+    rerender(<AgentNodeCard name="a" charge="#7" />)
+    expect(container.querySelector('[data-slot="meta"]')).toHaveTextContent('#7')
+  })
+
+  it('keeps detail working alongside the new slots', () => {
+    render(<AgentNodeCard name="a" detail="reading" lane="subagent" />)
+    expect(screen.getByRole('button')).toHaveTextContent('reading')
+    expect(screen.getByRole('button')).toHaveTextContent('subagent')
+  })
+
+  it('puts cost before the state label, spoken as words in the accessible name', () => {
+    render(<AgentNodeCard name="planner" state="needs-you" cost="$1.23" />)
+    expect(screen.getByRole('button', { name: /planner.*\$1\.23 needs you/ })).toBeInTheDocument()
+  })
+
+  it('keeps cost with a custom stateLabel', () => {
+    render(<AgentNodeCard name="a" cost="$2.00" stateLabel="blocked" />)
+    expect(screen.getByRole('button')).toHaveTextContent('$2.00 blocked')
+  })
+
+  it('contains no block elements, so it is valid inside the button', () => {
+    render(
+      <AgentNodeCard
+        name="a"
+        lane="x"
+        cost="$1"
+        charge={<AgentNodeCharge chargeKey="k" source="branch" />}
+        context={10}
+      />,
+    )
+    expect(screen.getByRole('button').querySelector('div')).toBeNull()
+  })
+})
+
+describe('AgentNodeCharge', () => {
+  it('shows the charge key as the chip text', () => {
+    render(<AgentNodeCharge chargeKey="strate#109" source="branch" />)
+    expect(screen.getByText('strate#109')).toBeInTheDocument()
+  })
+
+  it('exposes the source to screen readers as text, not only a title', () => {
+    render(
+      <button type="button">
+        <AgentNodeCharge chargeKey="strate#109" source="branch name" />
+      </button>,
+    )
+    expect(screen.getByRole('button', { name: /charge from branch name/ })).toBeInTheDocument()
+    expect(screen.getByText(/charge from branch name/)).toHaveClass('sr-only')
+  })
+
+  it('also sets a hover title carrying the source', () => {
+    render(<AgentNodeCharge chargeKey="k" source="branch" data-testid="c" />)
+    expect(screen.getByTestId('c')).toHaveAttribute('title', 'charge from branch')
+  })
+
+  it('says unlinked and no charge when there is no key', () => {
+    render(<AgentNodeCharge chargeKey={null} data-testid="c" />)
+    expect(screen.getByText('unlinked')).toBeInTheDocument()
+    expect(screen.getByText(/no charge/)).toHaveClass('sr-only')
+    expect(screen.getByTestId('c')).toHaveAttribute('title', 'no charge')
+  })
+
+  it('names a charge with no known source plainly', () => {
+    render(<AgentNodeCharge chargeKey="k" />)
+    expect(screen.getByText(/^, charge$/)).toHaveClass('sr-only')
+  })
+
+  it('truncates a long key inside the chip and keeps className/props', () => {
+    render(<AgentNodeCharge chargeKey="very-long-key" className="extra" data-testid="c" />)
+    expect(screen.getByTestId('c')).toHaveClass('extra', 'min-w-0', 'font-mono')
+    expect(screen.getByText('very-long-key')).toHaveClass('truncate')
   })
 })

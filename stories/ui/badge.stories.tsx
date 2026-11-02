@@ -33,3 +33,14 @@ export const AllVariants: Story = {
     </div>
   ),
 }
+
+export const AsChildSpan: Story = {
+  render: () => (
+    <button type="button" className="rounded border border-border p-2 text-sm">
+      Valid inside a button{' '}
+      <Badge asChild variant="outline">
+        <span>span badge</span>
+      </Badge>
+    </button>
+  ),
+}

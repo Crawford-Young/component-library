@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
@@ -20,10 +21,15 @@ const badgeVariants = cva(
   },
 )
 
-export type BadgeProps = React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof badgeVariants>
+export type BadgeProps = React.HTMLAttributes<HTMLDivElement> &
+  VariantProps<typeof badgeVariants> & {
+    /** Render the badge look on the child element (e.g. a span, where a div is invalid). */
+    asChild?: boolean
+  }
 
-export function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />
+export function Badge({ className, variant, asChild = false, ...props }: BadgeProps) {
+  const Comp = asChild ? Slot : 'div'
+  return <Comp className={cn(badgeVariants({ variant }), className)} {...props} />
 }
 
 export { badgeVariants }

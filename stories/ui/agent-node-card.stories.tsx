@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { AgentNodeCard } from '@/components/ui/agent-node-card'
+import { AgentNodeCard, AgentNodeCharge } from '@/components/ui/agent-node-card'
 
 const meta: Meta<typeof AgentNodeCard> = {
   title: 'Display/AgentNodeCard',
@@ -50,5 +50,42 @@ export const AllStates: Story = {
       <AgentNodeCard name="selected" selected detail="Selected" />
       <AgentNodeCard name="dimmed" dimmed detail="Dimmed" />
     </div>
+  ),
+}
+
+export const WithLaneChargeAndCost: Story = {
+  render: () => (
+    <AgentNodeCard
+      name="builder"
+      state="needs-you"
+      cost="$1.23"
+      lane="background"
+      charge={<AgentNodeCharge chargeKey="strate#109" source="branch name" />}
+      context={62}
+      contextLabel="62%"
+    />
+  ),
+}
+
+export const UnlinkedCharge: Story = {
+  render: () => (
+    <AgentNodeCard
+      name="scout"
+      cost="$0.40"
+      lane="subagent"
+      charge={<AgentNodeCharge chargeKey={null} />}
+    />
+  ),
+}
+
+export const LongChargeKeyTruncates: Story = {
+  render: () => (
+    <AgentNodeCard
+      name="builder"
+      lane="interactive"
+      charge={
+        <AgentNodeCharge chargeKey="a-very-long-charge-key-that-must-ellipsize" source="session" />
+      }
+    />
   ),
 }
