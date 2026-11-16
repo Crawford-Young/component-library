@@ -64,7 +64,7 @@ Every component maps to one class; its extension mechanism is fixed by the class
 1. **No new domain-typed props on shells.** A prop encoding app domain (streak, locked, activityId) goes through a slot or app-side composition. This anti-pattern produced 6 calendar waves of typed-prop additions while the existing `renderEventPopover` slot sat unused.
 2. **Slot ctx objects are versioned API.** Every ctx interface is exported and documented. Presets consume the exact same ctx as apps — if a preset can be built from the parts, the ctx is sufficient; if not, the ctx is wrong, not the preset.
 
-> Gate and story-authoring gotchas → `cl-gates` skill (load before running gates or writing a story).
+> Gate and story-authoring gotchas → this repo's `.claude/skills/cl-gates/SKILL.md` (read before running gates or writing a story).
 
 ## Time semantics (calendar components)
 
