@@ -49,6 +49,41 @@ describe('Toggle', () => {
     expect(btn.className).toContain('h-11')
   })
 
+  it.each(['default', 'outline'] as const)(
+    'applies touch size classes with %s variant',
+    (variant) => {
+      render(
+        <Toggle size="touch" variant={variant}>
+          B
+        </Toggle>,
+      )
+      const cls = screen.getByRole('button').className.split(/\s+/)
+      for (const c of [
+        'h-24',
+        'min-w-24',
+        'flex-col',
+        'gap-1.5',
+        'px-3',
+        'text-base',
+        '[&_svg]:size-8',
+        '[&_svg]:shrink-0',
+      ]) {
+        expect(cls).toContain(c)
+      }
+      // touch replaces, not stacks on, the default 40px height
+      expect(cls).not.toContain('h-10')
+    },
+  )
+
+  it('keeps variant styling at touch size', () => {
+    render(
+      <Toggle size="touch" variant="outline">
+        B
+      </Toggle>,
+    )
+    expect(screen.getByRole('button').className).toContain('border')
+  })
+
   it('applies data-[state=on] pressed styling', async () => {
     const user = userEvent.setup()
     render(<Toggle aria-label="bold">B</Toggle>)

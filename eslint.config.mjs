@@ -34,6 +34,8 @@ export default tseslint.config(
       'dist/**',
       'storybook-static/**',
       'coverage/**',
+      'playwright-report/**',
+      'test-results/**',
       'node_modules/**',
       'scripts/**',
       '.worktrees/**',

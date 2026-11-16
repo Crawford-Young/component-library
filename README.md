@@ -28,7 +28,7 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 
 | Component           | Notes                                                                                                                                                       |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`            | 6 variants × 4 sizes, `asChild` via Radix Slot                                                                                                              |
+| `Button`            | 6 variants × 5 sizes (incl. 96px `touch`), `asChild` via Radix Slot                                                                                         |
 | `Checkbox`          | Controlled and uncontrolled                                                                                                                                 |
 | `ColorSwatchPicker` | Color swatch grid for `CalendarEventColor` — aria-pressed group, `size` (`sm` / `md`), full palette exported as `EVENT_COLORS`                              |
 | `DatePicker`        | Popover + react-day-picker v9 — `renderTrigger` custom trigger slot, `calendarClassNames`/`calendarComponents` pass-through                                 |
@@ -41,8 +41,8 @@ Production-quality React component library built on [Radix UI](https://radix-ui.
 | `TaskTimeFields`    | Date + start/end time; `use24h` toggles 12h/24h display                                                                                                     |
 | `TimeInput`         | Scroll-spinner time field — `size` (`sm` / `md`), `use24h` AM/PM toggle                                                                                     |
 | `Textarea`          | Forwarded ref, resizable                                                                                                                                    |
-| `Toggle`            | default / outline × sm / md / lg                                                                                                                            |
-| `ToggleGroup`       | single / multiple                                                                                                                                           |
+| `Toggle`            | default / outline × sm / md / lg / touch (icon over label)                                                                                                  |
+| `ToggleGroup`       | single / multiple, `touch` size, vertical rail                                                                                                              |
 
 ### Form
 
