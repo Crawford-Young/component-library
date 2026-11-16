@@ -1,0 +1,95 @@
+import AxeBuilder from '@axe-core/playwright'
+import { expect, test } from '@playwright/test'
+
+const stories = [
+  { name: 'States', id: 'display-agentnodering--states' },
+  { name: 'Root', id: 'display-agentnodering--root' },
+  { name: 'Default', id: 'display-agentnodering--default' },
+  { name: 'RootIdle', id: 'display-agentnodering--root-idle' },
+  { name: 'RootDone', id: 'display-agentnodering--root-done' },
+  { name: 'DefaultSelected', id: 'display-agentnodering--default-selected' },
+  { name: 'NoContext', id: 'display-agentnodering--no-context' },
+  { name: 'Dense', id: 'display-agentnodering--dense' },
+]
+
+const themes = [
+  { theme: 'dark', query: '', dark: true },
+  { theme: 'light', query: '&globals=backgrounds.value:!hex(ffffff)', dark: false },
+] as const
+
+const discSizes = [
+  { name: 'Root', id: 'display-agentnodering--root', size: 'root', px: 120 },
+  { name: 'Default', id: 'display-agentnodering--default', size: 'default', px: 96 },
+  { name: 'States', id: 'display-agentnodering--states', size: 'default', px: 96 },
+] as const
+
+async function open(
+  page: import('@playwright/test').Page,
+  id: string,
+  query: string,
+  dark: boolean,
+) {
+  await page.goto(`/iframe.html?id=${id}&viewMode=story${query}`)
+  await page.waitForSelector('#storybook-root:not([hidden]) > *', { timeout: 15_000 })
+  // Assert the theme actually applied before trusting any result.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+    .toBe(dark)
+}
+
+for (const { theme, query, dark } of themes) {
+  for (const { name, id } of stories) {
+    test(`AgentNodeRing ${name} (${theme}) has no axe violations`, async ({ page }) => {
+      await open(page, id, query, dark)
+      const results = await new AxeBuilder({ page }).include('#storybook-root').analyze()
+      expect(results.violations).toEqual([])
+    })
+  }
+
+  for (const { name, id, size, px } of discSizes) {
+    test(`AgentNodeRing ${name} (${theme}) discs are ${px}x${px}`, async ({ page }) => {
+      await open(page, id, query, dark)
+      const discs = await page.$$eval(`[data-size="${size}"] [data-slot="ring"]`, (els) =>
+        els.map((el) => {
+          const r = el.getBoundingClientRect()
+          return { width: r.width, height: r.height }
+        }),
+      )
+      expect(discs.length).toBeGreaterThan(0)
+      for (const d of discs) {
+        expect(Math.abs(d.width - px)).toBeLessThanOrEqual(1)
+        expect(Math.abs(d.height - px)).toBeLessThanOrEqual(1)
+      }
+    })
+  }
+
+  test(`AgentNodeRing Dense (${theme}) dots render at the size the story set`, async ({ page }) => {
+    await open(page, 'display-agentnodering--dense', query, dark)
+    const rows = await page.$$eval('[data-row-size]', (rowEls) =>
+      rowEls.map((row) => ({
+        expected: Number(row.getAttribute('data-row-size')),
+        dots: Array.from(row.querySelectorAll('button[data-size="dense"]')).map((b) => {
+          const r = b.getBoundingClientRect()
+          return { width: r.width, height: r.height }
+        }),
+      })),
+    )
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.dots).toHaveLength(4)
+      for (const d of row.dots) {
+        expect(Math.abs(d.width - row.expected)).toBeLessThanOrEqual(1)
+        expect(Math.abs(d.height - row.expected)).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+}
+
+test('AgentNodeRing accessible name says the context percent once, rounded', async ({ page }) => {
+  await open(page, 'display-agentnodering--default', '&args=context:42.4', true)
+  const button = page.getByRole('button')
+  // Exactly one "42" (not "42 42%", not "42.4"), and the percent is present.
+  await expect(button).toHaveAccessibleName(/^(?:(?!42).)*42%(?:(?!42).)*$/)
+  await expect(button).toHaveAccessibleName(/implementer/)
+  await expect(button).toHaveAccessibleName(/strate#62/)
+})
