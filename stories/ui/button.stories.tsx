@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const meta: Meta<typeof Button> = {
@@ -10,7 +11,7 @@ const meta: Meta<typeof Button> = {
       control: 'select',
       options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'],
     },
-    size: { control: 'select', options: ['default', 'sm', 'lg', 'icon'] },
+    size: { control: 'select', options: ['default', 'sm', 'lg', 'icon', 'touch'] },
     disabled: { control: 'boolean' },
   },
 }
@@ -36,6 +37,31 @@ export const AllVariants: Story = {
           {v}
         </Button>
       ))}
+    </div>
+  ),
+}
+
+export const Touch: Story = {
+  render: () => (
+    <Button size="touch">
+      <Settings aria-hidden="true" />
+      Settings
+    </Button>
+  ),
+}
+
+export const TouchVariants: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-3">
+      {(['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'] as const).map((v) => (
+        <Button key={v} variant={v} size="touch">
+          <Settings aria-hidden="true" />
+          {v}
+        </Button>
+      ))}
+      <Button size="touch" aria-label="Settings">
+        <Settings aria-hidden="true" />
+      </Button>
     </div>
   ),
 }

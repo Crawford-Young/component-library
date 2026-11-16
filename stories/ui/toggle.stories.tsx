@@ -20,6 +20,15 @@ export const Default: Story = {
   ),
 }
 
+export const Touch: Story = {
+  render: () => (
+    <Toggle size="touch">
+      <Bold />
+      <span>Bold</span>
+    </Toggle>
+  ),
+}
+
 export const Outline: Story = {
   render: () => (
     <Toggle variant="outline" aria-label="Toggle bold">

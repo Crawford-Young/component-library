@@ -1,5 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { AlignCenter, AlignLeft, AlignRight } from 'lucide-react'
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Home,
+  Map as MapIcon,
+  Music,
+  Settings,
+} from 'lucide-react'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 const meta: Meta<typeof ToggleGroup> = {
@@ -11,6 +19,35 @@ const meta: Meta<typeof ToggleGroup> = {
 
 export default meta
 type Story = StoryObj<typeof ToggleGroup>
+
+export const TouchRail: Story = {
+  render: () => (
+    <ToggleGroup
+      type="single"
+      orientation="vertical"
+      size="touch"
+      aria-label="Navigation"
+      defaultValue="home"
+    >
+      <ToggleGroupItem value="home">
+        <Home />
+        <span>Home</span>
+      </ToggleGroupItem>
+      <ToggleGroupItem value="music">
+        <Music />
+        <span>Music</span>
+      </ToggleGroupItem>
+      <ToggleGroupItem value="map">
+        <MapIcon />
+        <span>Map</span>
+      </ToggleGroupItem>
+      <ToggleGroupItem value="settings">
+        <Settings />
+        <span>Settings</span>
+      </ToggleGroupItem>
+    </ToggleGroup>
+  ),
+}
 
 export const Default: Story = {
   render: () => (

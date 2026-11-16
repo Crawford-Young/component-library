@@ -22,6 +22,7 @@ const toggleVariants = cva(
         sm: 'h-8 px-2.5',
         default: 'h-10 px-3',
         lg: 'h-11 px-5',
+        touch: 'h-24 min-w-24 flex-col gap-1.5 px-3 text-base [&_svg]:size-8 [&_svg]:shrink-0',
       },
     },
     defaultVariants: {
