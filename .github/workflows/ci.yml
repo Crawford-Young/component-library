@@ -113,7 +113,7 @@ jobs:
 
   e2e:
     name: E2E Accessibility
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.59 has no chromium build for ubuntu 26.04 (ubuntu-latest since 2026-10)
     needs: [lint-and-typecheck, test]
     steps:
       - name: Checkout
