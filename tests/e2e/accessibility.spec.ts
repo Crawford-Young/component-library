@@ -8,6 +8,7 @@ const stories = [
   { name: 'Avatar', id: 'display-avatar--with-fallback' },
   { name: 'Badge', id: 'display-badge--default' },
   { name: 'Badge Warning', id: 'display-badge--warning' },
+  { name: 'Badge Success', id: 'display-badge--success' },
   { name: 'Button', id: 'inputs-button--default' },
   { name: 'Card', id: 'display-card--default' },
   { name: 'Checkbox', id: 'inputs-checkbox--default' },
@@ -175,3 +176,20 @@ for (const { name, id } of stories) {
     expect(results.violations).toEqual([])
   })
 }
+
+// The filled success badge pairs --success with --success-foreground; the loop above runs the
+// dark theme only, so pin the same pair in the light theme too.
+test('Badge Success (light) has no axe violations', async ({ page }) => {
+  await page.goto(
+    '/iframe.html?id=display-badge--success&viewMode=story&globals=backgrounds.value:!hex(ffffff)',
+  )
+  await page.waitForSelector('#storybook-root:not([hidden]) > *', { timeout: 15_000 })
+  // Assert the theme actually applied before trusting the result.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+    .toBe(false)
+
+  const results = await new AxeBuilder({ page }).include('#storybook-root').analyze()
+
+  expect(results.violations).toEqual([])
+})
