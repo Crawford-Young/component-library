@@ -115,7 +115,7 @@ importers:
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.9.0
-        version: 4.14.0(playwright-core@1.65.1)
+        version: 4.11.1(playwright-core@1.65.1)
       '@changesets/cli':
         specifier: ^2.27.0
         version: 2.31.1(@types/node@26.6.6)
@@ -291,9 +291,8 @@ packages:
     resolution: {integrity: sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==}
     engines: {node: '>=10'}
 
-  '@axe-core/playwright@4.14.0':
-    resolution: {integrity: sha512-SGUhG5PIHd2eMdpgBF2PyQLOhX+qyDR2PT4cmoS4Qk2ak+jX/rrSvst9l0PGv5WTHolKpUMvVmoHpr4cZgf1RQ==}
-    engines: {node: '>=22.12.0'}
+  '@axe-core/playwright@4.11.1':
+    resolution: {integrity: sha512-mKEfoUIB1MkVTht0BGZFXtSAEKXMJoDkyV5YZ9jbBmZCcWDz71tegNsdTkIN8zc/yMi5Gm2kx7Z5YQ9PfWNAWw==}
     peerDependencies:
       playwright-core: '>= 1.0.0'
 
@@ -2451,6 +2450,10 @@ packages:
 
   axe-core@3.5.6:
     resolution: {integrity: sha512-LEUDjgmdJoA3LqklSTwKYqkjcZ4HKc4ddIYGSAiSkr46NTjzg2L9RNB+lekO9P7Dlpa87+hBtzc2Fzn/+GUWMQ==}
+    engines: {node: '>=4'}
+
+  axe-core@4.11.2:
+    resolution: {integrity: sha512-byD6KPdvo72y/wj2T/4zGEvvlis+PsZsn/yPS3pEO+sFpcrqRpX/TJCxvVaEsNeMrfQbCr7w163YqoD9IYwHXw==}
     engines: {node: '>=4'}
 
   axe-core@4.12.1:
@@ -5168,9 +5171,9 @@ snapshots:
 
   '@alloc/quick-lru@5.3.0': {}
 
-  '@axe-core/playwright@4.14.0(playwright-core@1.65.1)':
+  '@axe-core/playwright@4.11.1(playwright-core@1.65.1)':
     dependencies:
-      axe-core: 4.14.1
+      axe-core: 4.11.2
       playwright-core: 1.65.1
 
   '@babel/code-frame@7.29.7':
@@ -7459,6 +7462,8 @@ snapshots:
       possible-typed-array-names: 1.1.0
 
   axe-core@3.5.6: {}
+
+  axe-core@4.11.2: {}
 
   axe-core@4.12.1: {}
 
