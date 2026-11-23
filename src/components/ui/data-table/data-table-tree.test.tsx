@@ -30,12 +30,36 @@ const tree: Node[] = [
 const getSubRows = (n: Node) => n.children
 
 const bodyRows = () => screen.getAllByRole('row').slice(1)
-const names = () => bodyRows().map((r) => within(r).getAllByRole('cell')[0].textContent)
+const LEVEL_PREFIX = /^Level \d+, /
+// The first cell's text starts with the sr-only depth prefix (#134); names() reads past it.
+const names = () =>
+  bodyRows().map((r) =>
+    (within(r).getAllByRole('cell')[0].textContent ?? '').replace(LEVEL_PREFIX, ''),
+  )
 
 describe('DataTable tree rows', () => {
   it('shows only top-level rows initially and hides children', () => {
     render(<DataTable columns={columns} data={tree} getSubRows={getSubRows} />)
     expect(names()).toEqual(['Zeta', 'Alpha', 'Solo'])
+  })
+
+  it('announces row depth to screen readers (#134)', async () => {
+    const user = userEvent.setup()
+    render(<DataTable columns={columns} data={tree} getSubRows={getSubRows} />)
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    const prefixes = bodyRows().map((r) => {
+      const prefix = within(r).getAllByRole('cell')[0].querySelector('.sr-only')
+      return prefix?.textContent
+    })
+    expect(prefixes).toEqual([
+      'Level 1, ',
+      'Level 2, ',
+      'Level 3, ',
+      'Level 2, ',
+      'Level 1, ',
+      'Level 2, ',
+      'Level 1, ',
+    ])
   })
 
   it('renders an expand button with aria-expanded only on rows with children', () => {

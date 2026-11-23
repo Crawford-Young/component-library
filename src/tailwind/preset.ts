@@ -37,10 +37,12 @@ export const cyUIPreset: Partial<Config> = {
         success: {
           DEFAULT: 'rgb(var(--success) / <alpha-value>)',
           foreground: 'rgb(var(--success-foreground) / <alpha-value>)',
+          text: 'rgb(var(--success-text) / <alpha-value>)',
         },
         warning: {
           DEFAULT: 'rgb(var(--warning) / <alpha-value>)',
           foreground: 'rgb(var(--warning-foreground) / <alpha-value>)',
+          text: 'rgb(var(--warning-text) / <alpha-value>)',
         },
         info: {
           DEFAULT: 'rgb(var(--info) / <alpha-value>)',

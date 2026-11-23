@@ -142,3 +142,13 @@ export const Dense: Story = {
     </div>
   ),
 }
+
+/** A selected needs-you dot, for checking that focus keeps both the halo and the selection. */
+export const DenseSelected: Story = {
+  render: () => (
+    <div className="flex items-center gap-6">
+      <AgentNodeRing size="dense" className="size-6" name="implementer" state="needs-you" />
+      <AgentNodeRing size="dense" className="size-6" name="reviewer" state="needs-you" selected />
+    </div>
+  ),
+}

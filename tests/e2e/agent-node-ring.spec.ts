@@ -10,6 +10,7 @@ const stories = [
   { name: 'DefaultSelected', id: 'display-agentnodering--default-selected' },
   { name: 'NoContext', id: 'display-agentnodering--no-context' },
   { name: 'Dense', id: 'display-agentnodering--dense' },
+  { name: 'DenseSelected', id: 'display-agentnodering--dense-selected' },
 ]
 
 const themes = [
@@ -125,3 +126,44 @@ test('AgentNodeRing NoContext accessible name carries no context percent', async
   await expect(button).toHaveAccessibleName('implementer strate#62 idle $0.00')
   await expect(button).not.toHaveAccessibleName(/%|context/)
 })
+
+// #159: a dense needs-you dot's warning halo is a box-shadow ring. Focus used to be one too and
+// replaced it. Read computed styles after a real keyboard Tab, never class names.
+const WARNING_HALO = 'rgba(245, 158, 11, 0.5)'
+
+for (const { theme, query, dark } of themes) {
+  test(`AgentNodeRing dense needs-you keeps its halo under keyboard focus (${theme})`, async ({
+    page,
+  }) => {
+    await open(page, 'display-agentnodering--dense-selected', query, dark)
+    const plain = page.getByRole('button', { name: /^implementer/ })
+    const selected = page.getByRole('button', { name: /^reviewer/ })
+
+    const read = (el: Element) => {
+      const cs = getComputedStyle(el)
+      return {
+        boxShadow: cs.boxShadow,
+        outlineStyle: cs.outlineStyle,
+        outlineWidth: cs.outlineWidth,
+        outlineOffset: cs.outlineOffset,
+      }
+    }
+
+    const selectedBefore = await selected.evaluate(read)
+
+    await page.keyboard.press('Tab')
+    await expect(plain).toBeFocused()
+    const focused = await plain.evaluate(read)
+    expect(focused.boxShadow).toContain(WARNING_HALO)
+    expect(focused.outlineStyle).toBe('solid')
+    expect(focused.outlineWidth).toBe('2px')
+
+    await page.keyboard.press('Tab')
+    await expect(selected).toBeFocused()
+    const selectedFocused = await selected.evaluate(read)
+    expect(selectedFocused.boxShadow).toContain(WARNING_HALO)
+    expect(selectedFocused.outlineStyle).toBe('solid')
+    // Focus is visible on the selected dot too: its outline steps out.
+    expect(selectedFocused.outlineOffset).not.toBe(selectedBefore.outlineOffset)
+  })
+}

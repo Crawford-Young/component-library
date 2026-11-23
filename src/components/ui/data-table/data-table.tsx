@@ -192,6 +192,11 @@ export function DataTable<TData>({
                         : undefined
                     }
                   >
+                    {isTree && index === 0 && (
+                      // Depth is drawn as indent only; this gives it to screen readers
+                      // too (#134). aria-level is invalid on role=table rows.
+                      <span className="sr-only">{`Level ${row.depth + 1}, `}</span>
+                    )}
                     {isTree && index === 0 && !row.getCanExpand() && (
                       <span aria-hidden="true" className="mr-1 inline-block size-4 align-middle" />
                     )}

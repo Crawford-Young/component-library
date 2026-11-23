@@ -141,6 +141,7 @@ const stories = [
   { name: 'StackedBarChart', id: 'display-stackedbarchart--default' },
   { name: 'StackedBarChart Hours', id: 'display-stackedbarchart--hours' },
   { name: 'StackedBarChart Empty', id: 'display-stackedbarchart--empty' },
+  { name: 'StackedBarChart MissingValues', id: 'display-stackedbarchart--missing-values' },
   { name: 'DayTimeline', id: 'display-daytimeline--default' },
   { name: 'DayTimeline CustomKinds', id: 'display-daytimeline--custom-kinds' },
   { name: 'DayTimeline MarksOnly', id: 'display-daytimeline--marks-only' },
@@ -193,3 +194,27 @@ test('Badge Success (light) has no axe violations', async ({ page }) => {
 
   expect(results.violations).toEqual([])
 })
+
+// #153: tone colours used as TEXT (success / warning) failed contrast in the light theme. The
+// loop above runs dark only, so check every story that sets tone text in light as well.
+const lightToneStories = [
+  { name: 'Alert AllVariants', id: 'feedback-alert--all-variants' },
+  { name: 'AgentNodeCard AllStates', id: 'display-agentnodecard--all-states' },
+  { name: 'StatTile', id: 'display-stattile--default' },
+  { name: 'StatTile Worse', id: 'display-stattile--worse' },
+  { name: 'StatTile InAGrid', id: 'display-stattile--in-a-grid' },
+]
+
+for (const { name, id } of lightToneStories) {
+  test(`${name} (light) has no axe violations`, async ({ page }) => {
+    await page.goto(`/iframe.html?id=${id}&viewMode=story&globals=backgrounds.value:!hex(ffffff)`)
+    await page.waitForSelector('#storybook-root:not([hidden]) > *', { timeout: 15_000 })
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+      .toBe(false)
+
+    const results = await new AxeBuilder({ page }).include('#storybook-root').analyze()
+
+    expect(results.violations).toEqual([])
+  })
+}

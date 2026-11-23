@@ -30,7 +30,7 @@ type Tone = 'good' | 'bad' | 'flat'
 
 const deltaVariants = cva('m-0 text-xs tabular-nums', {
   variants: {
-    tone: { good: 'text-success', bad: 'text-warning', flat: 'text-muted-foreground' },
+    tone: { good: 'text-success-text', bad: 'text-warning-text', flat: 'text-muted-foreground' },
   },
 })
 

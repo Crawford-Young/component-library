@@ -37,7 +37,7 @@ describe('StatTile', () => {
         />,
       )
       const delta = screen.getByText(/12% vs \$8\.63/)
-      expect(delta.closest('dd')).toHaveClass('text-success')
+      expect(delta.closest('dd')).toHaveClass('text-success-text')
       expect(delta.closest('dd')).toHaveTextContent('▼')
       expect(delta.closest('dd')).toHaveTextContent('down')
     })
@@ -51,7 +51,7 @@ describe('StatTile', () => {
         />,
       )
       const dd = screen.getByText(/35% vs 0\.63 h/).closest('dd')
-      expect(dd).toHaveClass('text-warning')
+      expect(dd).toHaveClass('text-warning-text')
       expect(dd).toHaveTextContent('▲')
       expect(dd).toHaveTextContent('up')
     })
@@ -60,14 +60,14 @@ describe('StatTile', () => {
       render(
         <StatTile label="L" value="1" delta={{ change: 0.5, goodWhen: 'up', label: 'vs 2' }} />,
       )
-      expect(screen.getByText(/50% vs 2/).closest('dd')).toHaveClass('text-success')
+      expect(screen.getByText(/50% vs 2/).closest('dd')).toHaveClass('text-success-text')
     })
 
     it('treats a decrease as bad when up is good', () => {
       render(
         <StatTile label="L" value="1" delta={{ change: -0.5, goodWhen: 'up', label: 'vs 2' }} />,
       )
-      expect(screen.getByText(/50% vs 2/).closest('dd')).toHaveClass('text-warning')
+      expect(screen.getByText(/50% vs 2/).closest('dd')).toHaveClass('text-warning-text')
     })
 
     it('is flat when the change is 0', () => {

@@ -14,8 +14,8 @@ describe('AgentNodeCard', () => {
   })
 
   it.each([
-    ['working', 'working', 'text-success', 'bg-success'],
-    ['needs-you', 'needs you', 'text-warning', 'bg-warning'],
+    ['working', 'working', 'text-success-text', 'bg-success'],
+    ['needs-you', 'needs you', 'text-warning-text', 'bg-warning'],
     ['idle', 'idle', 'text-muted-foreground', 'bg-muted-foreground'],
     ['done', 'done', 'text-muted-foreground', 'bg-muted-foreground'],
   ] as const)('state %s labels and colours', (state, label, text, dot) => {
