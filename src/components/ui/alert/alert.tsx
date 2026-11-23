@@ -6,10 +6,14 @@ const alertVariants = cva('relative w-full border-l-[3px] rounded-r-lg p-4', {
   variants: {
     variant: {
       default: 'bg-surface border-border text-foreground',
-      success: 'bg-success/10 border-success text-success-text',
-      warning: 'bg-warning/10 border-warning text-warning-text',
-      destructive: 'bg-destructive/10 border-destructive text-destructive',
-      info: 'bg-info/10 border-info text-info',
+      // Tone variants: the title takes the tone-text colour, and the description is
+      // lifted from muted to foreground, since muted-foreground drops under 4.5:1 on
+      // every light /10 tint (#153).
+      success: 'bg-success/10 border-success text-success-text [&>p]:text-foreground',
+      warning: 'bg-warning/10 border-warning text-warning-text [&>p]:text-foreground',
+      destructive:
+        'bg-destructive/10 border-destructive text-destructive-text [&>p]:text-foreground',
+      info: 'bg-info/10 border-info text-info-text [&>p]:text-foreground',
     },
   },
   defaultVariants: { variant: 'default' },

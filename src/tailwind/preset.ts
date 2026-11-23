@@ -33,6 +33,7 @@ export const cyUIPreset: Partial<Config> = {
         destructive: {
           DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
           foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
+          text: 'rgb(var(--destructive-text) / <alpha-value>)',
         },
         success: {
           DEFAULT: 'rgb(var(--success) / <alpha-value>)',
@@ -47,6 +48,7 @@ export const cyUIPreset: Partial<Config> = {
         info: {
           DEFAULT: 'rgb(var(--info) / <alpha-value>)',
           foreground: 'rgb(var(--info-foreground) / <alpha-value>)',
+          text: 'rgb(var(--info-text) / <alpha-value>)',
         },
         // Categorical series, cycled by StackedBarChart and DayTimeline
         chart: {
