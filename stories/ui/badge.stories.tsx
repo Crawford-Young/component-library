@@ -8,7 +8,7 @@ const meta: Meta<typeof Badge> = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['default', 'secondary', 'destructive', 'warning', 'outline'],
+      options: ['default', 'secondary', 'destructive', 'warning', 'success', 'outline'],
     },
   },
 }
@@ -20,16 +20,19 @@ export const Default: Story = { args: { children: 'New' } }
 export const Secondary: Story = { args: { children: 'Beta', variant: 'secondary' } }
 export const Destructive: Story = { args: { children: 'Error', variant: 'destructive' } }
 export const Warning: Story = { args: { children: 'Needs review', variant: 'warning' } }
+export const Success: Story = { args: { children: 'Checks passed', variant: 'success' } }
 export const Outline: Story = { args: { children: 'Draft', variant: 'outline' } }
 
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
-      {(['default', 'secondary', 'destructive', 'warning', 'outline'] as const).map((v) => (
-        <Badge key={v} variant={v}>
-          {v}
-        </Badge>
-      ))}
+      {(['default', 'secondary', 'destructive', 'warning', 'success', 'outline'] as const).map(
+        (v) => (
+          <Badge key={v} variant={v}>
+            {v}
+          </Badge>
+        ),
+      )}
     </div>
   ),
 }

@@ -93,3 +93,35 @@ test('AgentNodeRing accessible name says the context percent once, rounded', asy
   await expect(button).toHaveAccessibleName(/implementer/)
   await expect(button).toHaveAccessibleName(/strate#62/)
 })
+
+// Exact names below are written from each story's props (every fact once, in reading order,
+// separator dots hidden), not copied from what the browser rendered.
+test('AgentNodeRing Root accessible names say each fact once', async ({ page }) => {
+  await open(page, 'display-agentnodering--root', '', true)
+  const buttons = page.getByRole('button')
+  await expect(buttons).toHaveCount(3)
+  await expect(buttons.nth(0)).toHaveAccessibleName('42% director strate#62 working $7.10')
+  // Selection is a pressed state, not part of the name.
+  await expect(buttons.nth(1)).toHaveAccessibleName('42% director strate#62 working $7.10')
+  await expect(buttons.nth(1)).toHaveAttribute('aria-pressed', 'true')
+  await expect(buttons.nth(2)).toHaveAccessibleName('84% director strate#62 needs you $7.10')
+})
+
+test('AgentNodeRing Dense accessible names say each fact once', async ({ page }) => {
+  await open(page, 'display-agentnodering--dense', '', true)
+  const buttons = page.getByRole('button')
+  // Two rows (24px, 12px) of the four states, in the story's state order.
+  const labels = ['working', 'needs you', 'idle', 'done']
+  await expect(buttons).toHaveCount(labels.length * 2)
+  for (const [i, label] of [...labels, ...labels].entries()) {
+    await expect(buttons.nth(i)).toHaveAccessibleName(`implementer, ${label}, context 42%`)
+  }
+})
+
+test('AgentNodeRing NoContext accessible name carries no context percent', async ({ page }) => {
+  await open(page, 'display-agentnodering--no-context', '', true)
+  const button = page.getByRole('button')
+  await expect(button).toHaveCount(1)
+  await expect(button).toHaveAccessibleName('implementer strate#62 idle $0.00')
+  await expect(button).not.toHaveAccessibleName(/%|context/)
+})
