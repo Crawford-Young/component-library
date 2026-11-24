@@ -6,7 +6,6 @@ const config: StorybookConfig = {
   stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(ts|tsx)'],
   staticDirs: ['../public'],
   addons: [
-    '@storybook/addon-essentials',
     {
       name: '@storybook/addon-docs',
       options: {
@@ -18,7 +17,6 @@ const config: StorybookConfig = {
       },
     },
     '@storybook/addon-a11y',
-    '@storybook/addon-interactions',
   ],
   framework: {
     name: '@storybook/react-vite',
@@ -28,7 +26,7 @@ const config: StorybookConfig = {
     viteConfig.resolve ??= {}
     viteConfig.resolve.alias = {
       ...viteConfig.resolve.alias,
-      '@': path.resolve(__dirname, '../src'),
+      '@': path.resolve(import.meta.dirname, '../src'),
     }
     viteConfig.build = {
       ...viteConfig.build,
