@@ -15,6 +15,8 @@ import {
 import { EmptyState } from '@/components/ui/empty-state'
 
 const CURSOR_OPACITY = 0.4
+/** Table and tooltip text for a value that is missing, as opposed to 0. */
+const MISSING = '—'
 const PLOT_MARGIN = { top: 4, right: 4, left: 0, bottom: 0 } as const
 
 export interface StackedBarSeries {
@@ -22,7 +24,11 @@ export interface StackedBarSeries {
   readonly label: string
 }
 
-/** Series values should be numbers; anything else is read as 0 everywhere (bars, table, tooltip). */
+/**
+ * Series values should be numbers. A missing value (`null`, `undefined`, or any non-finite
+ * non-number) means "no data": no segment is drawn and the table and tooltip read `—`.
+ * A `0` still draws and reads as 0.
+ */
 export interface StackedBarDatum {
   readonly [key: string]: string | number | null | undefined
 }
@@ -48,9 +54,13 @@ export interface StackedBarChartProps extends Omit<
   readonly plotClassName?: string
 }
 
-const toNumber = (value: unknown): number => (typeof value === 'number' ? value : 0)
+const toNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null
 
-/** Coerces each series value to a number once, so bars, table and tooltip read the same data. */
+const formatOrDash = (value: number | null, format: (value: number) => string): string =>
+  value === null ? MISSING : format(value)
+
+/** Coerces each series value to a number or null once, so bars, table and tooltip agree. */
 const normalize = (
   data: ReadonlyArray<StackedBarDatum>,
   series: ReadonlyArray<StackedBarSeries>,
@@ -91,7 +101,7 @@ export function StackedBarTooltip({
       key: series[index].key,
       label: series[index].label,
       swatch: swatchClass(index),
-      text: format(toNumber(entry.value)),
+      text: formatOrDash(toNumber(entry.value), format),
     })
   }
   return <ChartTooltipCard heading={xFormat(String(label))} rows={rows} />
@@ -114,7 +124,7 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
     ref,
   ) => {
     const rows = normalize(data, series)
-    const hasData = rows.some((row) => series.some((s) => row[s.key] !== 0))
+    const hasData = rows.some((row) => series.some((s) => row[s.key] !== null && row[s.key] !== 0))
     if (!hasData) {
       return (
         <div ref={ref} className={className} {...props}>
@@ -157,7 +167,7 @@ export const StackedBarChart = React.forwardRef<HTMLDivElement, StackedBarChartP
           headers={[xLabel, ...series.map((s) => s.label)]}
           rows={rows.map((row) => [
             xFormat(String(row[xKey])),
-            ...series.map((s) => format(row[s.key] as number)),
+            ...series.map((s) => formatOrDash(row[s.key] as number | null, format)),
           ])}
         />
       </div>

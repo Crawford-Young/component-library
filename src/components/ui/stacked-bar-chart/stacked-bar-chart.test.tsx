@@ -83,7 +83,7 @@ describe('StackedBarChart', () => {
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 
-  it('treats non-numeric series values as zero', () => {
+  it('shows the empty state when every value is missing', () => {
     const odd = [{ day: 'a', demo: 'x', other: undefined }]
     render(<StackedBarChart data={odd} xKey="day" series={series} format={format} />)
     expect(screen.getByText('No data')).toBeInTheDocument()
@@ -114,16 +114,32 @@ describe('StackedBarChart', () => {
     expect(within(screen.getByRole('table')).getByText('$-2.00')).toBeInTheDocument()
   })
 
-  it('shows non-numeric cells as zero in the table', () => {
+  it('reads missing cells as no data, not zero, in the table (#137)', () => {
     render(
       <StackedBarChart
-        data={[{ day: 'a', demo: 3, other: 'x' }]}
+        data={[
+          { day: 'a', demo: 3, other: null },
+          { day: 'b', demo: undefined, other: 'x' },
+          { day: 'c', demo: Number.NaN, other: 0 },
+        ]}
         xKey="day"
         series={series}
         format={format}
       />,
     )
-    expect(within(screen.getByRole('table')).getByText('$0.00')).toBeInTheDocument()
+    const cells = within(screen.getByRole('table'))
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) =>
+        within(row)
+          .getAllByRole('cell')
+          .map((c) => c.textContent),
+      )
+    expect(cells).toEqual([
+      ['a', '$3.00', '—'],
+      ['b', '—', '—'],
+      ['c', '—', '$0.00'],
+    ])
   })
 
   it('sizes the plot with plotClassName, defaulting to h-48', () => {
@@ -203,6 +219,22 @@ describe('StackedBarTooltip', () => {
     expect(screen.getByText('Demo')).toBeInTheDocument()
     expect(screen.getByText('$1.20')).toBeInTheDocument()
     expect(screen.getByText('$0.40')).toBeInTheDocument()
+  })
+
+  it('reads a missing value as no data and a zero as zero (#137)', () => {
+    render(
+      <StackedBarTooltip
+        {...props}
+        active
+        label="06"
+        payload={[
+          { dataKey: 'demo', value: null },
+          { dataKey: 'other', value: 0 },
+        ]}
+      />,
+    )
+    expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.getByText('$0.00')).toBeInTheDocument()
   })
 
   it('skips payload entries that are not configured series', () => {

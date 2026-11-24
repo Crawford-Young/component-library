@@ -14,11 +14,15 @@ const DEFAULT_LABEL: Record<AgentNodeState, string> = {
   done: 'done',
 }
 
-export const agentNodeRingVariants = cva('relative focus-visible:ring-2 focus-visible:ring-ring', {
+// Round nodes show focus as a ring (box-shadow). A dense dot cannot: its needs-you halo is
+// already a box-shadow ring, and `focus-visible:ring-ring` would replace it (#159). Dense dots
+// show focus as an outline instead (see denseEmphasis), so the halo survives focus.
+export const agentNodeRingVariants = cva('relative', {
   variants: {
     size: {
-      root: 'inline-flex flex-col items-center gap-2 text-center focus-visible:outline-none',
-      default: 'inline-flex flex-col items-center gap-2 text-center focus-visible:outline-none',
+      root: 'inline-flex flex-col items-center gap-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      default:
+        'inline-flex flex-col items-center gap-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
       dense: 'inline-block size-3 shrink-0 rounded-full',
     },
   },
@@ -34,8 +38,10 @@ const denseEmphasis = cva('', {
       done: '',
     },
     selected: {
-      true: 'outline outline-2 outline-offset-2 outline-accent',
-      false: 'focus-visible:outline-none',
+      // Selection is already an outline, so focus pushes it out a step rather than recolouring it.
+      true: 'outline outline-2 outline-offset-2 outline-accent focus-visible:outline-offset-4',
+      false:
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
     },
   },
 })

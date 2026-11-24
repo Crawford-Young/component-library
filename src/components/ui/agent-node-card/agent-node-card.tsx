@@ -31,8 +31,8 @@ const cardVariants = cva(
 const stateTextVariants = cva('ml-auto shrink-0 text-[10.5px] font-medium', {
   variants: {
     state: {
-      working: 'text-success',
-      'needs-you': 'text-warning',
+      working: 'text-success-text',
+      'needs-you': 'text-warning-text',
       idle: 'text-muted-foreground',
       done: 'text-muted-foreground',
     },

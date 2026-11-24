@@ -370,12 +370,31 @@ describe('AgentNodeRing - dense focus and selection', () => {
     expect(classes).not.toContain('focus-visible:outline-none')
   })
 
-  it('still drops the browser outline on an unselected dot and on round nodes', () => {
-    for (const size of SIZES) {
+  it('shows focus on round nodes as a ring, with the browser outline dropped', () => {
+    for (const size of ['root', 'default'] as const) {
       const { unmount } = render(<AgentNodeRing name="implementer" size={size} />)
-      expect(classesOf(screen.getByRole('button')), size).toContain('focus-visible:outline-none')
+      const classes = classesOf(screen.getByRole('button'))
+      expect(classes, size).toContain('focus-visible:outline-none')
+      expect(classes, size).toContain('focus-visible:ring-ring')
       unmount()
     }
+  })
+
+  it('shows focus on an unselected dense dot as an outline, so the halo ring survives (#159)', () => {
+    render(<AgentNodeRing name="implementer" size="dense" state="needs-you" />)
+    const classes = classesOf(screen.getByRole('button'))
+    expect(classes).toContain('ring-warning/50')
+    expect(classes).toContain('focus-visible:outline-ring')
+    expect(classes).not.toContain('focus-visible:ring-ring')
+    expect(classes).not.toContain('focus-visible:outline-none')
+  })
+
+  it("steps a selected dense dot's outline out on focus (#159)", () => {
+    render(<AgentNodeRing name="implementer" size="dense" state="needs-you" selected />)
+    const classes = classesOf(screen.getByRole('button'))
+    expect(classes).toContain('outline-accent')
+    expect(classes).toContain('focus-visible:outline-offset-4')
+    expect(classes).not.toContain('focus-visible:ring-ring')
   })
 })
 

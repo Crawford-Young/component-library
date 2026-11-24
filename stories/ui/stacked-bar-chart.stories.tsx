@@ -40,3 +40,16 @@ export const Hours: Story = {
 export const Empty: Story = {
   args: { data: [], emptyMessage: 'No spend recorded this week' },
 }
+
+/** A series that started recording mid-week: its earlier days are gaps ("—"), not zeros. */
+export const MissingValues: Story = {
+  args: {
+    data: [
+      { day: '2026-10-05', demo: 1.2, strate: 0.8, other: null },
+      { day: '2026-10-06', demo: 0.3, strate: 2.1, other: null },
+      { day: '2026-10-07', demo: 0, strate: 1.4, other: 0 },
+      { day: '2026-10-08', demo: 2.4, strate: 0.2, other: 0.1 },
+      { day: '2026-10-09', demo: 0.9, strate: 0.9, other: 0.9 },
+    ],
+  },
+}
