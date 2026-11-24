@@ -1,5 +1,11 @@
 # @cy/ui
 
+## 0.35.0
+
+### Minor Changes
+
+- b98453b: Add a Badge `success` variant (`bg-success` with `text-success-foreground`), for passing checks and other positive states.
+
 ## 0.34.0
 
 ### Minor Changes
