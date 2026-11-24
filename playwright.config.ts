@@ -27,7 +27,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm storybook dev -p ${STORYBOOK_PORT} --no-open`,
+    command: `pnpm exec storybook dev -p ${STORYBOOK_PORT} --no-open`,
     url: `http://localhost:${STORYBOOK_PORT}`,
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,

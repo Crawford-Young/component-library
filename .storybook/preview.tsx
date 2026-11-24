@@ -9,18 +9,23 @@ injectSpeedInsights()
 
 const preview: Preview = {
   parameters: {
+    // Storybook 9+ looks `globals.backgrounds.value` up as a KEY of `options`. The keys are the
+    // hex values themselves so the global still carries the colour: the decorator below and the
+    // `&globals=backgrounds.value:!hex(ffffff)` light-mode URLs (e2e, cl-gates) keep working.
     backgrounds: {
-      default: 'dark',
-      values: [
-        { name: 'dark', value: '#09090b' },
-        { name: 'light', value: '#ffffff' },
-      ],
+      options: {
+        '#09090b': { name: 'dark', value: '#09090b' },
+        '#ffffff': { name: 'light', value: '#ffffff' },
+      },
     },
     a11y: {
       config: {
         rules: [{ id: 'color-contrast', enabled: true }],
       },
     },
+  },
+  initialGlobals: {
+    backgrounds: { value: '#09090b' },
   },
   decorators: [
     (Story, context) => {
